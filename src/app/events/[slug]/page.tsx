@@ -27,7 +27,7 @@ export default async function EventDetailPage({ params }: Props) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link
           href="/events"
-          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/60 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-white/60 hover:text-slate-950 dark:hover:text-white transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Back to All Events</span>
@@ -145,33 +145,33 @@ export default async function EventDetailPage({ params }: Props) {
 
           {/* Right Column (4 cols): Sticky Registration Dock */}
           <div className="lg:col-span-4">
-            <div className="sticky top-24 sm:top-28 glass-panel rounded-2xl border border-white/15 p-6 sm:p-8 space-y-5 shadow-2xl">
+            <div className="sticky top-24 sm:top-28 glass-panel rounded-2xl border border-black/10 dark:border-white/15 p-6 sm:p-8 space-y-5 shadow-2xl">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white/50 block">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/50 block">
                   ENTRY FEE
                 </span>
                 <div className="flex items-baseline gap-2 pt-1 font-sans">
-                  <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+                  <span className="text-4xl sm:text-5xl font-black text-slate-950 dark:text-white tracking-tight">
                     {formatINR(event.registration_fee_paise)}
                   </span>
-                  <span className="text-xs text-white/60 font-semibold">
+                  <span className="text-xs text-slate-600 dark:text-white/60 font-semibold">
                     per rider
                   </span>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-white/10 space-y-2.5 text-xs font-semibold">
-                <div className="flex justify-between text-white/70">
+              <div className="pt-3 border-t border-black/10 dark:border-white/10 space-y-2.5 text-xs font-semibold">
+                <div className="flex justify-between text-slate-700 dark:text-white/70">
                   <span>Registration Closes:</span>
-                  <span className="text-white font-bold">{formatDateIndian(event.registration_closes_at)}</span>
+                  <span className="text-slate-950 dark:text-white font-bold">{formatDateIndian(event.registration_closes_at)}</span>
                 </div>
-                <div className="flex justify-between text-white/70">
+                <div className="flex justify-between text-slate-700 dark:text-white/70">
                   <span>Eligibility:</span>
-                  <span className="text-white font-bold">12+ Years (Any Bike)</span>
+                  <span className="text-slate-950 dark:text-white font-bold">12+ Years (Any Bike)</span>
                 </div>
-                <div className="flex justify-between text-white/70">
+                <div className="flex justify-between text-slate-700 dark:text-white/70">
                   <span>Rider Pass:</span>
-                  <span className="text-[#b8f04c] font-bold">Instant Digital Pass & QR</span>
+                  <span className="text-[#335306] dark:text-[#b8f04c] font-bold">Instant Digital Pass & QR</span>
                 </div>
               </div>
 
@@ -187,13 +187,13 @@ export default async function EventDetailPage({ params }: Props) {
                   </Link>
                 </div>
               ) : (
-                <div className="p-4 rounded-xl bg-white/5 text-center text-xs font-bold text-white/60">
+                <div className="p-4 rounded-xl bg-slate-100 dark:bg-white/5 text-center text-xs font-bold text-slate-600 dark:text-white/60">
                   Registration Closed
                 </div>
               )}
 
-              <p className="text-xs text-center text-white/50 pt-2 border-t border-white/5 font-medium">
-                Helpline: <strong className="text-white">{CLUB_CONTACT_PHONE}</strong>
+              <p className="text-xs text-center text-slate-600 dark:text-white/50 pt-2 border-t border-black/10 dark:border-white/5 font-medium">
+                Helpline: <strong className="text-slate-950 dark:text-white">{CLUB_CONTACT_PHONE}</strong>
               </p>
             </div>
           </div>
