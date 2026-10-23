@@ -29,30 +29,30 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation - Simple, clear, no jargon */}
-          <nav className="hidden md:flex items-center gap-1 text-sm font-semibold">
+          <nav className="hidden md:flex items-center gap-1 text-sm font-bold">
             <Link
               href="/"
-              className="px-3.5 py-2 rounded-lg text-slate-700 hover:text-black hover:bg-black/5 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
+              className="px-3.5 py-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
             >
               Home
             </Link>
             <Link
               href="/#events"
-              className="px-3.5 py-2 rounded-lg text-slate-700 hover:text-black hover:bg-black/5 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
+              className="px-3.5 py-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
             >
               Upcoming Rides
             </Link>
             <Link
               href="/events"
-              className="px-3.5 py-2 rounded-lg text-slate-700 hover:text-black hover:bg-black/5 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
+              className="px-3.5 py-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
             >
               All Events
             </Link>
             <Link
               href="/registrations/lookup"
-              className="px-3.5 py-2 rounded-lg text-[#4d710d] dark:text-[#b8f04c] hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-lg text-[#2e4a06] hover:text-[#1d3003] dark:text-[#b8f04c] dark:hover:text-[#d4ff6e] hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
             >
-              <Search className="w-4 h-4 text-[#4d710d] dark:text-[#b8f04c]" />
+              <Search className="w-4 h-4 text-[#2e4a06] dark:text-[#b8f04c]" />
               <span>Find My Pass</span>
             </Link>
           </nav>

@@ -17,19 +17,19 @@ export default async function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-6 sm:space-y-8">
           {/* Simple Club Tag */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[#b8f04c] text-xs font-bold uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-[#b8f04c] animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/5 dark:bg-white/10 border border-slate-900/10 dark:border-white/15 text-[#3b5e08] dark:text-[#b8f04c] text-xs font-bold uppercase tracking-wider shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-[#4a7209] dark:bg-[#b8f04c] animate-pulse" />
             <span>{CLUB_NAME} • GUJARAT</span>
           </div>
 
           {/* Bold Impact Headline */}
           <div className="space-y-3">
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight event-heading leading-none">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-slate-950 dark:text-white leading-none">
               RIDE BEYOND<br />
-              <span className="opacity-40">THE ORDINARY.</span>
+              <span className="text-slate-400 dark:text-white/40">THE ORDINARY.</span>
             </h1>
 
-            <p className="text-sm sm:text-base event-body max-w-xl font-medium leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-700 dark:text-[#d1d6cb] max-w-xl font-medium leading-relaxed">
               Weekend community rides, canal pacelines, and century brevets in Anand. Open to all riders and bicycles.
             </p>
           </div>
@@ -54,7 +54,7 @@ export default async function HomePage() {
           </div>
 
           {/* Hero Image Showcase */}
-          <div className="relative w-full rounded-2xl overflow-hidden glass-panel border border-white/10 shadow-2xl">
+          <div className="relative w-full rounded-2xl overflow-hidden glass-panel border border-black/10 dark:border-white/10 shadow-2xl">
             <div className="relative w-full h-[260px] sm:h-[400px] lg:h-[480px] bg-black">
               <img
                 src="https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=2000&q=80"
@@ -86,13 +86,13 @@ export default async function HomePage() {
       {/* SECTION 2: FEATURED RIDE */}
       {featuredEvent && (
         <section id="events" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5 scroll-mt-24">
-          <div className="flex items-center justify-between pb-2 border-b border-white/10">
-            <h2 className="text-2xl sm:text-3xl font-black uppercase event-heading tracking-tight">
+          <div className="flex items-center justify-between pb-2 border-b border-black/10 dark:border-white/10">
+            <h2 className="text-2xl sm:text-3xl font-black uppercase text-slate-950 dark:text-white tracking-tight">
               FEATURED UPCOMING RIDE
             </h2>
             <Link
               href="/events"
-              className="text-xs font-bold text-[#557b12] dark:text-[#b8f04c] hover:underline uppercase flex items-center gap-1"
+              className="text-xs font-bold text-[#3b5e08] dark:text-[#b8f04c] hover:underline uppercase flex items-center gap-1"
             >
               <span>ALL RIDES ({publishedEvents.length})</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -106,8 +106,8 @@ export default async function HomePage() {
       {/* SECTION 3: MORE RIDES (Clean Grid) */}
       {remainingEvents.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-          <div className="pb-2 border-b border-white/10">
-            <h3 className="text-xl sm:text-2xl font-black uppercase event-heading tracking-tight">
+          <div className="pb-2 border-b border-black/10 dark:border-white/10">
+            <h3 className="text-xl sm:text-2xl font-black uppercase text-slate-950 dark:text-white tracking-tight">
               MORE RIDES ON CALENDAR
             </h3>
           </div>
