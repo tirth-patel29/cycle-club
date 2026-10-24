@@ -31,10 +31,28 @@ export interface CyclingEvent {
 
 export type RegistrationStatus = 'pending_payment' | 'confirmed' | 'cancelled';
 export type GenderOption = 'Male' | 'Female' | 'Other' | 'Prefer not to say';
+export type BicycleType = 'Road' | 'Hybrid' | 'MTB' | 'City Bike' | 'Gravel Cycle';
+export type TshirtSize = 'S' | 'M' | 'L' | 'XL' | '2XL' | 'None';
+
+export interface RiderProfile {
+  id: string; // auth.users UUID
+  full_name: string;
+  email: string;
+  mobile_number: string;
+  bicycle_type: BicycleType;
+  age?: number;
+  gender?: GenderOption;
+  bicycle_brand?: string;
+  bicycle_model?: string;
+  tshirt_size?: TshirtSize;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Registration {
   id: string;
   public_reference: string; // e.g. "ACC-2026-X89J"
+  rider_id?: string; // Authenticated user ID if logged in
   event_id: string;
   event_title?: string;
   full_name: string;
@@ -44,8 +62,10 @@ export interface Registration {
   gender: GenderOption;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
-  jersey_size?: 'S' | 'M' | 'L' | 'XL' | '2XL' | 'None';
-  bicycle_type?: 'Road Bike' | 'Hybrid' | 'MTB' | 'Single Speed' | 'Other';
+  jersey_size?: TshirtSize;
+  bicycle_type?: BicycleType;
+  bicycle_brand?: string;
+  bicycle_model?: string;
   terms_accepted_at: string;
   status: RegistrationStatus;
   amount_due_paise: number;

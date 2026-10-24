@@ -106,6 +106,9 @@ export function ConfirmationPassView({ registration, event, payment }: Props) {
               <p className="text-xs event-body">
                 Age: {registration.age} • Gender: {registration.gender} • Mobile: +91 {registration.mobile_number}
               </p>
+              <p className="text-xs font-mono text-lime-700 dark:text-lime-400 font-bold mt-1">
+                Bicycle: {registration.bicycle_type || 'Road'} {registration.bicycle_brand ? `(${registration.bicycle_brand} ${registration.bicycle_model || ''})` : ''} • Jersey: {registration.jersey_size || 'None'}
+              </p>
             </div>
 
             <div className="event-venue-box p-4 rounded-2xl flex items-center gap-4 shrink-0">
@@ -157,11 +160,13 @@ export function ConfirmationPassView({ registration, event, payment }: Props) {
           {/* Footer fee & verified badge */}
           <div className="pt-4 border-t border-black/10 dark:border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs">
             <div>
-              <span className="opacity-60">FEE PAID: </span>
-              <strong className="event-heading font-extrabold">{formatINR(registration.amount_due_paise)}</strong>
-              {payment && (
+              <span className="opacity-60">REGISTRATION FEE: </span>
+              <strong className="event-heading font-extrabold">
+                {registration.amount_due_paise === 0 ? 'FREE ENTRY (₹0)' : formatINR(registration.amount_due_paise)}
+              </strong>
+              {registration.amount_due_paise > 0 && payment && (
                 <span className="ml-2 opacity-50 text-[10px] font-mono">
-                  (TXN: {payment.provider_payment_reference})
+                  (DEMO TXN: {payment.provider_payment_reference})
                 </span>
               )}
             </div>

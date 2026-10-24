@@ -65,5 +65,25 @@ INSERT INTO events (
   '2026-10-20 00:00:00+05:30',
   '2026-12-05 20:00:00+05:30',
   '2026-10-20 00:00:00+05:30'
+),
+(
+  'e0000000-0000-0000-0000-000000000004',
+  'charotar-community-morning-loop-15k',
+  'Charotar Community Morning Loop 15K',
+  'A complimentary community cycling gathering through the shaded morning avenues of Vallabh Vidyanagar. Zero entry fee, certified route marshals, and complimentary post-ride refreshments for all participants.',
+  'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1600&q=80',
+  'Shastri Maidan, Vallabh Vidyanagar, Anand',
+  'Loop through University Road, Mota Bazaar, and scenic canal lane.',
+  '2026-12-20 06:30:00+05:30',
+  '2026-12-20 08:30:00+05:30',
+  15,
+  30,
+  'Easy / Leisure',
+  0,
+  'INR',
+  'published',
+  '2026-10-20 00:00:00+05:30',
+  '2026-12-19 20:00:00+05:30',
+  '2026-10-20 00:00:00+05:30'
 )
 ON CONFLICT (slug) DO NOTHING;

@@ -6,3 +6,5 @@ export function createClient() {
 
   return createBrowserClient(supabaseUrl, supabaseKey);
 }
+
+export const supabase = createClient();

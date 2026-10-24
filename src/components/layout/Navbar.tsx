@@ -1,13 +1,29 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Bike, Search, ChevronRight } from 'lucide-react';
+import { Menu, X, Bike, Search, ChevronRight, User, ShieldCheck } from 'lucide-react';
 import { CLUB_NAME } from '@/lib/constants';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { supabase } from '@/lib/supabase/client';
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setIsAuthenticated(!!data.user);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 right-0 w-full z-50 bg-[#ffffff]/95 dark:bg-[#0c0f0a]/95 backdrop-blur-md border-b border-black/10 dark:border-white/10 transition-colors shadow-xs dark:shadow-none">
@@ -28,7 +44,7 @@ export function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Navigation - Simple, clear, no jargon */}
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1 text-sm font-bold">
             <Link
               href="/"
@@ -37,16 +53,10 @@ export function Navbar() {
               Home
             </Link>
             <Link
-              href="/#events"
-              className="px-3.5 py-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
-            >
-              Upcoming Rides
-            </Link>
-            <Link
               href="/events"
               className="px-3.5 py-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
             >
-              All Events
+              Rides & Events
             </Link>
             <Link
               href="/registrations/lookup"
@@ -55,13 +65,29 @@ export function Navbar() {
               <Search className="w-4 h-4 text-[#2e4a06] dark:text-[#b8f04c]" />
               <span>Find My Pass</span>
             </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/profile"
+                className="px-3.5 py-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+              >
+                <User className="w-4 h-4 text-lime-600 dark:text-lime-400" />
+                <span>My Profile</span>
+              </Link>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="px-3.5 py-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
+              >
+                Rider Sign In
+              </Link>
+            )}
           </nav>
 
           {/* Right Action: Glossy Button & Theme Toggle */}
           <div className="hidden md:flex items-center gap-2.5">
             <ThemeToggle />
             <Link
-              href="/#events"
+              href="/events"
               className="btn-glossy-lime px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
             >
               <span>JOIN A RIDE</span>
@@ -91,7 +117,7 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Drawer - Simple, clean, large buttons for easy tapping */}
+      {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white dark:bg-[#0c0f0a] border-b border-black/10 dark:border-white/15 px-4 pt-3 pb-6 space-y-2 text-sm font-semibold shadow-2xl">
           <div className="flex items-center justify-between pb-2 mb-1 border-b border-black/10 dark:border-white/10">
@@ -106,19 +132,30 @@ export function Navbar() {
             Home
           </Link>
           <Link
-            href="/#events"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-3 px-3 rounded-xl text-slate-700 dark:text-white/90 hover:bg-black/5 dark:hover:bg-white/10"
-          >
-            Upcoming Rides
-          </Link>
-          <Link
             href="/events"
             onClick={() => setMobileMenuOpen(false)}
             className="block py-3 px-3 rounded-xl text-slate-700 dark:text-white/90 hover:bg-black/5 dark:hover:bg-white/10"
           >
             All Cycling Events
           </Link>
+          {isAuthenticated ? (
+            <Link
+              href="/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 py-3 px-3 rounded-xl text-slate-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              <User className="w-4 h-4 text-lime-500" />
+              <span>Rider Profile & Passes</span>
+            </Link>
+          ) : (
+            <Link
+              href="/auth/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-3 px-3 rounded-xl text-slate-700 dark:text-white/90 hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              Rider Sign In
+            </Link>
+          )}
           <Link
             href="/registrations/lookup"
             onClick={() => setMobileMenuOpen(false)}

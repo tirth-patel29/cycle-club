@@ -36,8 +36,8 @@ export function EventCard({ event }: EventCardProps) {
             <span className="photo-overlay-pill px-2.5 py-1 rounded-md">
               +{event.elevation_gain_m}m Elevation
             </span>
-            <span className="bg-[#b8f04c] text-[#0c1204] font-black px-2.5 py-1 rounded-md text-sm shadow-sm">
-              {formatINR(event.registration_fee_paise)}
+            <span className="bg-[#b8f04c] text-[#0c1204] font-black px-2.5 py-1 rounded-md text-xs sm:text-sm shadow-sm">
+              {event.registration_fee_paise === 0 ? 'FREE ENTRY' : formatINR(event.registration_fee_paise)}
             </span>
           </div>
         </div>

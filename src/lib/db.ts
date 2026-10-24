@@ -1,15 +1,46 @@
-import { CyclingEvent, Registration, Payment, AuditLog } from '@/types';
+import { CyclingEvent, Registration, Payment, AuditLog, RiderProfile, BicycleType, EventStatus } from '@/types';
 import { INITIAL_EVENTS } from './constants';
 
 // In-memory persistent store for development & offline environments
 // This ensures that even before Supabase is connected, the entire app (registration,
-// demo payment, admin CRUD, CSV export) functions reliably without 500 crashes.
+// demo payment, admin CRUD, rider profiles, CSV export) functions reliably without 500 crashes.
 class DatabaseService {
   private events: CyclingEvent[] = [...INITIAL_EVENTS];
+  private profiles: RiderProfile[] = [
+    {
+      id: 'usr-rider-01',
+      full_name: 'Rajeshbhai Patel',
+      email: 'rajesh.patel@example.in',
+      mobile_number: '9825123456',
+      bicycle_type: 'Hybrid',
+      age: 52,
+      gender: 'Male',
+      bicycle_brand: 'Trek',
+      bicycle_model: 'FX 2 Disc',
+      tshirt_size: 'XL',
+      created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+      updated_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+    },
+    {
+      id: 'usr-rider-02',
+      full_name: 'Ananya Sharma',
+      email: 'ananya.sharma@example.in',
+      mobile_number: '9876543210',
+      bicycle_type: 'Road',
+      age: 28,
+      gender: 'Female',
+      bicycle_brand: 'Giant',
+      bicycle_model: 'Contend AR 1',
+      tshirt_size: 'M',
+      created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
+      updated_at: new Date(Date.now() - 86400000 * 15).toISOString(),
+    }
+  ];
   private registrations: Registration[] = [
     {
       id: 'reg-demo-01',
       public_reference: 'ACC-2026-N78K',
+      rider_id: 'usr-rider-01',
       event_id: 'evt-001',
       event_title: 'Amul Heritage Sunrise 45K',
       full_name: 'Rajeshbhai Patel',
@@ -21,6 +52,8 @@ class DatabaseService {
       emergency_contact_phone: '9825987654',
       jersey_size: 'XL',
       bicycle_type: 'Hybrid',
+      bicycle_brand: 'Trek',
+      bicycle_model: 'FX 2 Disc',
       terms_accepted_at: new Date(Date.now() - 86400000 * 2).toISOString(),
       status: 'confirmed',
       amount_due_paise: 29900,
@@ -32,6 +65,7 @@ class DatabaseService {
     {
       id: 'reg-demo-02',
       public_reference: 'ACC-2026-P42X',
+      rider_id: 'usr-rider-02',
       event_id: 'evt-002',
       event_title: 'Charotar 100K Century Challenge',
       full_name: 'Ananya Sharma',
@@ -42,7 +76,9 @@ class DatabaseService {
       emergency_contact_name: 'Suresh Sharma',
       emergency_contact_phone: '9876500000',
       jersey_size: 'M',
-      bicycle_type: 'Road Bike',
+      bicycle_type: 'Road',
+      bicycle_brand: 'Giant',
+      bicycle_model: 'Contend AR 1',
       terms_accepted_at: new Date(Date.now() - 86400000).toISOString(),
       status: 'confirmed',
       amount_due_paise: 59900,
@@ -89,12 +125,69 @@ class DatabaseService {
     }
   ];
 
-  // EVENTS
-  async getEvents(includeDrafts = false): Promise<CyclingEvent[]> {
-    if (includeDrafts) {
-      return [...this.events];
+  // RIDER PROFILES
+  async getRiderProfile(userId: string): Promise<RiderProfile | null> {
+    const profile = this.profiles.find((p) => p.id === userId);
+    return profile ? { ...profile } : null;
+  }
+
+  async upsertRiderProfile(userId: string, data: Partial<RiderProfile>): Promise<RiderProfile> {
+    const idx = this.profiles.findIndex((p) => p.id === userId);
+    const now = new Date().toISOString();
+
+    if (idx !== -1) {
+      this.profiles[idx] = {
+        ...this.profiles[idx],
+        ...data,
+        id: userId,
+        updated_at: now
+      };
+      await this.logAudit(userId, 'RIDER_PROFILE_UPDATED', 'registration', userId, {
+        bicycle_type: this.profiles[idx].bicycle_type
+      });
+      return { ...this.profiles[idx] };
+    } else {
+      const newProfile: RiderProfile = {
+        id: userId,
+        full_name: data.full_name || 'Rider',
+        email: data.email || 'rider@example.in',
+        mobile_number: data.mobile_number || '9825000000',
+        bicycle_type: data.bicycle_type || 'Hybrid',
+        age: data.age,
+        gender: data.gender,
+        bicycle_brand: data.bicycle_brand,
+        bicycle_model: data.bicycle_model,
+        tshirt_size: data.tshirt_size || 'None',
+        created_at: now,
+        updated_at: now
+      };
+      this.profiles.unshift(newProfile);
+      await this.logAudit(userId, 'RIDER_PROFILE_CREATED', 'registration', userId, {
+        bicycle_type: newProfile.bicycle_type
+      });
+      return { ...newProfile };
     }
-    return this.events.filter((e) => e.status === 'published');
+  }
+
+  async getRiderProfiles(): Promise<RiderProfile[]> {
+    return [...this.profiles];
+  }
+
+  // EVENTS
+  async getEvents(options?: { includeDrafts?: boolean; timeframe?: 'all' | 'upcoming' | 'past' } | boolean): Promise<CyclingEvent[]> {
+    const includeDrafts = typeof options === 'boolean' ? options : !!options?.includeDrafts;
+    const timeframe = typeof options === 'object' ? options?.timeframe : 'all';
+
+    let list = includeDrafts ? [...this.events] : this.events.filter((e) => e.status === 'published');
+    const now = new Date().getTime();
+
+    if (timeframe === 'upcoming') {
+      list = list.filter((e) => new Date(e.starts_at).getTime() >= now);
+    } else if (timeframe === 'past') {
+      list = list.filter((e) => new Date(e.starts_at).getTime() < now);
+    }
+
+    return list;
   }
 
   async getEventBySlug(slug: string): Promise<CyclingEvent | null> {
@@ -132,13 +225,16 @@ class DatabaseService {
   }
 
   // REGISTRATIONS
-  async getRegistrations(filter?: { eventId?: string; status?: string; search?: string }): Promise<Registration[]> {
+  async getRegistrations(filter?: { eventId?: string; status?: string; search?: string; riderId?: string }): Promise<Registration[]> {
     let list = [...this.registrations];
     if (filter?.eventId) {
       list = list.filter((r) => r.event_id === filter.eventId);
     }
     if (filter?.status) {
       list = list.filter((r) => r.status === filter.status);
+    }
+    if (filter?.riderId) {
+      list = list.filter((r) => r.rider_id === filter.riderId);
     }
     if (filter?.search) {
       const q = filter.search.toLowerCase();
@@ -178,30 +274,42 @@ class DatabaseService {
     const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
     const publicRef = `ACC-${year}-${randomChars}`;
 
+    // Free event handling (amount_due_paise === 0) confirms immediately with NO fake financial transaction
+    const isFree = data.amount_due_paise === 0;
+    const initialStatus = isFree ? 'confirmed' : 'pending_payment';
+
     const newReg: Registration = {
       ...data,
       id: `reg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       public_reference: publicRef,
+      status: initialStatus,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
     this.registrations.unshift(newReg);
 
-    // Create initial pending payment record
-    const payment: Payment = {
-      id: `pay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      registration_id: newReg.id,
-      provider: 'demo',
-      provider_payment_reference: `DEMO_PENDING_${Date.now()}`,
-      amount_paise: newReg.amount_due_paise,
-      currency: newReg.currency,
-      status: 'pending',
-      idempotency_key: data.idempotency_key,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    this.payments.unshift(payment);
+    if (isFree) {
+      await this.logAudit('system', 'FREE_REGISTRATION_CONFIRMED', 'registration', newReg.id, {
+        reference: newReg.public_reference,
+        event_id: newReg.event_id
+      });
+    } else {
+      // Create initial pending payment record for paid events
+      const payment: Payment = {
+        id: `pay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        registration_id: newReg.id,
+        provider: 'demo',
+        provider_payment_reference: `DEMO_PENDING_${Date.now()}`,
+        amount_paise: newReg.amount_due_paise,
+        currency: newReg.currency,
+        status: 'pending',
+        idempotency_key: data.idempotency_key,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      this.payments.unshift(payment);
+    }
 
     return newReg;
   }

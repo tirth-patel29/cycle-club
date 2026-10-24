@@ -1,139 +1,123 @@
 /**
- * Anand Cycling Club - Event Platform Load Testing Script
- * 
- * Simulates concurrent participant traffic accessing the homepage,
- * event detail, and submitting registrations.
- * 
+ * Anand Cycling Club — Registration Load Testing Script
+ * Simulates concurrent registration requests with synthetic rider profiles,
+ * canonical bicycle types, and idempotency guarantees.
+ *
  * Usage:
- *   node scripts/load-test.mjs --concurrency 50 --requests 200 --url http://localhost:3000
+ *   node scripts/load-test.mjs [concurrency] [totalRequests] [baseUrl]
+ * Example:
+ *   node scripts/load-test.mjs 50 500 http://localhost:3000
  */
 
-import { randomUUID } from 'crypto';
+const BICYCLE_TYPES = ['Road', 'Hybrid', 'MTB', 'City Bike', 'Gravel Cycle'];
+const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
+const SIZES = ['S', 'M', 'L', 'XL', '2XL'];
 
-const args = process.argv.slice(2);
-function getArg(flag, defaultValue) {
-  const index = args.indexOf(flag);
-  return index !== -1 && args[index + 1] ? args[index + 1] : defaultValue;
-}
+async function main() {
+  const concurrency = parseInt(process.argv[2] || '20', 10);
+  const totalRequests = parseInt(process.argv[3] || '100', 10);
+  const baseUrl = process.argv[4] || 'http://localhost:3000';
 
-const BASE_URL = getArg('--url', 'http://localhost:3000');
-const CONCURRENCY = parseInt(getArg('--concurrency', '50'), 10);
-const TOTAL_REQUESTS = parseInt(getArg('--requests', '200'), 10);
+  console.log(`\n======================================================`);
+  console.log(`   ANAND CYCLING CLUB — CONCURRENT LOAD SIMULATOR    `);
+  console.log(`======================================================`);
+  console.log(`Target URL:      ${baseUrl}/api/registrations`);
+  console.log(`Total Requests:  ${totalRequests}`);
+  console.log(`Concurrency:     ${concurrency}`);
+  console.log(`------------------------------------------------------\n`);
 
-console.log(`====================================================`);
-console.log(`🚴 Anand Cycling Club - Load Testing Harness`);
-console.log(`Target URL:        ${BASE_URL}`);
-console.log(`Concurrency Level: ${CONCURRENCY} virtual users`);
-console.log(`Total Requests:    ${TOTAL_REQUESTS}`);
-console.log(`====================================================\n`);
+  let completed = 0;
+  let succeeded = 0;
+  let failed = 0;
+  const latencies = [];
 
-const latencies = [];
-let successful = 0;
-let failed = 0;
+  const startTime = Date.now();
 
-async function executeSingleJourney(userId) {
-  const start = performance.now();
-  const idempotencyKey = randomUUID();
+  async function sendRegistration(index) {
+    const idempotencyKey = `load-test-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 8)}`;
+    const randomBicycle = BICYCLE_TYPES[index % BICYCLE_TYPES.length];
+    const randomGender = GENDERS[index % GENDERS.length];
+    const randomSize = SIZES[index % SIZES.length];
 
-  try {
-    // 1. Fetch Homepage
-    const resHome = await fetch(`${BASE_URL}/`);
-    if (!resHome.ok) throw new Error(`Home failed with status ${resHome.status}`);
-
-    // 2. Fetch Event Detail
-    const resEvent = await fetch(`${BASE_URL}/events/amul-heritage-city-ride-2026`);
-    if (!resEvent.ok) throw new Error(`Event detail failed with status ${resEvent.status}`);
-
-    // 3. Submit Registration
-    const regPayload = {
+    const payload = {
       event_id: 'evt-001',
-      full_name: `Test Rider ${userId}`,
-      mobile_number: `9825${String(100000 + (userId % 900000))}`,
-      age: 20 + (userId % 50),
-      gender: 'Male',
-      bicycle_type: 'Hybrid',
+      full_name: `Synthetic Rider ${index + 1}`,
+      mobile_number: `9825${String(100000 + index).slice(-6)}`,
+      email: `synthetic.rider.${index + 1}@acc-loadtest.org`,
+      age: 20 + (index % 45),
+      gender: randomGender,
+      bicycle_type: randomBicycle,
+      bicycle_brand: 'Trek',
+      bicycle_model: 'Domane AL 2',
+      jersey_size: randomSize,
       terms_accepted: true,
       idempotency_key: idempotencyKey
     };
 
-    const resReg = await fetch(`${BASE_URL}/api/registrations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(regPayload)
-    });
+    const reqStart = Date.now();
+    try {
+      const res = await fetch(`${baseUrl}/api/registrations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-idempotency-key': idempotencyKey
+        },
+        body: JSON.stringify(payload)
+      });
 
-    if (!resReg.ok) throw new Error(`Registration failed with status ${resReg.status}`);
-    const regData = await resReg.json();
+      const latency = Date.now() - reqStart;
+      latencies.push(latency);
 
-    // 4. Simulate Demo Payment
-    const resPay = await fetch(`${BASE_URL}/api/payments/demo`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        registration_reference: regData.public_reference,
-        outcome: 'success',
-        payment_method: 'upi_qr'
-      })
-    });
-
-    if (!resPay.ok) throw new Error(`Payment failed with status ${resPay.status}`);
-
-    const duration = performance.now() - start;
-    latencies.push(duration);
-    successful++;
-  } catch (err) {
-    failed++;
-  }
-}
-
-async function runPool() {
-  const startTime = performance.now();
-  let completed = 0;
-  let running = 0;
-  let requestIndex = 0;
-
-  return new Promise((resolve) => {
-    function launchNext() {
-      if (completed >= TOTAL_REQUESTS) {
-        resolve();
-        return;
+      if (res.ok) {
+        succeeded++;
+      } else {
+        failed++;
       }
-
-      while (running < CONCURRENCY && requestIndex < TOTAL_REQUESTS) {
-        const id = requestIndex++;
-        running++;
-
-        executeSingleJourney(id).finally(() => {
-          running--;
-          completed++;
-          if (completed % 25 === 0 || completed === TOTAL_REQUESTS) {
-            process.stdout.write(`\rProgress: ${completed}/${TOTAL_REQUESTS} completed (${failed} errors)`);
-          }
-          launchNext();
-        });
+    } catch {
+      failed++;
+      latencies.push(Date.now() - reqStart);
+    } finally {
+      completed++;
+      if (completed % 25 === 0 || completed === totalRequests) {
+        process.stdout.write(`\rProgress: ${completed}/${totalRequests} (${Math.round((completed / totalRequests) * 100)}%)`);
       }
     }
+  }
 
-    launchNext();
-  }).then(() => {
-    const totalDurationSec = (performance.now() - startTime) / 1000;
-    latencies.sort((a, b) => a - b);
-
-    const p50 = latencies[Math.floor(latencies.length * 0.5)] || 0;
-    const p95 = latencies[Math.floor(latencies.length * 0.95)] || 0;
-    const p99 = latencies[Math.floor(latencies.length * 0.99)] || 0;
-    const rps = (successful / totalDurationSec).toFixed(2);
-
-    console.log(`\n\n================ Load Test Report ================`);
-    console.log(`Total Time Elapsed:    ${totalDurationSec.toFixed(2)}s`);
-    console.log(`Successful Journeys:   ${successful}`);
-    console.log(`Failed Requests:       ${failed}`);
-    console.log(`Throughput:            ${rps} req/sec`);
-    console.log(`Latency p50 (Median):  ${p50.toFixed(1)}ms`);
-    console.log(`Latency p95:           ${p95.toFixed(1)}ms`);
-    console.log(`Latency p99:           ${p99.toFixed(1)}ms`);
-    console.log(`====================================================\n`);
+  // Pool execution
+  const queue = Array.from({ length: totalRequests }, (_, i) => i);
+  const workers = Array.from({ length: concurrency }, async () => {
+    while (queue.length > 0) {
+      const idx = queue.shift();
+      if (idx !== undefined) {
+        await sendRegistration(idx);
+      }
+    }
   });
+
+  await Promise.all(workers);
+
+  const totalTimeSec = (Date.now() - startTime) / 1000;
+  latencies.sort((a, b) => a - b);
+
+  const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length || 0;
+  const p50 = latencies[Math.floor(latencies.length * 0.5)] || 0;
+  const p95 = latencies[Math.floor(latencies.length * 0.95)] || 0;
+  const p99 = latencies[Math.floor(latencies.length * 0.99)] || 0;
+  const rps = totalRequests / totalTimeSec;
+
+  console.log(`\n\n================ LOAD TEST RESULTS ================`);
+  console.log(`Total Requests:      ${totalRequests}`);
+  console.log(`Successful:          ${succeeded}`);
+  console.log(`Failed:              ${failed}`);
+  console.log(`Success Rate:        ${((succeeded / totalRequests) * 100).toFixed(1)}%`);
+  console.log(`Elapsed Time:        ${totalTimeSec.toFixed(2)}s`);
+  console.log(`Throughput:          ${rps.toFixed(1)} req/sec`);
+  console.log(`Avg Latency:         ${avgLatency.toFixed(1)}ms`);
+  console.log(`p50 Latency:         ${p50}ms`);
+  console.log(`p95 Latency:         ${p95}ms`);
+  console.log(`p99 Latency:         ${p99}ms`);
+  console.log(`====================================================\n`);
 }
 
-runPool();
+main().catch(console.error);

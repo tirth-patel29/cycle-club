@@ -116,6 +116,41 @@ export const INITIAL_EVENTS: CyclingEvent[] = [
       'Helmets compulsory.',
       'Riders of all ages (12+) and bicycle types (even single-speeds) welcome.'
     ]
+  },
+  {
+    id: 'evt-004',
+    slug: 'charotar-community-morning-loop-15k',
+    title: 'Charotar Community Morning Loop 15K',
+    description: 'A complimentary community cycling gathering through the shaded morning avenues of Vallabh Vidyanagar. Zero entry fee, certified route marshals, and complimentary post-ride refreshments for all participants.',
+    cover_image_url: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1600&q=80',
+    venue: 'Shastri Maidan, Vallabh Vidyanagar, Anand',
+    location_description: 'Loop through University Road, Mota Bazaar, and scenic canal lane.',
+    starts_at: '2026-12-20T06:30:00+05:30',
+    ends_at: '2026-12-20T08:30:00+05:30',
+    distance_km: 15,
+    elevation_gain_m: 30,
+    difficulty: 'Easy / Leisure',
+    registration_fee_paise: 0, // FREE
+    currency: 'INR',
+    status: 'published',
+    registration_opens_at: '2026-10-20T00:00:00+05:30',
+    registration_closes_at: '2026-12-19T20:00:00+05:30',
+    published_at: '2026-10-20T00:00:00+05:30',
+    created_at: '2026-10-20T00:00:00+05:30',
+    updated_at: '2026-10-20T00:00:00+05:30',
+    pace_guide: '12 - 16 km/h (Social & Family Friendly)',
+    reporting_time: '06:00 AM IST',
+    flag_off_time: '06:30 AM IST',
+    amenities: [
+      'Free community entry for all age groups',
+      'Fresh tender coconut water & banana at finish line',
+      'Official Club Digital Certificate',
+      'First Aid & Support Squad'
+    ],
+    rules: [
+      'Helmets mandatory for all participants.',
+      'All bicycles (road, hybrid, MTB, city bikes, gravel) welcome.'
+    ]
   }
 ];
 

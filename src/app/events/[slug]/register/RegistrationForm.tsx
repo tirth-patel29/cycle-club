@@ -2,25 +2,51 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CyclingEvent } from '@/types';
+import { CyclingEvent, RiderProfile, BicycleType } from '@/types';
 import { formatINR } from '@/lib/constants';
-import { normalizeIndianMobile, INDIAN_MOBILE_REGEX } from '@/lib/validations/registration';
-import { AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import {
+  BICYCLE_TYPES,
+  TSHIRT_SIZES,
+  normalizeIndianMobile,
+  INDIAN_MOBILE_REGEX
+} from '@/lib/validations/registration';
+import {
+  AlertCircle,
+  Loader2,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
+  Bike,
+  Sparkles
+} from 'lucide-react';
 
 interface Props {
   event: CyclingEvent;
+  initialProfile?: RiderProfile | null;
+  userEmail?: string;
+  userId?: string;
 }
 
-export function RegistrationForm({ event }: Props) {
+export function RegistrationForm({ event, initialProfile, userEmail, userId }: Props) {
   const router = useRouter();
 
-  const [fullName, setFullName] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [email, setEmail] = useState('');
-  const [age, setAge] = useState<number | ''>('');
-  const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | 'Prefer not to say'>('Male');
-  const [bicycleType, setBicycleType] = useState<'Road Bike' | 'Hybrid' | 'MTB' | 'Single Speed' | 'Other'>('Hybrid');
-  const [jerseySize, setJerseySize] = useState<'S' | 'M' | 'L' | 'XL' | '2XL' | 'None'>('None');
+  // Prefill state from rider's profile if available
+  const [fullName, setFullName] = useState(initialProfile?.full_name || '');
+  const [mobileNumber, setMobileNumber] = useState(initialProfile?.mobile_number || '');
+  const [email, setEmail] = useState(userEmail || '');
+  const [age, setAge] = useState<number | ''>(initialProfile?.age || 26);
+  const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | 'Prefer not to say'>(
+    initialProfile?.gender || 'Male'
+  );
+  const [bicycleType, setBicycleType] = useState<BicycleType>(
+    initialProfile?.bicycle_type || 'Road'
+  );
+  const [bicycleBrand, setBicycleBrand] = useState(initialProfile?.bicycle_brand || '');
+  const [bicycleModel, setBicycleModel] = useState(initialProfile?.bicycle_model || '');
+  const [jerseySize, setJerseySize] = useState<'S' | 'M' | 'L' | 'XL' | '2XL' | 'None'>(
+    (initialProfile?.tshirt_size as any) || 'L'
+  );
+  const [saveToProfile, setSaveToProfile] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -31,12 +57,14 @@ export function RegistrationForm({ event }: Props) {
     setIdempotencyKey(key);
   }, []);
 
+  const isFreeEvent = event.registration_fee_paise === 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
     if (!fullName.trim() || fullName.trim().length < 2) {
-      setErrorMessage('Please enter your full name.');
+      setErrorMessage('Please enter your full name (at least 2 characters).');
       return;
     }
 
@@ -47,18 +75,41 @@ export function RegistrationForm({ event }: Props) {
     }
 
     if (age === '' || Number(age) < 12 || Number(age) > 100) {
-      setErrorMessage('Please enter a valid age between 12 and 100.');
+      setErrorMessage('Please enter a valid participant age between 12 and 100.');
       return;
     }
 
     if (!termsAccepted) {
-      setErrorMessage('You must accept the safety helmet rule to proceed.');
+      setErrorMessage('You must accept the safety guidelines and helmet requirement.');
       return;
     }
 
     setSubmitting(true);
 
     try {
+      // 1. If rider opted to update their permanent profile with these changes, do it separately
+      if (saveToProfile && userId) {
+        try {
+          await fetch('/api/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              full_name: fullName.trim(),
+              mobile_number: cleanedMobile,
+              bicycle_type: bicycleType,
+              bicycle_brand: bicycleBrand.trim() || undefined,
+              bicycle_model: bicycleModel.trim() || undefined,
+              age: Number(age),
+              gender,
+              tshirt_size: jerseySize
+            })
+          });
+        } catch {
+          // Continue with registration even if profile save fails
+        }
+      }
+
+      // 2. Submit Event Registration with immutable snapshot
       const response = await fetch('/api/registrations', {
         method: 'POST',
         headers: {
@@ -67,12 +118,15 @@ export function RegistrationForm({ event }: Props) {
         },
         body: JSON.stringify({
           event_id: event.id,
+          rider_id: userId,
           full_name: fullName.trim(),
           mobile_number: cleanedMobile,
           email: email.trim() || undefined,
           age: Number(age),
           gender,
           bicycle_type: bicycleType,
+          bicycle_brand: bicycleBrand.trim() || undefined,
+          bicycle_model: bicycleModel.trim() || undefined,
           jersey_size: jerseySize,
           terms_accepted: true,
           idempotency_key: idempotencyKey
@@ -85,7 +139,12 @@ export function RegistrationForm({ event }: Props) {
         throw new Error(data.error || 'Registration failed.');
       }
 
-      router.push(`/registrations/${data.public_reference}/pay`);
+      // 3. Flow control: Free events directly confirmed -> confirmation page. Paid events -> payment simulation
+      if (data.is_free || data.status === 'confirmed' || isFreeEvent) {
+        router.push(`/registrations/${data.public_reference}`);
+      } else {
+        router.push(`/registrations/${data.public_reference}/pay`);
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setErrorMessage(err.message);
@@ -99,16 +158,23 @@ export function RegistrationForm({ event }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-semibold flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
           <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {initialProfile && (
+        <div className="p-3.5 rounded-xl bg-lime-500/10 border border-lime-500/20 text-lime-800 dark:text-lime-300 text-xs flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-lime-500 shrink-0" />
+          <span>Prefilled from your saved Anand Cycling Club profile. Any adjustments here will apply to this ride.</span>
         </div>
       )}
 
       {/* 1. Rider Information */}
       <div className="glass-panel rounded-2xl border border-black/10 dark:border-white/10 p-5 sm:p-8 space-y-5">
-        <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#335306] dark:text-[#b8f04c]">
-          1. Rider Information
+        <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#335306] dark:text-[#b8f04c] flex items-center gap-2">
+          <span>1. Rider Information</span>
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
@@ -120,7 +186,7 @@ export function RegistrationForm({ event }: Props) {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g. Rajesh Patel"
-              className="w-full px-4 py-3.5 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-base focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
             />
           </div>
 
@@ -133,23 +199,23 @@ export function RegistrationForm({ event }: Props) {
               value={mobileNumber}
               onChange={(e) => setMobileNumber(e.target.value)}
               placeholder="98250 12345"
-              className="w-full px-4 py-3.5 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-base font-bold focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm font-bold focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-slate-700 dark:text-white/70 uppercase">Email (Optional)</label>
+            <label className="text-slate-700 dark:text-white/70 uppercase">Email Address (for Digital Bib)</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com"
-              className="w-full px-4 py-3.5 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-base focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              placeholder="rider@example.com"
+              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-slate-700 dark:text-white/70 uppercase">Age (Years) *</label>
+            <label className="text-slate-700 dark:text-white/70 uppercase">Age *</label>
             <input
               type="number"
               required
@@ -157,8 +223,7 @@ export function RegistrationForm({ event }: Props) {
               max={100}
               value={age}
               onChange={(e) => setAge(e.target.value === '' ? '' : Number(e.target.value))}
-              placeholder="e.g. 45"
-              className="w-full px-4 py-3.5 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-base font-bold focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
             />
           </div>
 
@@ -167,95 +232,163 @@ export function RegistrationForm({ event }: Props) {
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value as any)}
-              className="w-full px-4 py-3.5 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
             >
-              <option value="Male" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Male</option>
-              <option value="Female" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Female</option>
-              <option value="Other" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Other</option>
-              <option value="Prefer not to say" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Prefer not to say</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* 2. Bicycle & T-Shirt */}
+      {/* 2. Bicycle & Gear for this Event */}
       <div className="glass-panel rounded-2xl border border-black/10 dark:border-white/10 p-5 sm:p-8 space-y-5">
-        <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#335306] dark:text-[#b8f04c]">
-          2. Bicycle & T-Shirt Size
+        <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#335306] dark:text-[#b8f04c] flex items-center gap-2">
+          <Bike className="w-4 h-4" />
+          <span>2. Bicycle & Equipment for this Event</span>
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
-          <div className="space-y-1.5">
-            <label className="text-slate-700 dark:text-white/70 uppercase">Bicycle Category</label>
-            <select
-              value={bicycleType}
-              onChange={(e) => setBicycleType(e.target.value as any)}
-              className="w-full px-4 py-3.5 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden"
-            >
-              <option value="Hybrid" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Hybrid (Most Common)</option>
-              <option value="Road Bike" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Road / Drop-bar Bike</option>
-              <option value="MTB" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Mountain Bike (MTB)</option>
-              <option value="Single Speed" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Single Speed / City Cycle</option>
-              <option value="Other" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Other</option>
-            </select>
+        <div className="space-y-4 text-xs font-semibold">
+          {/* Canonical 5 Bicycle Types */}
+          <div className="space-y-2">
+            <label className="text-slate-700 dark:text-white/70 uppercase block">
+              Bicycle Type for this Ride *
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {BICYCLE_TYPES.map((type) => (
+                <button
+                  type="button"
+                  key={type}
+                  onClick={() => setBicycleType(type)}
+                  className={`p-3 rounded-xl text-center border font-mono text-xs font-bold transition-all ${
+                    bicycleType === type
+                      ? 'bg-lime-500 text-black border-lime-600 shadow-sm'
+                      : 'bg-white dark:bg-black/30 border-slate-300 dark:border-white/15 text-slate-800 dark:text-zinc-200 hover:border-lime-500'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-slate-700 dark:text-white/70 uppercase">Bicycle Brand (Optional)</label>
+              <input
+                type="text"
+                value={bicycleBrand}
+                onChange={(e) => setBicycleBrand(e.target.value)}
+                placeholder="e.g. Trek, Giant, Scott"
+                className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-slate-700 dark:text-white/70 uppercase">Model / Nickname (Optional)</label>
+              <input
+                type="text"
+                value={bicycleModel}
+                onChange={(e) => setBicycleModel(e.target.value)}
+                placeholder="e.g. Domane AL 2"
+                className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-slate-700 dark:text-white/70 uppercase">Club Event T-Shirt</label>
-            <select
-              value={jerseySize}
-              onChange={(e) => setJerseySize(e.target.value as any)}
-              className="w-full px-4 py-3.5 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden"
-            >
-              <option value="None" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">None needed</option>
-              <option value="S" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Small (S - 38)</option>
-              <option value="M" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Medium (M - 40)</option>
-              <option value="L" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Large (L - 42)</option>
-              <option value="XL" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Extra Large (XL - 44)</option>
-              <option value="2XL" className="bg-white text-slate-900 dark:bg-[#11140e] dark:text-white">Double XL (2XL - 46)</option>
-            </select>
+            <label className="text-slate-700 dark:text-white/70 uppercase">Event Finisher Jersey / T-Shirt Size</label>
+            <div className="flex flex-wrap gap-2">
+              {TSHIRT_SIZES.map((size) => (
+                <button
+                  type="button"
+                  key={size}
+                  onClick={() => setJerseySize(size)}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-mono font-bold uppercase transition-all ${
+                    jerseySize === size
+                      ? 'bg-lime-500 text-black shadow-sm ring-1 ring-lime-500'
+                      : 'bg-zinc-100 dark:bg-white/5 border border-zinc-300 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/10'
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Profile persistence option */}
+          <div className="pt-2">
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-zinc-300">
+              <input
+                type="checkbox"
+                checked={saveToProfile}
+                onChange={(e) => setSaveToProfile(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-lime-600 focus:ring-lime-500"
+              />
+              <span>Also save these bicycle and size choices to my permanent profile</span>
+            </label>
           </div>
         </div>
       </div>
 
-      {/* Safety Agreement */}
-      <div className="glass-panel rounded-2xl border border-black/10 dark:border-white/10 p-4 sm:p-5 text-xs">
-        <label className="flex items-start gap-3 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            required
-            checked={termsAccepted}
-            onChange={(e) => setTermsAccepted(e.target.checked)}
-            className="w-5 h-5 rounded border-slate-300 dark:border-white/20 bg-white dark:bg-black text-[#4d710d] dark:text-[#b8f04c] focus:ring-[#4d710d] dark:focus:ring-[#b8f04c] mt-0.5 shrink-0"
-          />
-          <span className="text-slate-800 dark:text-white/80 font-medium leading-relaxed">
-            I understand that a <strong>cycling helmet is mandatory</strong> for the entire ride. I am medically fit and agree to follow the Anand Cycling Club safety rules.
-          </span>
-        </label>
-      </div>
+      {/* 3. Safety Terms & Fee Summary */}
+      <div className="glass-panel rounded-2xl border border-black/10 dark:border-white/10 p-5 sm:p-8 space-y-5">
+        <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#335306] dark:text-[#b8f04c]">
+          3. Confirmation & Terms
+        </h2>
 
-      {/* Summary Bar & Glossy Button */}
-      <div className="glass-panel rounded-2xl border border-black/10 dark:border-white/15 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-        <div className="text-center sm:text-left">
-          <span className="text-[11px] uppercase text-slate-500 dark:text-white/50 block font-semibold">Total Registration Fee</span>
-          <span className="text-3xl sm:text-4xl font-black text-[#335306] dark:text-[#b8f04c]">
-            {formatINR(event.registration_fee_paise)}
-          </span>
+        <div className="p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 space-y-2">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              required
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-lime-600 focus:ring-lime-500 shrink-0"
+            />
+            <span className="text-xs text-slate-700 dark:text-white/80 leading-relaxed font-medium">
+              I agree to the Anand Cycling Club safety terms. I confirm I will wear a certified cycling helmet throughout the ride, obey route marshals, and ride within my physical limits.
+            </span>
+          </label>
+        </div>
+
+        {/* Authoritative Fee Display */}
+        <div className="flex items-center justify-between p-4 rounded-xl bg-lime-500/10 border border-lime-500/20">
+          <div>
+            <span className="text-xs font-mono uppercase text-slate-600 dark:text-zinc-400 block">Registration Fee</span>
+            <span className="text-lg font-black text-slate-900 dark:text-white">
+              {isFreeEvent ? 'FREE ENTRY' : formatINR(event.registration_fee_paise)}
+            </span>
+          </div>
+
+          <div className="text-right">
+            <span className="text-[10px] font-mono text-zinc-500 block uppercase">Gateway Status</span>
+            <span className="text-xs font-bold text-lime-600 dark:text-lime-400">
+              {isFreeEvent ? 'No Payment Required' : 'Demo Mode (No Real Money)'}
+            </span>
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={submitting}
-          className="btn-glossy-lime w-full sm:w-auto px-8 py-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          className="btn-glossy-lime w-full py-4 rounded-xl text-center flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-xl disabled:opacity-50"
         >
           {submitting ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Processing...</span>
+              <Loader2 className="w-4 h-4 animate-spin stroke-[3]" />
+              <span>Processing Bib Allocation...</span>
+            </>
+          ) : isFreeEvent ? (
+            <>
+              <span>CONFIRM FREE REGISTRATION</span>
+              <CheckCircle2 className="w-4 h-4 stroke-[3]" />
             </>
           ) : (
             <>
-              <span>PROCEED TO PAYMENT</span>
+              <span>CONTINUE TO DEMO PAYMENT ({formatINR(event.registration_fee_paise)})</span>
               <ArrowRight className="w-4 h-4 stroke-[3]" />
             </>
           )}

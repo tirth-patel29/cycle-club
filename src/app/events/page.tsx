@@ -1,8 +1,9 @@
 import React from 'react';
 import { db } from '@/lib/db';
-import { EventCard } from '@/components/events/EventCard';
-import { Bike } from 'lucide-react';
+import { EventsFilterView } from '@/components/events/EventsFilterView';
 import { CLUB_NAME } from '@/lib/constants';
+
+export const revalidate = 0;
 
 export default async function EventsCatalogPage() {
   const events = await db.getEvents();
@@ -23,19 +24,8 @@ export default async function EventsCatalogPage() {
         </p>
       </div>
 
-      {/* Events Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {events.map((event) => (
-          <EventCard key={event.id} event={event} />
-        ))}
-      </div>
-
-      {events.length === 0 && (
-        <div className="text-center py-20 glass-panel rounded-3xl border border-white/10 p-8 space-y-3 text-white/60">
-          <Bike className="w-10 h-10 text-white/30 mx-auto" />
-          <p className="text-sm font-semibold">No rides currently scheduled. Check back soon!</p>
-        </div>
-      )}
+      {/* Filterable Events List */}
+      <EventsFilterView events={events} />
     </div>
   );
 }

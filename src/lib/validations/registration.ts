@@ -15,8 +15,16 @@ export function normalizeIndianMobile(phone: string): string {
   return cleaned;
 }
 
+export const BICYCLE_TYPES = ['Road', 'Hybrid', 'MTB', 'City Bike', 'Gravel Cycle'] as const;
+export const TSHIRT_SIZES = ['S', 'M', 'L', 'XL', '2XL', 'None'] as const;
+
+export const bicycleTypeSchema = z.enum(BICYCLE_TYPES, {
+  message: 'Please select a valid bicycle type (Road, Hybrid, MTB, City Bike, Gravel Cycle)'
+});
+
 export const registrationSchema = z.object({
   event_id: z.string().min(1, 'Event ID is required'),
+  rider_id: z.string().uuid().optional().or(z.literal('')),
   full_name: z
     .string()
     .trim()
@@ -60,11 +68,11 @@ export const registrationSchema = z.object({
     .optional()
     .or(z.literal('')),
   jersey_size: z
-    .enum(['S', 'M', 'L', 'XL', '2XL', 'None'])
+    .enum(TSHIRT_SIZES)
     .default('None'),
-  bicycle_type: z
-    .enum(['Road Bike', 'Hybrid', 'MTB', 'Single Speed', 'Other'])
-    .default('Hybrid'),
+  bicycle_type: bicycleTypeSchema.default('Hybrid'),
+  bicycle_brand: z.string().trim().max(50).optional().or(z.literal('')),
+  bicycle_model: z.string().trim().max(50).optional().or(z.literal('')),
   terms_accepted: z
     .boolean()
     .refine((val) => val === true, {
@@ -73,4 +81,33 @@ export const registrationSchema = z.object({
   idempotency_key: z.string().uuid({ message: 'Invalid idempotency key' })
 });
 
+export const riderProfileSchema = z.object({
+  full_name: z
+    .string()
+    .trim()
+    .min(2, 'Please enter your full name (at least 2 characters)')
+    .max(70, 'Name must be within 70 characters'),
+  mobile_number: z
+    .string()
+    .trim()
+    .transform(normalizeIndianMobile)
+    .refine((val) => INDIAN_MOBILE_REGEX.test(val), {
+      message: 'Please enter a valid 10-digit Indian mobile number (starts with 6, 7, 8, or 9)'
+    }),
+  bicycle_type: bicycleTypeSchema,
+  age: z
+    .coerce
+    .number({ message: 'Please enter a valid age' })
+    .int('Age must be a whole number')
+    .min(12, 'Must be at least 12 years of age')
+    .max(100, 'Please enter a valid age under 100')
+    .optional(),
+  gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']).optional(),
+  bicycle_brand: z.string().trim().max(50).optional().or(z.literal('')),
+  bicycle_model: z.string().trim().max(50).optional().or(z.literal('')),
+  tshirt_size: z.enum(TSHIRT_SIZES).optional().default('None')
+});
+
 export type RegistrationFormData = z.infer<typeof registrationSchema>;
+export type RiderProfileFormData = z.infer<typeof riderProfileSchema>;
+
