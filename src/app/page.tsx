@@ -196,10 +196,10 @@ export default function HomePage() {
         <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-lime-500/20 via-zinc-900/10 to-transparent border border-lime-500/30 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center sm:text-left">
             <h3 className="text-2xl sm:text-3xl font-black uppercase text-slate-900 dark:text-white tracking-tight">
-              READY FOR THIS WEEKEND’S STAGE?
+              READY TO RIDE WITH THE PELOTON?
             </h3>
             <p className="text-sm text-slate-700 dark:text-zinc-300">
-              Check out upcoming community morning loops, canal centuries, and gravel challenges.
+              Community dawn loops, canal centuries, and endurance challenges across Gujarat.
             </p>
           </div>
 
@@ -207,7 +207,7 @@ export default function HomePage() {
             href="/events"
             className="btn-glossy-lime py-3.5 px-8 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 shadow-lg"
           >
-            <span>VIEW EVENT CALENDAR</span>
+            <span>EXPLORE CLUB CALENDAR</span>
             <ArrowRight className="w-4 h-4 stroke-[3]" />
           </Link>
         </div>

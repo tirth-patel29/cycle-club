@@ -26,8 +26,7 @@ export function Footer() {
           {/* Quick links */}
           <div className="flex flex-wrap items-center gap-6 text-xs font-semibold">
             <Link href="/" className="text-slate-700 hover:text-black dark:text-white/70 dark:hover:text-white transition-colors">Home</Link>
-            <Link href="/#events" className="text-slate-700 hover:text-black dark:text-white/70 dark:hover:text-white transition-colors">Upcoming Rides</Link>
-            <Link href="/events" className="text-slate-700 hover:text-black dark:text-white/70 dark:hover:text-white transition-colors">All Events</Link>
+            <Link href="/events" className="text-slate-700 hover:text-black dark:text-white/70 dark:hover:text-white transition-colors">Rides & Events</Link>
             <Link href="/registrations/lookup" className="text-[#2e4a06] dark:text-[#b8f04c] font-bold hover:underline transition-colors">Find My Pass</Link>
           </div>
 
