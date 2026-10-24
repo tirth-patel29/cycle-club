@@ -1,41 +1,43 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X, Bike, Search, ChevronRight, User } from 'lucide-react';
 import { CLUB_NAME } from '@/lib/constants';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { supabase } from '@/lib/supabase/client';
 
 export function Navbar() {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  useEffect(() => {
-    // 1. Check direct session cookie via /api/auth/me
-    fetch('/api/auth/me')
-      .then((res) => {
-        if (res.ok) setIsAuthenticated(true);
-      })
-      .catch(() => {});
-
-    // 2. Check Supabase auth if configured
+  const checkAuth = useCallback(async () => {
     try {
-      supabase.auth.getUser().then(({ data }) => {
-        if (data?.user) setIsAuthenticated(true);
-      }).catch(() => {});
-
-      const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-        if (session?.user) setIsAuthenticated(true);
-      });
-
-      return () => {
-        authListener?.subscription?.unsubscribe();
-      };
+      const res = await fetch('/api/auth/me', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setIsAuthenticated(Boolean(data.authenticated));
+      } else {
+        setIsAuthenticated(false);
+      }
     } catch {
-      // Ignored
+      setIsAuthenticated(false);
     }
   }, []);
+
+  useEffect(() => {
+    checkAuth();
+
+    const handleAuthChange = () => {
+      checkAuth();
+    };
+    window.addEventListener('acc_auth_changed', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('acc_auth_changed', handleAuthChange);
+    };
+  }, [pathname, checkAuth]);
 
   return (
     <header className="fixed top-0 left-0 right-0 w-full z-50 bg-[#ffffff]/95 dark:bg-[#0c0f0a]/95 backdrop-blur-md border-b border-black/10 dark:border-white/10 transition-colors shadow-xs dark:shadow-none">

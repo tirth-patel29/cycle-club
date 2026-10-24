@@ -48,6 +48,9 @@ function LoginForm() {
       }
 
       // Smooth redirection to intended destination with session loaded
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('acc_auth_changed'));
+      }
       router.push(returnUrl);
       router.refresh();
     } catch {
@@ -74,6 +77,9 @@ function LoginForm() {
       });
 
       if (response.ok) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('acc_auth_changed'));
+        }
         router.push(returnUrl);
         router.refresh();
       } else {

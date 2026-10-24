@@ -47,9 +47,6 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen site-bg text-[#f1f3ee] font-sans flex flex-col antialiased selection:bg-lime-400 selection:text-slate-950">
-        {/* Grain Background Overlay across all pages */}
-        <div className="grain-overlay" aria-hidden="true" />
-        
         <Navbar />
         <main className="flex-1 relative z-10">{children}</main>
         <Footer />

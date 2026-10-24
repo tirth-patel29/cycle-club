@@ -60,6 +60,9 @@ function SignupForm() {
         return;
       }
 
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('acc_auth_changed'));
+      }
       setRegisteredName(fullName.trim());
       setRegisteredEmail(email.trim());
       setShowSuccessModal(true);

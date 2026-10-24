@@ -18,26 +18,24 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
 
-      if (signInError) {
-        // Fallback for local demo/admin simulation if supabase isn't seeded with password
-        if (email === 'admin@anandcyclingclub.in') {
-          router.push('/admin');
-          router.refresh();
-          return;
-        }
-        setError(signInError.message);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Authentication failed. Please verify admin credentials.');
         return;
       }
 
-      if (data?.user) {
-        router.push('/admin');
-        router.refresh();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('acc_auth_changed'));
       }
+      router.push('/admin');
+      router.refresh();
     } catch {
       setError('An error occurred during authentication.');
     } finally {
@@ -46,8 +44,8 @@ export default function AdminLoginPage() {
   }
 
   function fillDemoAdmin() {
-    setEmail('admin@anandcyclingclub.in');
-    setPassword('AnandPeloton2026!');
+    setEmail('tirthhpatel29@gmail.com');
+    setPassword('tirth#2957');
   }
 
   return (
@@ -87,7 +85,7 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@anandcyclingclub.in"
+                placeholder="tirthhpatel29@gmail.com"
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-zinc-50 dark:bg-black/40 border border-zinc-300 dark:border-white/15 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm font-mono"
               />
             </div>

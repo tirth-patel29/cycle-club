@@ -136,11 +136,13 @@ export default function ProfilePage() {
   async function handleSignOut() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      await supabase.auth.signOut();
     } catch {
       // Ignored
     }
-    router.push('/');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('acc_auth_changed'));
+    }
+    router.push('/auth/login');
     router.refresh();
   }
 
