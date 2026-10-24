@@ -34,7 +34,16 @@ export async function GET() {
   }
 
   // Also fetch user's event registrations
-  const registrations = db.getRegistrations({ riderId: user.id });
+  let registrations: any[] = [];
+  try {
+    const fetched = await db.getRegistrations({ riderId: user.id });
+    if (Array.isArray(fetched)) {
+      registrations = fetched;
+    }
+  } catch (err) {
+    console.error('Failed to get registrations for rider:', err);
+    registrations = [];
+  }
 
   return NextResponse.json({
     user: {

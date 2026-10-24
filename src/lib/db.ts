@@ -1,6 +1,7 @@
 import pg from 'pg';
 import { CyclingEvent, Registration, Payment, AuditLog, RiderProfile, BicycleType, EventStatus } from '@/types';
 import { INITIAL_EVENTS } from './constants';
+import { ensureUuid, isValidUuid } from './auth';
 
 let pgPool: pg.Pool | null = null;
 
@@ -458,9 +459,7 @@ class DatabaseService {
         }
         query += ' ORDER BY r.created_at DESC';
         const res = await pool.query(query, params);
-        if (res.rows.length > 0) {
-          return res.rows.map(mapRegistrationRow);
-        }
+        return res.rows.map(mapRegistrationRow);
       } catch (err) {
         // Fall back
       }
@@ -554,16 +553,19 @@ class DatabaseService {
     const isFree = data.amount_due_paise === 0;
     const initialStatus = isFree ? 'confirmed' : 'pending_payment';
 
+    const riderUuid = data.rider_id ? (isValidUuid(data.rider_id) ? data.rider_id : ensureUuid(data.rider_id)) : null;
+    const idempotencyUuid = ensureUuid(data.idempotency_key);
+
     const pool = getPool();
     if (pool) {
       try {
         // Ensure user exists if rider_id provided
-        if (data.rider_id) {
+        if (riderUuid) {
           await pool.query(`
             INSERT INTO auth.users (id, email)
             VALUES ($1, $2)
             ON CONFLICT (id) DO NOTHING;
-          `, [data.rider_id, data.email || `${data.rider_id}@acc-user.in`]);
+          `, [riderUuid, data.email || `${riderUuid}@acc-user.in`]);
         }
 
         const res = await pool.query(`
@@ -577,7 +579,7 @@ class DatabaseService {
           ) RETURNING *;
         `, [
           publicRef,
-          data.rider_id || null,
+          riderUuid,
           data.event_id,
           data.full_name,
           data.mobile_number,
@@ -594,7 +596,7 @@ class DatabaseService {
           initialStatus,
           data.amount_due_paise,
           data.currency || 'INR',
-          data.idempotency_key
+          idempotencyUuid
         ]);
 
         if (res.rows.length > 0) {

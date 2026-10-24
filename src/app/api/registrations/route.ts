@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { registrationSchema } from '@/lib/validations/registration';
+import { ensureUuid } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,8 +31,11 @@ export async function POST(req: NextRequest) {
       idempotency_key
     } = parseResult.data;
 
+    const normalizedRiderId = rider_id && rider_id.trim() ? ensureUuid(rider_id.trim()) : undefined;
+    const normalizedIdempotencyKey = ensureUuid(idempotency_key);
+
     // 2. Check for existing registration with the same idempotency key
-    const existing = await db.getRegistrationByIdempotencyKey(idempotency_key);
+    const existing = await db.getRegistrationByIdempotencyKey(normalizedIdempotencyKey);
     if (existing) {
       return NextResponse.json({
         success: true,
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
     // 5. Persist registration safely
     const newReg = await db.createRegistration({
       event_id: event.id,
-      rider_id: rider_id || undefined,
+      rider_id: normalizedRiderId,
       event_title: event.title,
       full_name,
       mobile_number,
@@ -82,7 +86,7 @@ export async function POST(req: NextRequest) {
       status: isFree ? 'confirmed' : 'pending_payment',
       amount_due_paise: amountDuePaise,
       currency,
-      idempotency_key
+      idempotency_key: normalizedIdempotencyKey
     });
 
     return NextResponse.json({

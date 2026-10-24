@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Bike, Search, ChevronRight, User, ShieldCheck } from 'lucide-react';
+import { Menu, X, Bike, Search, ChevronRight, User } from 'lucide-react';
 import { CLUB_NAME } from '@/lib/constants';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { supabase } from '@/lib/supabase/client';
@@ -12,17 +12,29 @@ export function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setIsAuthenticated(!!data.user);
-    });
+    // 1. Check direct session cookie via /api/auth/me
+    fetch('/api/auth/me')
+      .then((res) => {
+        if (res.ok) setIsAuthenticated(true);
+      })
+      .catch(() => {});
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-      setIsAuthenticated(!!session?.user);
-    });
+    // 2. Check Supabase auth if configured
+    try {
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) setIsAuthenticated(true);
+      }).catch(() => {});
 
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
+      const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+        if (session?.user) setIsAuthenticated(true);
+      });
+
+      return () => {
+        authListener?.subscription?.unsubscribe();
+      };
+    } catch {
+      // Ignored
+    }
   }, []);
 
   return (
@@ -65,30 +77,31 @@ export function Navbar() {
               <Search className="w-4 h-4 text-[#2e4a06] dark:text-[#b8f04c]" />
               <span>Find My Pass</span>
             </Link>
+          </nav>
+
+          {/* Right Action: Rider Sign In & Join Ride (both styled with same glossy CSS) */}
+          <div className="hidden md:flex items-center gap-2.5">
+            <ThemeToggle />
             {isAuthenticated ? (
               <Link
                 href="/profile"
-                className="px-3.5 py-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+                className="btn-glossy-dark px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-slate-800 dark:text-white"
               >
                 <User className="w-4 h-4 text-lime-600 dark:text-lime-400" />
-                <span>My Profile</span>
+                <span>MY PROFILE</span>
               </Link>
             ) : (
               <Link
                 href="/auth/login"
-                className="px-3.5 py-2 rounded-lg text-slate-800 hover:text-black hover:bg-slate-100 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
+                className="btn-glossy-dark px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-slate-800 dark:text-white"
               >
-                Rider Sign In
+                <User className="w-4 h-4 text-lime-600 dark:text-lime-400" />
+                <span>RIDER SIGN IN</span>
               </Link>
             )}
-          </nav>
-
-          {/* Right Action: Glossy Button & Theme Toggle */}
-          <div className="hidden md:flex items-center gap-2.5">
-            <ThemeToggle />
             <Link
               href="/events"
-              className="btn-glossy-lime px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5"
+              className="btn-glossy-lime px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm"
             >
               <span>JOIN A RIDE</span>
               <ChevronRight className="w-4 h-4 stroke-[3]" />
@@ -142,7 +155,7 @@ export function Navbar() {
             <Link
               href="/profile"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 py-3 px-3 rounded-xl text-slate-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10"
+              className="flex items-center gap-2 py-3 px-3 rounded-xl text-slate-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 font-bold"
             >
               <User className="w-4 h-4 text-lime-500" />
               <span>Rider Profile & Passes</span>
@@ -151,7 +164,7 @@ export function Navbar() {
             <Link
               href="/auth/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-3 px-3 rounded-xl text-slate-700 dark:text-white/90 hover:bg-black/5 dark:hover:bg-white/10"
+              className="block py-3 px-3 rounded-xl text-slate-700 dark:text-white/90 hover:bg-black/5 dark:hover:bg-white/10 font-bold"
             >
               Rider Sign In
             </Link>

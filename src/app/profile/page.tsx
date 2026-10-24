@@ -73,8 +73,10 @@ export default function ProfilePage() {
           });
         }
 
-        if (data.registrations) {
+        if (Array.isArray(data.registrations)) {
           setRegistrations(data.registrations);
+        } else {
+          setRegistrations([]);
         }
       } catch (err) {
         console.error('Failed to load profile:', err);
@@ -132,7 +134,12 @@ export default function ProfilePage() {
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      await supabase.auth.signOut();
+    } catch {
+      // Ignored
+    }
     router.push('/');
     router.refresh();
   }
@@ -404,13 +411,13 @@ export default function ProfilePage() {
           <div className="p-6 rounded-2xl bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200 dark:border-white/10 shadow-xl">
             <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white mb-1 flex items-center gap-2">
               <Ticket className="w-4 h-4 text-lime-500" />
-              Your Event Passes ({registrations.length})
+              Your Event Passes ({Array.isArray(registrations) ? registrations.length : 0})
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
               Live passes and digital bib confirmations for Anand Cycling Club rides.
             </p>
 
-            {registrations.length === 0 ? (
+            {!Array.isArray(registrations) || registrations.length === 0 ? (
               <div className="text-center py-8 px-4 border border-dashed border-zinc-300 dark:border-white/10 rounded-xl">
                 <Calendar className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
                 <p className="text-xs text-zinc-500 mb-3">No active event registrations yet.</p>
@@ -423,7 +430,7 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {registrations.map((reg) => (
+                {(Array.isArray(registrations) ? registrations : []).map((reg) => (
                   <div
                     key={reg.id}
                     className="p-3.5 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/30 hover:border-lime-500/50 transition-all flex flex-col gap-2"

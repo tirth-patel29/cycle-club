@@ -24,7 +24,7 @@ export const bicycleTypeSchema = z.enum(BICYCLE_TYPES, {
 
 export const registrationSchema = z.object({
   event_id: z.string().min(1, 'Event ID is required'),
-  rider_id: z.string().uuid().optional().or(z.literal('')),
+  rider_id: z.string().optional().or(z.literal('')),
   full_name: z
     .string()
     .trim()
@@ -73,12 +73,12 @@ export const registrationSchema = z.object({
   bicycle_type: bicycleTypeSchema.default('Hybrid'),
   bicycle_brand: z.string().trim().max(50).optional().or(z.literal('')),
   bicycle_model: z.string().trim().max(50).optional().or(z.literal('')),
-  terms_accepted: z
+    terms_accepted: z
     .boolean()
     .refine((val) => val === true, {
       message: 'You must accept the safety guidelines and ride terms to register'
     }),
-  idempotency_key: z.string().uuid({ message: 'Invalid idempotency key' })
+  idempotency_key: z.string().min(1, 'Invalid idempotency key')
 });
 
 export const riderProfileSchema = z.object({
