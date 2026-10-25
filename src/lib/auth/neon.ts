@@ -2,22 +2,20 @@ import { createNeonAuth } from '@neondatabase/auth/next/server';
 import { db } from '@/lib/db';
 import { setSessionCookie, ensureUuid, getSession } from '@/lib/auth';
 
+export const NEON_AUTH_DEFAULT_BASE_URL = 'https://ep-billowing-sunset-az44yy0j.neonauth.c-3.ap-southeast-1.aws.neon.tech/neondb/auth';
+
 /**
- * Returns the official Neon Auth server instance if NEON_AUTH_BASE_URL is configured
+ * Returns the official Neon Auth server instance
  */
 export function getNeonAuthServer() {
-  const baseUrl = process.env.NEON_AUTH_BASE_URL;
-  const secret = process.env.NEON_AUTH_COOKIE_SECRET || process.env.SESSION_SECRET || 'anand-cycling-club-secret-key-2026-gujarat';
-
-  if (!baseUrl || baseUrl.includes('placeholder')) {
-    return null;
-  }
+  const baseUrl = process.env.NEON_AUTH_BASE_URL || NEON_AUTH_DEFAULT_BASE_URL;
+  const secret = (process.env.NEON_AUTH_COOKIE_SECRET || process.env.SESSION_SECRET || 'anand-cycling-club-secret-key-2026-gujarat').padEnd(32, '0');
 
   try {
     return createNeonAuth({
       baseUrl,
       cookies: {
-        secret: secret.padEnd(32, '0'),
+        secret,
         sessionDataTtl: 300
       }
     });

@@ -1,42 +1,90 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { syncGoogleUserToRiderProfile, getNeonAuthServer } from '@/lib/auth/neon';
-import { getSession } from '@/lib/auth';
+import { createSessionToken } from '@/lib/auth';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get('code');
   const returnUrl = requestUrl.searchParams.get('returnUrl') || requestUrl.searchParams.get('state') || '/profile';
-  const email = requestUrl.searchParams.get('email');
-  const name = requestUrl.searchParams.get('name');
-  const id = requestUrl.searchParams.get('id');
+  const emailParam = requestUrl.searchParams.get('email');
+  const nameParam = requestUrl.searchParams.get('name');
+  const idParam = requestUrl.searchParams.get('id');
 
-  // 1. Check if Neon Auth server is active and has a session
+  let authenticatedUser: { id: string; email: string; name?: string; picture?: string } | null = null;
+
+  // 1. Check Neon Auth getSession
   const neonAuth = getNeonAuthServer();
   if (neonAuth) {
     try {
       const session = await neonAuth.getSession();
-      if (session?.data?.user) {
-        await syncGoogleUserToRiderProfile({
+      if (session?.data?.user?.email) {
+        authenticatedUser = {
           id: session.data.user.id,
           email: session.data.user.email,
-          name: session.data.user.name || undefined
-        });
+          name: session.data.user.name || undefined,
+          picture: (session.data.user as any).image || undefined
+        };
       }
     } catch (err) {
-      console.warn('Neon auth callback getSession:', err);
+      console.warn('Neon auth getSession error:', err);
     }
   }
 
-  // 2. If direct callback params provided (e.g. from Google OAuth redirect)
-  if (email) {
-    await syncGoogleUserToRiderProfile({
-      id: id || `google-${Buffer.from(email).toString('hex').slice(0, 16)}`,
-      email,
-      name: name || undefined
-    });
+  // 2. Extract Neon Auth session token cookie if getSession didn't resolve
+  if (!authenticatedUser) {
+    try {
+      const sessionToken = request.cookies.get('__Secure-neon-auth.session_token')?.value ||
+                           request.cookies.get('neon-auth.session_token')?.value ||
+                           null;
+      const dbUser = await db.getNeonAuthUser(sessionToken);
+      if (dbUser?.email) {
+        authenticatedUser = {
+          id: dbUser.id,
+          email: dbUser.email,
+          name: dbUser.name || undefined,
+          picture: dbUser.image || undefined
+        };
+      }
+    } catch (err) {
+      console.warn('Direct database session check error:', err);
+    }
   }
 
-  // Safe redirect back to original page or profile
+  // 3. Check direct query parameters
+  if (!authenticatedUser && emailParam && emailParam.includes('@')) {
+    authenticatedUser = {
+      id: idParam || `google-${Buffer.from(emailParam).toString('hex').slice(0, 16)}`,
+      email: emailParam,
+      name: nameParam || undefined
+    };
+  }
+
+  // 4. Set destination and build redirect response
   const destination = returnUrl.startsWith('/') ? returnUrl : '/profile';
-  return NextResponse.redirect(new URL(destination, request.url));
+  const response = NextResponse.redirect(new URL(destination, request.url));
+
+  // 5. If user resolved, synchronize profile and persist in PostgreSQL
+  if (authenticatedUser) {
+    try {
+      const profile = await syncGoogleUserToRiderProfile(authenticatedUser);
+      const token = await createSessionToken({
+        userId: profile.id,
+        email: profile.email,
+        fullName: profile.full_name,
+        role: 'rider'
+      });
+
+      response.cookies.set('acc_session_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60
+      });
+    } catch (err) {
+      console.error('Callback sync profile error:', err);
+    }
+  }
+
+  return response;
 }
