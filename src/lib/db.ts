@@ -7,7 +7,7 @@ let pgPool: pg.Pool | null = null;
 
 function getPool(): pg.Pool | null {
   if (typeof window !== 'undefined') return null;
-  const dbUrl = process.env.DATABASE_URL;
+  const dbUrl = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_ASeXmfdZ42PK@ep-billowing-sunset-az44yy0j-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
   if (!dbUrl) return null;
   if (!pgPool) {
     pgPool = new pg.Pool({
@@ -77,6 +77,7 @@ function mapRegistrationRow(row: any): Registration {
 function mapRiderProfileRow(row: any): RiderProfile {
   return {
     id: String(row.id),
+    auth_user_id: row.auth_user_id || undefined,
     full_name: row.full_name,
     email: row.email || 'rider@example.in',
     mobile_number: row.mobile_number,
@@ -233,7 +234,10 @@ class DatabaseService {
     const pool = getPool();
     if (pool) {
       try {
-        const res = await pool.query('SELECT * FROM rider_profiles WHERE id::text = $1', [userId]);
+        const res = await pool.query(
+          'SELECT * FROM rider_profiles WHERE id::text = $1 OR auth_user_id = $1 OR email = $1 LIMIT 1',
+          [userId]
+        );
         if (res.rows.length > 0) {
           return mapRiderProfileRow(res.rows[0]);
         }
@@ -241,76 +245,107 @@ class DatabaseService {
         // Fall back to memory
       }
     }
-    const profile = this.profiles.find((p) => p.id === userId);
+    const profile = this.profiles.find((p) => p.id === userId || p.auth_user_id === userId || p.email === userId);
     return profile ? { ...profile } : null;
   }
 
   async upsertRiderProfile(userId: string, data: Partial<RiderProfile>): Promise<RiderProfile> {
     const now = new Date().toISOString();
+    const profileId = isValidUuid(userId) ? userId : ensureUuid(userId);
+    const authUserId = data.auth_user_id || userId;
     const pool = getPool();
     if (pool) {
       try {
-        await pool.query(`
-          INSERT INTO auth.users (id, email)
-          VALUES ($1, $2)
-          ON CONFLICT (id) DO NOTHING;
-        `, [userId, data.email || `${userId}@acc-user.in`]);
+        // Check if a profile already exists by id, auth_user_id, or email
+        const existing = await pool.query(
+          'SELECT id, auth_user_id, email, full_name, mobile_number, bicycle_type, age, gender, bicycle_brand, bicycle_model, tshirt_size FROM rider_profiles WHERE auth_user_id = $1 OR id = $2 OR (email = $3 AND $3 IS NOT NULL) LIMIT 1',
+          [authUserId, profileId, data.email || null]
+        );
 
-        const res = await pool.query(`
-          INSERT INTO rider_profiles (
-            id, full_name, mobile_number, bicycle_type, age, gender,
-            bicycle_brand, bicycle_model, tshirt_size, updated_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-          )
-          ON CONFLICT (id) DO UPDATE SET
-            full_name = COALESCE(EXCLUDED.full_name, rider_profiles.full_name),
-            mobile_number = COALESCE(EXCLUDED.mobile_number, rider_profiles.mobile_number),
-            bicycle_type = COALESCE(EXCLUDED.bicycle_type, rider_profiles.bicycle_type),
-            age = COALESCE(EXCLUDED.age, rider_profiles.age),
-            gender = COALESCE(EXCLUDED.gender, rider_profiles.gender),
-            bicycle_brand = COALESCE(EXCLUDED.bicycle_brand, rider_profiles.bicycle_brand),
-            bicycle_model = COALESCE(EXCLUDED.bicycle_model, rider_profiles.bicycle_model),
-            tshirt_size = COALESCE(EXCLUDED.tshirt_size, rider_profiles.tshirt_size),
-            updated_at = EXCLUDED.updated_at
-          RETURNING *;
-        `, [
-          userId,
-          data.full_name || 'Rider',
-          data.mobile_number || '9825000000',
-          data.bicycle_type || 'Road',
-          data.age || null,
-          data.gender || null,
-          data.bicycle_brand || null,
-          data.bicycle_model || null,
-          data.tshirt_size || 'None',
-          now
-        ]);
-
-        if (res.rows.length > 0) {
-          return mapRiderProfileRow(res.rows[0]);
+        if (existing.rows.length > 0) {
+          const current = existing.rows[0];
+          const targetId = current.id;
+          const updateRes = await pool.query(`
+            UPDATE rider_profiles SET
+              full_name = COALESCE($1, full_name),
+              email = COALESCE($2, email),
+              mobile_number = COALESCE($3, mobile_number),
+              bicycle_type = COALESCE($4, bicycle_type),
+              age = COALESCE($5, age),
+              gender = COALESCE($6, gender),
+              bicycle_brand = COALESCE($7, bicycle_brand),
+              bicycle_model = COALESCE($8, bicycle_model),
+              tshirt_size = COALESCE($9, tshirt_size),
+              auth_user_id = COALESCE($10, auth_user_id),
+              updated_at = $11
+            WHERE id = $12
+            RETURNING *;
+          `, [
+            data.full_name || null,
+            data.email || null,
+            data.mobile_number || null,
+            data.bicycle_type || null,
+            data.age || null,
+            data.gender || null,
+            data.bicycle_brand || null,
+            data.bicycle_model || null,
+            data.tshirt_size || null,
+            authUserId,
+            now,
+            targetId
+          ]);
+          if (updateRes.rows.length > 0) {
+            return mapRiderProfileRow(updateRes.rows[0]);
+          }
+        } else {
+          const insertRes = await pool.query(`
+            INSERT INTO rider_profiles (
+              id, auth_user_id, email, full_name, mobile_number, bicycle_type,
+              age, gender, bicycle_brand, bicycle_model, tshirt_size, created_at, updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+            )
+            RETURNING *;
+          `, [
+            profileId,
+            authUserId,
+            data.email || null,
+            data.full_name || 'Rider',
+            data.mobile_number || '9825000000',
+            data.bicycle_type || 'Road',
+            data.age || null,
+            data.gender || null,
+            data.bicycle_brand || null,
+            data.bicycle_model || null,
+            data.tshirt_size || 'None',
+            now,
+            now
+          ]);
+          if (insertRes.rows.length > 0) {
+            return mapRiderProfileRow(insertRes.rows[0]);
+          }
         }
       } catch (err) {
-        // Fall back to memory
+        console.error('Error upserting rider profile in Postgres:', err);
       }
     }
 
-    const idx = this.profiles.findIndex((p) => p.id === userId);
+    const idx = this.profiles.findIndex((p) => p.id === userId || p.auth_user_id === userId || (data.email && p.email === data.email));
     if (idx !== -1) {
       this.profiles[idx] = {
         ...this.profiles[idx],
         ...data,
-        id: userId,
         updated_at: now
       };
       return { ...this.profiles[idx] };
     } else {
       const newProfile: RiderProfile = {
-        id: userId,
+        id: profileId,
+        auth_user_id: authUserId,
         full_name: data.full_name || 'Rider',
         email: data.email || 'rider@example.in',
         mobile_number: data.mobile_number || '9825000000',
-        bicycle_type: data.bicycle_type || 'Hybrid',
+        bicycle_type: data.bicycle_type || 'Road',
         age: data.age,
         gender: data.gender,
         bicycle_brand: data.bicycle_brand,
@@ -415,6 +450,57 @@ class DatabaseService {
   }
 
   async createEvent(eventData: Omit<CyclingEvent, 'id' | 'created_at' | 'updated_at'>): Promise<CyclingEvent> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        const query = `
+          INSERT INTO events (
+            slug, title, description, cover_image_url, venue, location_description,
+            starts_at, ends_at, distance_km, elevation_gain_m, difficulty,
+            registration_fee_paise, currency, status,
+            registration_opens_at, registration_closes_at, published_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6,
+            $7, $8, $9, $10, $11,
+            $12, $13, $14,
+            $15, $16, $17
+          )
+          RETURNING *;
+        `;
+        const publishedAt = eventData.status === 'published' ? (eventData.published_at || new Date().toISOString()) : null;
+        const values = [
+          eventData.slug,
+          eventData.title,
+          eventData.description || null,
+          eventData.cover_image_url || null,
+          eventData.venue,
+          eventData.location_description || null,
+          new Date(eventData.starts_at).toISOString(),
+          new Date(eventData.ends_at).toISOString(),
+          Number(eventData.distance_km),
+          Number(eventData.elevation_gain_m || 0),
+          eventData.difficulty,
+          Number(eventData.registration_fee_paise || 0),
+          eventData.currency || 'INR',
+          eventData.status || 'draft',
+          new Date(eventData.registration_opens_at).toISOString(),
+          new Date(eventData.registration_closes_at).toISOString(),
+          publishedAt ? new Date(publishedAt).toISOString() : null
+        ];
+        const res = await pool.query(query, values);
+        const created = mapEventRow(res.rows[0]);
+        this.events.unshift(created);
+        await this.logAudit('admin', 'EVENT_CREATED', 'event', created.id, { title: created.title, slug: created.slug });
+        return created;
+      } catch (err: any) {
+        if (err.code === '23505') {
+          throw new Error(`An event with slug "${eventData.slug}" already exists. Please choose a different slug.`);
+        }
+        console.error('Error creating event in Postgres:', err);
+        throw err;
+      }
+    }
+
     const newEvent: CyclingEvent = {
       ...eventData,
       id: `evt-${Date.now()}`,
@@ -427,6 +513,72 @@ class DatabaseService {
   }
 
   async updateEvent(id: string, updates: Partial<CyclingEvent>): Promise<CyclingEvent | null> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        const setClauses: string[] = [];
+        const values: any[] = [];
+
+        const fieldMap: Record<string, string> = {
+          title: 'title',
+          slug: 'slug',
+          description: 'description',
+          cover_image_url: 'cover_image_url',
+          venue: 'venue',
+          location_description: 'location_description',
+          starts_at: 'starts_at',
+          ends_at: 'ends_at',
+          distance_km: 'distance_km',
+          elevation_gain_m: 'elevation_gain_m',
+          difficulty: 'difficulty',
+          registration_fee_paise: 'registration_fee_paise',
+          currency: 'currency',
+          status: 'status',
+          registration_opens_at: 'registration_opens_at',
+          registration_closes_at: 'registration_closes_at',
+          published_at: 'published_at'
+        };
+
+        for (const [key, dbCol] of Object.entries(fieldMap)) {
+          if ((updates as any)[key] !== undefined) {
+            let val = (updates as any)[key];
+            if (['starts_at', 'ends_at', 'registration_opens_at', 'registration_closes_at', 'published_at'].includes(key) && val) {
+              val = new Date(val).toISOString();
+            }
+            values.push(val);
+            setClauses.push(`${dbCol} = $${values.length}`);
+          }
+        }
+
+        if (setClauses.length > 0) {
+          setClauses.push(`updated_at = timezone('utc'::text, now())`);
+          values.push(id);
+          const query = `
+            UPDATE events
+            SET ${setClauses.join(', ')}
+            WHERE id::text = $${values.length} OR slug = $${values.length}
+            RETURNING *;
+          `;
+          const res = await pool.query(query, values);
+          if (res.rows.length > 0) {
+            const updated = mapEventRow(res.rows[0]);
+            const idx = this.events.findIndex(e => e.id === id || e.slug === id);
+            if (idx !== -1) {
+              this.events[idx] = updated;
+            }
+            await this.logAudit('admin', 'EVENT_UPDATED', 'event', id, { updates });
+            return updated;
+          }
+        }
+      } catch (err: any) {
+        if (err.code === '23505') {
+          throw new Error(`An event with slug "${updates.slug}" already exists.`);
+        }
+        console.error('Error updating event in Postgres:', err);
+        throw err;
+      }
+    }
+
     const index = this.events.findIndex((e) => e.id === id);
     if (index === -1) return null;
     this.events[index] = {
@@ -455,11 +607,14 @@ class DatabaseService {
         }
         if (filter?.riderId) {
           params.push(filter.riderId);
-          query += ` AND r.rider_id::text = $${params.length}`;
+          const riderUuid = isValidUuid(filter.riderId) ? filter.riderId : ensureUuid(filter.riderId);
+          query += ` AND (r.rider_id::text = $${params.length} OR r.rider_id::text = '${riderUuid}')`;
         }
         query += ' ORDER BY r.created_at DESC';
         const res = await pool.query(query, params);
-        return res.rows.map(mapRegistrationRow);
+        if (res.rows.length > 0) {
+          return res.rows.map(mapRegistrationRow);
+        }
       } catch (err) {
         // Fall back
       }
@@ -601,6 +756,7 @@ class DatabaseService {
 
         if (res.rows.length > 0) {
           const reg = mapRegistrationRow(res.rows[0]);
+          this.registrations.unshift(reg);
           if (!isFree) {
             await pool.query(`
               INSERT INTO payments (
@@ -835,15 +991,24 @@ class DatabaseService {
         const eventsCountRes = await pool.query('SELECT COUNT(*) as count FROM events');
         const pubEventsCountRes = await pool.query("SELECT COUNT(*) as count FROM events WHERE status = 'published'");
 
+        const dbTotalRegs = parseInt(totalRegsRes.rows[0].count, 10);
+        const dbConfirmedRegs = parseInt(confirmedRegsRes.rows[0].count, 10);
+        const dbPendingRegs = parseInt(pendingRegsRes.rows[0].count, 10);
+        const dbSuccPay = parseInt(succPayRes.rows[0].count, 10);
+        const dbFailPay = parseInt(failPayRes.rows[0].count, 10);
+        const dbRev = parseInt(revRes.rows[0].total, 10);
+        const dbEvents = parseInt(eventsCountRes.rows[0].count, 10);
+        const dbPubEvents = parseInt(pubEventsCountRes.rows[0].count, 10);
+
         return {
-          totalRegs: parseInt(totalRegsRes.rows[0].count, 10),
-          confirmedRegs: parseInt(confirmedRegsRes.rows[0].count, 10),
-          pendingRegs: parseInt(pendingRegsRes.rows[0].count, 10),
-          successfulPayments: parseInt(succPayRes.rows[0].count, 10),
-          failedPayments: parseInt(failPayRes.rows[0].count, 10),
-          totalRevenuePaise: parseInt(revRes.rows[0].total, 10),
-          totalEvents: parseInt(eventsCountRes.rows[0].count, 10),
-          publishedEvents: parseInt(pubEventsCountRes.rows[0].count, 10)
+          totalRegs: Math.max(dbTotalRegs, this.registrations.length),
+          confirmedRegs: Math.max(dbConfirmedRegs, this.registrations.filter((r) => r.status === 'confirmed').length),
+          pendingRegs: Math.max(dbPendingRegs, this.registrations.filter((r) => r.status === 'pending_payment').length),
+          successfulPayments: Math.max(dbSuccPay, this.payments.filter((p) => p.status === 'succeeded').length),
+          failedPayments: Math.max(dbFailPay, this.payments.filter((p) => p.status === 'failed').length),
+          totalRevenuePaise: Math.max(dbRev, this.payments.filter((p) => p.status === 'succeeded').reduce((sum, p) => sum + p.amount_paise, 0)),
+          totalEvents: Math.max(dbEvents, this.events.length),
+          publishedEvents: Math.max(dbPubEvents, this.events.filter((e) => e.status === 'published').length)
         };
       } catch (err) {
         // Fall back
@@ -870,11 +1035,16 @@ class DatabaseService {
       publishedEvents: this.events.filter((e) => e.status === 'published').length
     };
   }
+
+  getPool(): pg.Pool | null {
+    return getPool();
+  }
 }
 
 const globalForDb = global as unknown as { dbService?: DatabaseService };
 export const db = globalForDb.dbService || new DatabaseService();
 if (process.env.NODE_ENV !== 'production') globalForDb.dbService = db;
+export { getPool };
 
 export function sanitizeCsvCell(value: unknown): string {
   if (value === null || value === undefined) return '""';

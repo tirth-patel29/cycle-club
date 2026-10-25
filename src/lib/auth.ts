@@ -109,18 +109,26 @@ export async function getSession(): Promise<UserSession | null> {
 }
 
 export async function setSessionCookie(session: UserSession) {
-  const cookieStore = await cookies();
-  const token = await createSessionToken(session);
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60 // 7 days
-  });
+  try {
+    const cookieStore = await cookies();
+    const token = await createSessionToken(session);
+    cookieStore.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 // 7 days
+    });
+  } catch {
+    // Non-request context (unit tests / CLI)
+  }
 }
 
 export async function clearSessionCookie() {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete(SESSION_COOKIE_NAME);
+  } catch {
+    // Non-request context
+  }
 }

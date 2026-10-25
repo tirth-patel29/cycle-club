@@ -35,7 +35,8 @@ export type BicycleType = 'Road' | 'Hybrid' | 'MTB' | 'City Bike' | 'Gravel Cycl
 export type TshirtSize = 'S' | 'M' | 'L' | 'XL' | '2XL' | 'None';
 
 export interface RiderProfile {
-  id: string; // auth.users UUID
+  id: string; // profile UUID
+  auth_user_id?: string; // Stable user identifier from Neon Auth
   full_name: string;
   email: string;
   mobile_number: string;

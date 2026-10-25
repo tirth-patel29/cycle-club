@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, sanitizeCsvCell } from '@/lib/db';
+import { isAdminUser } from '@/lib/supabase/server';
 
 export async function GET(req: NextRequest) {
   try {
+    const isAuthorized = await isAdminUser();
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized: Admin privileges required.' }, { status: 403 });
+    }
     const { searchParams } = new URL(req.url);
     const eventId = searchParams.get('eventId') || undefined;
 

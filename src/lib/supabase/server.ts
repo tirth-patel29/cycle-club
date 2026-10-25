@@ -115,8 +115,8 @@ export async function isAdminUser(): Promise<boolean> {
     // Fall back
   }
 
-  // Allow admin access if user email matches club admin or during dev testing
-  if (user.email === 'admin@anandcyclingclub.in' || user.email?.startsWith('admin@')) {
+  // Explicit authorized admin accounts only
+  if (user.email === 'admin@anandcyclingclub.in' || user.email === 'tirthhpatel29@gmail.com') {
     return true;
   }
 
