@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
@@ -11,6 +11,12 @@ const jakarta = Plus_Jakarta_Sans({
   display: 'swap',
   variable: '--font-jakarta',
 });
+
+export const viewport: Viewport = {
+  themeColor: '#F7F7F2',
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: `${CLUB_NAME} • Official Events & Races`,
@@ -25,28 +31,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${jakarta.variable} scroll-smooth dark`}>
+    <html lang="en" className={`${jakarta.variable} scroll-smooth`} data-theme="light">
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('acc-theme');
-                  if (theme === 'light') {
-                    document.documentElement.classList.remove('dark');
-                    document.documentElement.classList.add('light');
-                  } else {
-                    document.documentElement.classList.remove('light');
-                    document.documentElement.classList.add('dark');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
+        <meta name="color-scheme" content="light" />
       </head>
-      <body className="min-h-screen site-bg text-[#f1f3ee] font-sans flex flex-col antialiased selection:bg-lime-400 selection:text-slate-950">
+      <body className="min-h-screen bg-[#F7F7F2] text-[#171914] font-sans flex flex-col antialiased selection:bg-[#C7F36B] selection:text-[#171914] relative">
+        {/* Subtle Paper Grain Texture Overlay */}
+        <div className="fixed inset-0 pointer-events-none z-[1] opacity-35 bg-noise" aria-hidden="true" />
         <Navbar />
         <main className="flex-1 relative z-10">{children}</main>
         <Footer />

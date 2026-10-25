@@ -87,7 +87,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
     setSubmitting(true);
 
     try {
-      // 1. If rider opted to update their permanent profile with these changes, do it separately
+      // 1. If rider opted to update their permanent profile with these changes
       if (saveToProfile && userId) {
         try {
           await fetch('/api/profile', {
@@ -158,40 +158,40 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-3">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {initialProfile && (
-        <div className="p-3.5 rounded-xl bg-lime-500/10 border border-lime-500/20 text-lime-800 dark:text-lime-300 text-xs flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-lime-500 shrink-0" />
+        <div className="p-4 rounded-xl bg-[#EAEDE2] border border-[#E5E6DE] text-[#3F6212] text-xs flex items-center gap-2.5 font-medium">
+          <Sparkles className="w-4 h-4 text-[#3F6212] shrink-0" />
           <span>Prefilled from your saved Anand Cycling Club profile. Any adjustments here will apply to this ride.</span>
         </div>
       )}
 
       {/* 1. Rider Information */}
-      <div className="glass-panel rounded-2xl border border-black/10 dark:border-white/10 p-5 sm:p-8 space-y-5">
-        <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#335306] dark:text-[#b8f04c] flex items-center gap-2">
-          <span>1. Rider Information</span>
+      <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-5">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#3F6212] font-mono flex items-center gap-2">
+          <span>1. Rider Personal Details</span>
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
           <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-slate-700 dark:text-white/70 uppercase">Full Name *</label>
+            <label className="text-[#171914] uppercase block font-bold">Full Name *</label>
             <input
               type="text"
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g. Rajesh Patel"
-              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-slate-700 dark:text-white/70 uppercase">WhatsApp Mobile (+91) *</label>
+            <label className="text-[#171914] uppercase block font-bold">WhatsApp Mobile (+91) *</label>
             <input
               type="tel"
               required
@@ -199,23 +199,23 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
               value={mobileNumber}
               onChange={(e) => setMobileNumber(e.target.value)}
               placeholder="98250 12345"
-              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm font-bold focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm font-bold focus:border-lime-500 outline-none"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-slate-700 dark:text-white/70 uppercase">Email Address (for Digital Bib)</label>
+            <label className="text-[#171914] uppercase block font-bold">Email Address (for Digital Bib)</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="rider@example.com"
-              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-slate-700 dark:text-white/70 uppercase">Age *</label>
+            <label className="text-[#171914] uppercase block font-bold">Age *</label>
             <input
               type="number"
               required
@@ -223,16 +223,16 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
               max={100}
               value={age}
               onChange={(e) => setAge(e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-slate-700 dark:text-white/70 uppercase">Gender *</label>
+            <label className="text-[#171914] uppercase block font-bold">Gender *</label>
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value as any)}
-              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none"
             >
               <option value="Male">Male</option>
               <option value="Female">Female</option>
@@ -244,8 +244,8 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
       </div>
 
       {/* 2. Bicycle & Gear for this Event */}
-      <div className="glass-panel rounded-2xl border border-black/10 dark:border-white/10 p-5 sm:p-8 space-y-5">
-        <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#335306] dark:text-[#b8f04c] flex items-center gap-2">
+      <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-5">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#3F6212] font-mono flex items-center gap-2">
           <Bike className="w-4 h-4" />
           <span>2. Bicycle & Equipment for this Event</span>
         </h2>
@@ -253,7 +253,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
         <div className="space-y-4 text-xs font-semibold">
           {/* Canonical 5 Bicycle Types */}
           <div className="space-y-2">
-            <label className="text-slate-700 dark:text-white/70 uppercase block">
+            <label className="text-[#171914] uppercase block font-bold">
               Bicycle Type for this Ride *
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -262,10 +262,10 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
                   type="button"
                   key={type}
                   onClick={() => setBicycleType(type)}
-                  className={`p-3 rounded-xl text-center border font-mono text-xs font-bold transition-all ${
+                  className={`p-3 rounded-xl text-center border font-mono text-xs font-bold transition-all cursor-pointer ${
                     bicycleType === type
-                      ? 'bg-lime-500 text-black border-lime-600 shadow-sm'
-                      : 'bg-white dark:bg-black/30 border-slate-300 dark:border-white/15 text-slate-800 dark:text-zinc-200 hover:border-lime-500'
+                      ? 'bg-[#C7F36B] text-[#171914] border-[#8cc427] shadow-xs'
+                      : 'bg-[#F7F7F2] border-[#E5E6DE] text-[#62645C] hover:border-[#8cc427] hover:text-[#171914]'
                   }`}
                 >
                   {type}
@@ -276,40 +276,40 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-slate-700 dark:text-white/70 uppercase">Bicycle Brand (Optional)</label>
+              <label className="text-[#171914] uppercase block font-bold">Bicycle Brand (Optional)</label>
               <input
                 type="text"
                 value={bicycleBrand}
                 onChange={(e) => setBicycleBrand(e.target.value)}
                 placeholder="e.g. Trek, Giant, Scott"
-                className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+                className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-slate-700 dark:text-white/70 uppercase">Model / Nickname (Optional)</label>
+              <label className="text-[#171914] uppercase block font-bold">Model / Nickname (Optional)</label>
               <input
                 type="text"
                 value={bicycleModel}
                 onChange={(e) => setBicycleModel(e.target.value)}
                 placeholder="e.g. Domane AL 2"
-                className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+                className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-slate-700 dark:text-white/70 uppercase">Event Finisher Jersey / T-Shirt Size</label>
+            <label className="text-[#171914] uppercase block font-bold">Event Finisher Jersey / T-Shirt Size</label>
             <div className="flex flex-wrap gap-2">
               {TSHIRT_SIZES.map((size) => (
                 <button
                   type="button"
                   key={size}
                   onClick={() => setJerseySize(size)}
-                  className={`px-3.5 py-2 rounded-lg text-xs font-mono font-bold uppercase transition-all ${
+                  className={`px-4 py-2 rounded-lg text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
                     jerseySize === size
-                      ? 'bg-lime-500 text-black shadow-sm ring-1 ring-lime-500'
-                      : 'bg-zinc-100 dark:bg-white/5 border border-zinc-300 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/10'
+                      ? 'bg-[#171914] text-[#C7F36B] shadow-xs'
+                      : 'bg-[#F7F7F2] border border-[#E5E6DE] text-[#62645C] hover:border-[#D3D5CA] hover:text-[#171914]'
                   }`}
                 >
                   {size}
@@ -320,53 +320,53 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
 
           {/* Profile persistence option */}
           <div className="pt-2">
-            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-zinc-300">
+            <label className="flex items-center gap-2.5 cursor-pointer text-xs text-[#62645C] font-medium">
               <input
                 type="checkbox"
                 checked={saveToProfile}
                 onChange={(e) => setSaveToProfile(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-lime-600 focus:ring-lime-500"
+                className="w-4 h-4 rounded border-[#E5E6DE] text-lime-600 focus:ring-lime-500"
               />
-              <span>Also save these bicycle and size choices to my permanent profile</span>
+              <span>Also save these bicycle and apparel size choices to my permanent rider profile</span>
             </label>
           </div>
         </div>
       </div>
 
       {/* 3. Safety Terms & Fee Summary */}
-      <div className="glass-panel rounded-2xl border border-black/10 dark:border-white/10 p-5 sm:p-8 space-y-5">
-        <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#335306] dark:text-[#b8f04c]">
-          3. Confirmation & Terms
+      <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#3F6212] font-mono">
+          3. Safety Undertaking & Confirmation
         </h2>
 
-        <div className="p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 space-y-2">
+        <div className="p-4 rounded-xl bg-[#EAEDE2] border border-[#E5E6DE] space-y-2">
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
               required
               checked={termsAccepted}
               onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-lime-600 focus:ring-lime-500 shrink-0"
+              className="mt-0.5 w-4 h-4 rounded border-[#E5E6DE] text-lime-600 focus:ring-lime-500 shrink-0"
             />
-            <span className="text-xs text-slate-700 dark:text-white/80 leading-relaxed font-medium">
+            <span className="text-xs text-[#171914] leading-relaxed font-medium">
               I agree to the Anand Cycling Club safety terms. I confirm I will wear a certified cycling helmet throughout the ride, obey route marshals, and ride within my physical limits.
             </span>
           </label>
         </div>
 
-        {/* Authoritative Fee Display */}
-        <div className="flex items-center justify-between p-4 rounded-xl bg-lime-500/10 border border-lime-500/20">
+        {/* Fee Display Banner */}
+        <div className="flex items-center justify-between p-4 rounded-xl bg-[#C7F36B]/20 border border-[#8cc427]">
           <div>
-            <span className="text-xs font-mono uppercase text-slate-600 dark:text-zinc-400 block">Registration Fee</span>
-            <span className="text-lg font-black text-slate-900 dark:text-white">
+            <span className="text-xs font-mono uppercase text-[#62645C] block font-bold">Registration Fee</span>
+            <span className="text-xl font-black text-[#171914]">
               {isFreeEvent ? 'FREE ENTRY' : formatINR(event.registration_fee_paise)}
             </span>
           </div>
 
           <div className="text-right">
-            <span className="text-[10px] font-mono text-zinc-500 block uppercase">Gateway Status</span>
-            <span className="text-xs font-bold text-lime-600 dark:text-lime-400">
-              {isFreeEvent ? 'No Payment Required' : 'Demo Mode (No Real Money)'}
+            <span className="text-[10px] font-mono text-[#62645C] block uppercase font-bold">Gateway Status</span>
+            <span className="text-xs font-bold text-[#3F6212]">
+              {isFreeEvent ? 'Instant Pass Allocation' : 'Demo Checkout Mode'}
             </span>
           </div>
         </div>
@@ -374,7 +374,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
         <button
           type="submit"
           disabled={submitting}
-          className="btn-glossy-lime w-full py-4 rounded-xl text-center flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-xl disabled:opacity-50"
+          className="btn-glossy-lime w-full py-4 rounded-xl text-center flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-md disabled:opacity-50 cursor-pointer"
         >
           {submitting ? (
             <>
@@ -388,7 +388,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
             </>
           ) : (
             <>
-              <span>CONTINUE TO DEMO PAYMENT ({formatINR(event.registration_fee_paise)})</span>
+              <span>CONTINUE TO DEMO CHECKOUT ({formatINR(event.registration_fee_paise)})</span>
               <ArrowRight className="w-4 h-4 stroke-[3]" />
             </>
           )}

@@ -24,23 +24,23 @@ export function RegistrationLookupView() {
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-24 sm:py-32 space-y-8">
+    <div className="max-w-xl mx-auto px-4 py-20 sm:py-28 space-y-8">
       <div className="text-center space-y-3">
-        <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 text-[#4d710d] dark:text-[#b8f04c] flex items-center justify-center mx-auto shadow-lg">
+        <div className="w-14 h-14 rounded-2xl bg-[#EAEDE2] border border-[#d2d7c5] text-[#171914] flex items-center justify-center mx-auto shadow-xs">
           <ShieldCheck className="w-8 h-8" />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black uppercase event-heading tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-black uppercase text-[#171914] tracking-tight">
           FIND RIDER PASS
         </h1>
-        <p className="text-xs sm:text-sm uppercase event-body tracking-wider">
-          Enter your unique registration reference to retrieve your official digital bib.
+        <p className="text-xs sm:text-sm text-[#62645C] tracking-wide">
+          Enter your unique registration reference code to retrieve your official digital bib.
         </p>
       </div>
 
-      <div className="glass-panel rounded-3xl border border-white/10 p-6 sm:p-8 space-y-6 shadow-2xl">
+      <div className="surface-card rounded-3xl border border-[#E5E6DE] p-6 sm:p-8 space-y-6 shadow-lg">
         <form onSubmit={handleSearch} className="space-y-4 text-xs font-semibold">
           <div className="space-y-2">
-            <label className="text-slate-700 dark:text-white/70 uppercase block text-[11px]">
+            <label className="text-[#171914] uppercase block text-[11px] tracking-wider">
               REGISTRATION REFERENCE CODE
             </label>
             <input
@@ -49,12 +49,12 @@ export function RegistrationLookupView() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="e.g. ACC-2026-N78K"
-              className="w-full px-4 py-3.5 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/60 dark:text-white dark:border-white/20 font-mono text-base font-bold uppercase tracking-wider focus:border-[#4d710d] dark:focus:border-[#b8f04c] outline-hidden transition-colors"
+              className="w-full px-4 py-3.5 rounded-xl bg-[#F7F7F2] text-[#171914] border border-[#E5E6DE] font-mono text-base font-bold uppercase tracking-wider focus:border-[#171914] focus:bg-white outline-hidden transition-all placeholder:text-[#62645C]/50"
             />
           </div>
 
           {errorMessage && (
-            <p className="text-rose-500 font-semibold text-xs flex items-center gap-1.5">
+            <p className="text-rose-600 font-semibold text-xs flex items-center gap-1.5 bg-rose-50 p-3 rounded-lg border border-rose-200">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </p>
@@ -62,16 +62,16 @@ export function RegistrationLookupView() {
 
           <button
             type="submit"
-            className="btn-glossy-lime w-full py-4 rounded-xl uppercase tracking-wider text-xs font-black flex items-center justify-center gap-2 cursor-pointer"
+            className="btn-glossy-lime w-full py-4 rounded-xl uppercase tracking-wider text-xs font-black flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
             <span>RETRIEVE DIGITAL PASS</span>
             <ArrowRight className="w-4 h-4 stroke-[3]" />
           </button>
         </form>
 
-        <div className="pt-4 border-t border-black/10 dark:border-white/10 flex items-center justify-between text-xs text-slate-500 dark:text-white/40">
-          <span>COORDINATOR HELPLINE:</span>
-          <a href={`tel:${CLUB_CONTACT_PHONE.replace(/\s+/g, '')}`} className="text-slate-900 dark:text-white font-bold hover:text-[#4d710d] dark:hover:text-[#b8f04c]">
+        <div className="pt-4 border-t border-[#E5E6DE] flex items-center justify-between text-xs text-[#62645C]">
+          <span className="text-[11px] uppercase tracking-wider">COORDINATOR HELPLINE:</span>
+          <a href={`tel:${CLUB_CONTACT_PHONE.replace(/\s+/g, '')}`} className="text-[#171914] font-bold hover:underline">
             {CLUB_CONTACT_PHONE}
           </a>
         </div>

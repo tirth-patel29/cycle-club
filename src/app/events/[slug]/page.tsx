@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { formatINR, formatDateIndian, formatTimeIndian, CLUB_CONTACT_PHONE } from '@/lib/constants';
 import {
-  Calendar, Clock, MapPin, CheckCircle2, ArrowRight, ChevronLeft, ShieldCheck
+  Calendar, Clock, MapPin, CheckCircle2, ArrowRight, ChevronLeft, ShieldCheck, Mountain, Gauge
 } from 'lucide-react';
 
 interface Props {
@@ -20,50 +20,51 @@ export default async function EventDetailPage({ params }: Props) {
   }
 
   const isRegistrationOpen = new Date() <= new Date(event.registration_closes_at) && event.status === 'published';
+  const isFree = event.registration_fee_paise === 0;
 
   return (
-    <div className="pt-24 sm:pt-28 pb-20 space-y-6 sm:space-y-8">
-      {/* Back Button */}
+    <div className="w-full bg-[#F7F7F2] min-h-screen pt-24 sm:pt-28 pb-20 space-y-8">
+      {/* Navigation Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link
           href="/events"
-          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-white/60 hover:text-slate-950 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#62645C] hover:text-[#171914] transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Back to All Events</span>
         </Link>
       </div>
 
-      {/* Main Header / Banner */}
+      {/* Main Event Showcase Banner */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl overflow-hidden glass-panel border border-white/10 min-h-[300px] sm:min-h-[400px] flex flex-col justify-end p-6 sm:p-10 shadow-2xl">
+        <div className="relative rounded-3xl overflow-hidden border border-[#E5E6DE] min-h-[320px] sm:min-h-[420px] flex flex-col justify-end p-6 sm:p-12 shadow-md bg-[#171914]">
           <img
             src={event.cover_image_url}
             alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover opacity-60"
+            className="absolute inset-0 w-full h-full object-cover opacity-75"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b0d0a] via-[#0b0d0a]/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#171914]/95 via-[#171914]/60 to-transparent" />
 
-          <div className="relative z-10 space-y-3 max-w-3xl">
+          <div className="relative z-10 space-y-4 max-w-3xl">
             {/* Top Badges */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase">
-              <span className="bg-[#b8f04c] text-[#0c1204] font-black px-3.5 py-1 rounded-md">
+              <span className="bg-[#C7F36B] text-[#171914] font-black px-3.5 py-1 rounded-md shadow-xs">
                 {event.distance_km} KM
               </span>
-              <span className="bg-white/15 text-white px-3 py-1 rounded-md border border-white/10">
+              <span className="photo-overlay-pill px-3 py-1 rounded-md">
                 {event.difficulty}
               </span>
-              <span className="bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-md flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="bg-[#C7F36B]/20 text-[#C7F36B] border border-[#C7F36B]/40 px-3 py-1 rounded-md flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#C7F36B]" />
                 <span>REGISTRATIONS OPEN</span>
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase text-white tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase text-white tracking-tight leading-tight font-sans">
               {event.title}
             </h1>
 
-            <p className="text-sm sm:text-base text-white/80 max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base text-white/85 max-w-2xl leading-relaxed font-medium">
               {event.description}
             </p>
           </div>
@@ -72,52 +73,54 @@ export default async function EventDetailPage({ params }: Props) {
 
       {/* Two-Column Details & Registration Dock */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
-          {/* Left Column (8 cols): Spec grid & Amenities */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* Simple Spec Grid */}
-            <div className="glass-panel rounded-2xl border border-white/10 p-6 sm:p-8 space-y-5">
-              <h2 className="text-sm font-extrabold uppercase text-[#557b12] dark:text-[#b8f04c] tracking-wider">
-                RIDE SCHEDULE & ROUTE DETAILS
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column (8 cols): Route specs & Inclusions */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* Spec Grid */}
+            <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6">
+              <h2 className="text-xs font-bold uppercase text-[#3F6212] tracking-wider font-mono">
+                RIDE SCHEDULE & ROUTE SPECIFICATIONS
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="space-y-1 p-4 rounded-xl event-venue-box">
-                  <span className="text-[11px] uppercase opacity-60 block font-semibold">DATE & TIMING</span>
-                  <p className="text-base font-extrabold event-heading">
+                <div className="space-y-1 p-4 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE]">
+                  <span className="text-[11px] uppercase text-[#62645C] block font-semibold">DATE & TIMING</span>
+                  <p className="text-base font-extrabold text-[#171914]">
                     {formatDateIndian(event.starts_at)}
                   </p>
-                  <p className="text-xs text-[#557b12] dark:text-[#b8f04c] font-semibold">
+                  <p className="text-xs text-[#3F6212] font-bold">
                     Flag-Off: {formatTimeIndian(event.starts_at)} • Reporting: {event.reporting_time || '05:30 AM'}
                   </p>
                 </div>
 
-                <div className="space-y-1 p-4 rounded-xl event-venue-box">
-                  <span className="text-[11px] uppercase opacity-60 block font-semibold">STARTING POINT</span>
-                  <p className="text-base font-extrabold event-heading">
+                <div className="space-y-1 p-4 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE]">
+                  <span className="text-[11px] uppercase text-[#62645C] block font-semibold">STARTING POINT & VENUE</span>
+                  <p className="text-base font-extrabold text-[#171914]">
                     {event.venue}
                   </p>
-                  <p className="text-xs event-body">
+                  <p className="text-xs text-[#62645C] font-medium">
                     {event.location_description}
                   </p>
                 </div>
 
-                <div className="space-y-1 p-4 rounded-xl event-venue-box">
-                  <span className="text-[11px] uppercase opacity-60 block font-semibold">DISTANCE & ELEVATION</span>
-                  <p className="text-base font-extrabold event-heading">
-                    {event.distance_km} KM • +{event.elevation_gain_m}m Elevation
+                <div className="space-y-1 p-4 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE]">
+                  <span className="text-[11px] uppercase text-[#62645C] block font-semibold">DISTANCE & ELEVATION</span>
+                  <p className="text-base font-extrabold text-[#171914] flex items-center gap-1.5">
+                    <Mountain className="w-4 h-4 text-[#3F6212]" />
+                    <span>{event.distance_km} KM • +{event.elevation_gain_m}m</span>
                   </p>
-                  <p className="text-xs event-body">
+                  <p className="text-xs text-[#62645C] font-medium">
                     Smooth tarmac road with scenic rural stretches
                   </p>
                 </div>
 
-                <div className="space-y-1 p-4 rounded-xl event-venue-box">
-                  <span className="text-[11px] uppercase opacity-60 block font-semibold">EXPECTED SPEED</span>
-                  <p className="text-base font-extrabold event-heading">
-                    {event.pace_guide || '20 - 28 KM/H'}
+                <div className="space-y-1 p-4 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE]">
+                  <span className="text-[11px] uppercase text-[#62645C] block font-semibold">PACE & ESCORT</span>
+                  <p className="text-base font-extrabold text-[#171914] flex items-center gap-1.5">
+                    <Gauge className="w-4 h-4 text-[#3F6212]" />
+                    <span>{event.pace_guide || '20 - 28 KM/H'}</span>
                   </p>
-                  <p className="text-xs event-body">
+                  <p className="text-xs text-[#62645C] font-medium">
                     Ride marshals guiding front and rear peloton
                   </p>
                 </div>
@@ -126,16 +129,16 @@ export default async function EventDetailPage({ params }: Props) {
 
             {/* Inclusions */}
             {event.amenities && (
-              <div className="glass-panel rounded-2xl border border-white/10 p-6 sm:p-8 space-y-4">
-                <h3 className="text-sm font-extrabold uppercase text-[#557b12] dark:text-[#b8f04c] tracking-wider">
-                  WHAT IS INCLUDED
+              <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-5">
+                <h3 className="text-xs font-bold uppercase text-[#3F6212] tracking-wider font-mono">
+                  WHAT IS INCLUDED WITH YOUR REGISTRATION
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   {event.amenities.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 p-3.5 rounded-xl event-venue-box font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-[#557b12] dark:text-[#b8f04c] shrink-0 mt-0.5" />
-                      <span className="event-body">{item}</span>
+                    <div key={idx} className="flex items-start gap-2.5 p-3.5 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] font-medium">
+                      <CheckCircle2 className="w-4 h-4 text-[#3F6212] shrink-0 mt-0.5" />
+                      <span className="text-[#171914]">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -145,37 +148,37 @@ export default async function EventDetailPage({ params }: Props) {
 
           {/* Right Column (4 cols): Sticky Registration Dock */}
           <div className="lg:col-span-4">
-            <div className="sticky top-24 sm:top-28 glass-panel rounded-2xl border border-black/10 dark:border-white/15 p-6 sm:p-8 space-y-5 shadow-2xl">
+            <div className="sticky top-24 sm:top-28 surface-card rounded-2xl p-6 sm:p-8 space-y-6">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-white/50 block">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#62645C] block font-mono">
                   ENTRY FEE
                 </span>
                 <div className="flex items-baseline gap-2 pt-1 font-sans">
-                  <span className="text-4xl sm:text-5xl font-black text-slate-950 dark:text-white tracking-tight">
-                    {formatINR(event.registration_fee_paise)}
+                  <span className="text-4xl sm:text-5xl font-black text-[#171914] tracking-tight">
+                    {isFree ? 'FREE' : formatINR(event.registration_fee_paise)}
                   </span>
-                  <span className="text-xs text-slate-600 dark:text-white/60 font-semibold">
+                  <span className="text-xs text-[#62645C] font-semibold">
                     per rider
                   </span>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-black/10 dark:border-white/10 space-y-2.5 text-xs font-semibold">
-                <div className="flex justify-between text-slate-700 dark:text-white/70">
+              <div className="pt-4 border-t border-[#E5E6DE] space-y-3 text-xs font-semibold">
+                <div className="flex justify-between text-[#62645C]">
                   <span>Registration Closes:</span>
-                  <span className="text-slate-950 dark:text-white font-bold">{formatDateIndian(event.registration_closes_at)}</span>
+                  <span className="text-[#171914] font-bold">{formatDateIndian(event.registration_closes_at)}</span>
                 </div>
-                <div className="flex justify-between text-slate-700 dark:text-white/70">
+                <div className="flex justify-between text-[#62645C]">
                   <span>Eligibility:</span>
-                  <span className="text-slate-950 dark:text-white font-bold">12+ Years (Any Bike)</span>
+                  <span className="text-[#171914] font-bold">12+ Years (Any Bike)</span>
                 </div>
-                <div className="flex justify-between text-slate-700 dark:text-white/70">
+                <div className="flex justify-between text-[#62645C]">
                   <span>Rider Pass:</span>
-                  <span className="text-[#335306] dark:text-[#b8f04c] font-bold">Instant Digital Pass & QR</span>
+                  <span className="text-[#3F6212] font-bold">Instant Digital Pass & QR</span>
                 </div>
               </div>
 
-              {/* Glossy Button */}
+              {/* Action Button */}
               {isRegistrationOpen ? (
                 <div className="pt-2">
                   <Link
@@ -187,13 +190,13 @@ export default async function EventDetailPage({ params }: Props) {
                   </Link>
                 </div>
               ) : (
-                <div className="p-4 rounded-xl bg-slate-100 dark:bg-white/5 text-center text-xs font-bold text-slate-600 dark:text-white/60">
+                <div className="p-4 rounded-xl bg-[#EAEDE2] text-center text-xs font-bold text-[#62645C]">
                   Registration Closed
                 </div>
               )}
 
-              <p className="text-xs text-center text-slate-600 dark:text-white/50 pt-2 border-t border-black/10 dark:border-white/5 font-medium">
-                Helpline: <strong className="text-slate-950 dark:text-white">{CLUB_CONTACT_PHONE}</strong>
+              <p className="text-xs text-center text-[#62645C] pt-2 border-t border-[#E5E6DE] font-medium">
+                Helpline: <strong className="text-[#171914]">{CLUB_CONTACT_PHONE}</strong>
               </p>
             </div>
           </div>

@@ -26,63 +26,66 @@ export default async function EventRegisterPage({ params }: Props) {
   }
 
   const riderProfile = await getAuthRiderProfile();
+  const isFree = event.registration_fee_paise === 0;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-20 space-y-6">
-      {/* Back button */}
-      <div className="flex items-center justify-between">
-        <Link
-          href={`/events/${event.slug}`}
-          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Back to Event Details</span>
-        </Link>
+    <div className="w-full bg-[#F7F7F2] min-h-screen pt-24 sm:pt-28 pb-20">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Back button & User Status */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <Link
+            href={`/events/${event.slug}`}
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#62645C] hover:text-[#171914] transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Back to Event Details</span>
+          </Link>
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-lime-500/10 text-lime-700 dark:text-lime-400 font-mono text-xs font-bold">
-          <UserCheck className="w-3.5 h-3.5" />
-          <span>Logged in as {riderProfile?.full_name || authUser.email}</span>
-        </div>
-      </div>
-
-      {/* Header with event snapshot */}
-      <div className="glass-panel rounded-2xl p-6 sm:p-8 space-y-4 border border-black/10 dark:border-white/10 shadow-xl">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="bg-[#b8f04c] text-[#0c1204] text-xs font-black px-3 py-1 rounded-md uppercase">
-            {event.distance_km} KM
-          </span>
-          <span className="bg-black/5 dark:bg-white/10 text-slate-800 dark:text-white text-xs font-bold px-3 py-1 rounded-md border border-black/10 dark:border-white/10">
-            {event.difficulty}
-          </span>
-          <span className="bg-lime-500/20 text-[#2e4a06] dark:text-[#b8f04c] text-xs font-black px-3 py-1 rounded-md uppercase border border-lime-500/30">
-            {event.registration_fee_paise === 0 ? 'FREE EVENT' : `ENTRY: ₹${Math.round(event.registration_fee_paise / 100)}`}
-          </span>
-        </div>
-
-        <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight event-heading">
-          Register: {event.title}
-        </h1>
-
-        <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm event-body pt-2 border-t border-black/10 dark:border-white/10">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-4 h-4 text-[#4d710d] dark:text-[#b8f04c]" />
-            <span>{formatDateIndian(event.starts_at)}</span>
-          </div>
-          <span>•</span>
-          <div className="flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-[#4d710d] dark:text-[#b8f04c]" />
-            <span>{event.venue}</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAEDE2] border border-[#E5E6DE] text-[#3F6212] font-mono text-xs font-bold w-fit">
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>Logged in as {riderProfile?.full_name || authUser.email}</span>
           </div>
         </div>
-      </div>
 
-      {/* Registration Form Component with profile prefill */}
-      <RegistrationForm
-        event={event}
-        initialProfile={riderProfile}
-        userEmail={authUser.email || ''}
-        userId={authUser.id}
-      />
+        {/* Header with event snapshot */}
+        <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="bg-[#C7F36B] text-[#171914] text-xs font-black px-3 py-1 rounded-md uppercase shadow-xs">
+              {event.distance_km} KM
+            </span>
+            <span className="bg-[#EAEDE2] text-[#171914] text-xs font-bold px-3 py-1 rounded-md border border-[#E5E6DE]">
+              {event.difficulty}
+            </span>
+            <span className="bg-[#C7F36B]/25 text-[#3F6212] text-xs font-black px-3 py-1 rounded-md uppercase border border-[#8cc427]">
+              {isFree ? 'FREE EVENT' : `ENTRY: ₹${Math.round(event.registration_fee_paise / 100)}`}
+            </span>
+          </div>
+
+          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-[#171914] font-sans">
+            Register: {event.title}
+          </h1>
+
+          <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-[#62645C] font-medium pt-2 border-t border-[#E5E6DE]">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-[#3F6212]" />
+              <span>{formatDateIndian(event.starts_at)}</span>
+            </div>
+            <span>•</span>
+            <div className="flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-[#3F6212]" />
+              <span>{event.venue}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Registration Form Component with profile prefill */}
+        <RegistrationForm
+          event={event}
+          initialProfile={riderProfile}
+          userEmail={authUser.email || ''}
+          userId={authUser.id}
+        />
+      </div>
     </div>
   );
 }

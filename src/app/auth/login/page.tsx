@@ -168,36 +168,36 @@ function LoginForm() {
     <div className="max-w-md w-full mx-auto px-4 py-24 sm:py-32 space-y-8">
       {/* Brand Header */}
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-2xl bg-lime-500/10 text-lime-600 dark:text-[#b8f04c] flex items-center justify-center mx-auto mb-4 border border-lime-500/20 shadow-sm">
+        <div className="w-12 h-12 rounded-2xl bg-[#C7F36B]/40 text-[#171914] flex items-center justify-center mx-auto mb-3 border border-[#C7F36B] shadow-xs">
           <Bike className="w-6 h-6 stroke-[2.5]" />
         </div>
-        <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-3xl font-black uppercase tracking-tight text-[#171914] font-sans">
           Rider Sign In
         </h1>
-        <p className="text-xs text-slate-600 dark:text-white/60 uppercase tracking-widest font-mono">
-          {CLUB_NAME} • OFFICIAL PARTICIPANT PORTAL
+        <p className="text-xs text-[#62645C] uppercase tracking-widest font-mono font-bold">
+          {CLUB_NAME} • PARTICIPANT PORTAL
         </p>
       </div>
 
       {justRegistered && (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <div className="p-4 rounded-2xl bg-[#EAEDE2] border border-[#C7F36B] text-[#3F6212] text-xs flex items-center gap-3 font-semibold">
+          <CheckCircle2 className="w-5 h-5 text-[#3F6212] shrink-0" />
           <span>Account created successfully! Enter your password below or continue with Google.</span>
         </div>
       )}
 
       {/* Login Card */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-black/10 dark:border-white/10 shadow-2xl space-y-6">
+      <div className="surface-card rounded-3xl p-6 sm:p-8 space-y-6">
         {errorMessage && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-3">
+          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="p-4 rounded-xl bg-lime-500/10 border border-lime-500/30 text-lime-800 dark:text-lime-300 text-xs font-semibold flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-lime-500 shrink-0" />
+          <div className="p-4 rounded-xl bg-lime-50 border border-lime-200 text-lime-800 text-xs font-semibold flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-lime-600 shrink-0" />
             <span>{successMessage}</span>
           </div>
         )}
@@ -208,11 +208,11 @@ function LoginForm() {
             type="button"
             disabled={googleLoading || loading}
             onClick={handleGoogleSignIn}
-            className="w-full py-3.5 px-4 rounded-2xl bg-white dark:bg-zinc-800 text-slate-800 dark:text-white border border-slate-300 dark:border-white/20 hover:border-lime-500 dark:hover:border-lime-500 hover:shadow-md transition-all flex items-center justify-center gap-3 font-sans font-bold text-sm cursor-pointer disabled:opacity-50"
+            className="w-full py-3.5 px-4 rounded-2xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] hover:border-[#8cc427] hover:shadow-sm transition-all flex items-center justify-center gap-3 font-sans font-bold text-sm cursor-pointer disabled:opacity-50"
           >
             {googleLoading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin text-lime-500" />
+                <Loader2 className="w-5 h-5 animate-spin text-[#3F6212]" />
                 <span>Connecting to Google...</span>
               </>
             ) : (
@@ -223,23 +223,23 @@ function LoginForm() {
             )}
           </button>
 
-          <div className="flex items-center gap-1.5 justify-center text-[11px] text-slate-500 dark:text-white/40">
-            <ShieldCheck className="w-3.5 h-3.5 text-lime-500" />
+          <div className="flex items-center gap-1.5 justify-center text-[11px] text-[#62645C] font-medium">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#3F6212]" />
             <span>Protected by Neon Auth • PostgreSQL Verified</span>
           </div>
         </div>
 
         {/* Divider */}
         <div className="relative flex items-center justify-center">
-          <div className="border-t border-slate-200 dark:border-white/10 w-full"></div>
-          <span className="bg-white dark:bg-zinc-900 px-3 text-[10px] font-mono uppercase tracking-widest text-slate-400 dark:text-white/40 relative">
+          <div className="border-t border-[#E5E6DE] w-full"></div>
+          <span className="bg-[#FFFFFF] px-3 text-[10px] font-mono uppercase tracking-widest text-[#8B8D83] relative font-bold">
             Or sign in with email
           </span>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[11px] font-mono uppercase tracking-wider text-slate-700 dark:text-white/70 block">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-[#171914] block font-bold">
               Email Address *
             </label>
             <input
@@ -248,18 +248,18 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="rider@example.com"
-              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-lime-500 outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none transition-colors"
             />
           </div>
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-slate-700 dark:text-white/70">
+              <label className="text-[11px] font-mono uppercase tracking-wider text-[#171914] font-bold">
                 Password *
               </label>
               <Link
                 href="/auth/forgot-password"
-                className="text-[11px] text-slate-500 hover:text-black dark:text-white/50 dark:hover:text-white transition-colors"
+                className="text-[11px] text-[#62645C] hover:text-[#171914] transition-colors font-medium"
               >
                 Forgot password?
               </Link>
@@ -270,14 +270,14 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 border border-slate-300 dark:bg-black/50 dark:border-white/15 dark:text-white text-sm focus:border-lime-500 outline-hidden transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none transition-colors"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading || googleLoading}
-            className="btn-glossy-lime w-full py-4 rounded-xl text-center flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg disabled:opacity-50 mt-2 cursor-pointer"
+            className="btn-glossy-lime w-full py-4 rounded-xl text-center flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-md disabled:opacity-50 mt-2 cursor-pointer"
           >
             {loading ? (
               <>
@@ -294,22 +294,22 @@ function LoginForm() {
         </form>
 
         {/* Quick Demo Pre-fills */}
-        <div className="pt-4 border-t border-black/10 dark:border-white/10 space-y-2.5">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500 dark:text-white/40 block font-bold">
+        <div className="pt-4 border-t border-[#E5E6DE] space-y-2.5">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-[#62645C] block font-bold">
             QUICK DEMO ACCOUNTS:
           </span>
           <div className="flex flex-wrap gap-2 text-xs font-mono">
             <button
               type="button"
               onClick={() => handleQuickDemo('rajesh.patel@example.in')}
-              className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:border-lime-500 text-slate-700 dark:text-white/80 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#EAEDE2] border border-[#E5E6DE] hover:border-[#8cc427] text-[#171914] transition-colors cursor-pointer font-bold"
             >
               Rajesh (Hybrid)
             </button>
             <button
               type="button"
               onClick={() => handleQuickDemo('ananya.sharma@example.in')}
-              className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:border-lime-500 text-slate-700 dark:text-white/80 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#EAEDE2] border border-[#E5E6DE] hover:border-[#8cc427] text-[#171914] transition-colors cursor-pointer font-bold"
             >
               Ananya (Road)
             </button>
@@ -317,10 +317,10 @@ function LoginForm() {
         </div>
 
         <div className="pt-2 text-center text-xs">
-          <span className="text-slate-600 dark:text-white/60">New to Anand Cycling Club? </span>
+          <span className="text-[#62645C]">New to Anand Cycling Club? </span>
           <Link
             href={`/auth/signup?returnUrl=${encodeURIComponent(returnUrl)}`}
-            className="text-[#2e4a06] dark:text-[#b8f04c] font-black uppercase hover:underline"
+            className="text-[#3F6212] font-black uppercase hover:underline"
           >
             Create Rider Account
           </Link>

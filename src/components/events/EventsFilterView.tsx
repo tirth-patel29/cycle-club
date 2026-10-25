@@ -29,13 +29,13 @@ export function EventsFilterView({ events }: EventsFilterViewProps) {
   return (
     <div className="space-y-8">
       {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 dark:border-white/10 pb-4">
+      <div className="flex flex-wrap items-center gap-2.5 pb-2 border-b border-[#E5E6DE]">
         <button
           onClick={() => setActiveFilter('all')}
-          className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
             activeFilter === 'all'
-              ? 'bg-lime-500 text-black shadow-md'
-              : 'bg-zinc-100 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/10'
+              ? 'bg-[#171914] text-[#C7F36B] shadow-sm'
+              : 'bg-[#FFFFFF] text-[#62645C] border border-[#E5E6DE] hover:border-[#D3D5CA] hover:text-[#171914]'
           }`}
         >
           <Calendar className="w-3.5 h-3.5" />
@@ -44,10 +44,10 @@ export function EventsFilterView({ events }: EventsFilterViewProps) {
 
         <button
           onClick={() => setActiveFilter('upcoming')}
-          className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
             activeFilter === 'upcoming'
-              ? 'bg-lime-500 text-black shadow-md'
-              : 'bg-zinc-100 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/10'
+              ? 'bg-[#171914] text-[#C7F36B] shadow-sm'
+              : 'bg-[#FFFFFF] text-[#62645C] border border-[#E5E6DE] hover:border-[#D3D5CA] hover:text-[#171914]'
           }`}
         >
           <Clock className="w-3.5 h-3.5" />
@@ -56,10 +56,10 @@ export function EventsFilterView({ events }: EventsFilterViewProps) {
 
         <button
           onClick={() => setActiveFilter('past')}
-          className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
             activeFilter === 'past'
-              ? 'bg-lime-500 text-black shadow-md'
-              : 'bg-zinc-100 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/10'
+              ? 'bg-[#171914] text-[#C7F36B] shadow-sm'
+              : 'bg-[#FFFFFF] text-[#62645C] border border-[#E5E6DE] hover:border-[#D3D5CA] hover:text-[#171914]'
           }`}
         >
           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -74,11 +74,17 @@ export function EventsFilterView({ events }: EventsFilterViewProps) {
         ))}
       </div>
 
+      {/* Empty State */}
       {filteredEvents.length === 0 && (
-        <div className="text-center py-20 rounded-3xl border border-dashed border-zinc-300 dark:border-white/10 p-8 space-y-3">
-          <Bike className="w-10 h-10 text-zinc-400 mx-auto" />
-          <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-            No events found in this category.
+        <div className="text-center py-20 rounded-3xl bg-[#FFFFFF] border border-[#E5E6DE] p-8 space-y-3 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-[#EAEDE2] text-[#62645C] flex items-center justify-center mx-auto">
+            <Bike className="w-6 h-6 stroke-[2]" />
+          </div>
+          <p className="text-sm font-bold text-[#171914]">
+            No cycling events found in this category.
+          </p>
+          <p className="text-xs text-[#62645C]">
+            Please check back soon or switch filter tabs to view all scheduled rides.
           </p>
         </div>
       )}

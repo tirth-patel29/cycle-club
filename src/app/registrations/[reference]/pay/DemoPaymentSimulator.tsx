@@ -56,104 +56,108 @@ export function DemoPaymentSimulator({ registration, event }: Props) {
   return (
     <div className="space-y-6">
       {/* Demo Warning Banner */}
-      <div className="glass-panel border-2 border-amber-500/60 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 text-amber-800 dark:text-amber-300 text-xs font-semibold">
-        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
-        <p className="uppercase">
-          <strong className="text-amber-900 dark:text-amber-200">DEMO CHECKOUT ACTIVE:</strong> Simulated gateway. No real money or bank account will be charged.
+      <div className="bg-[#EAEDE2] border border-[#d2d7c5] rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 text-[#171914] text-xs font-semibold">
+        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+        <p className="uppercase text-[11px] leading-relaxed">
+          <strong className="text-amber-800">DEMO CHECKOUT ACTIVE:</strong> Simulated gateway environment. No actual bank or UPI account will be charged.
         </p>
       </div>
 
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-500 text-xs font-semibold">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
           {errorMessage}
         </div>
       )}
 
       {/* Summary Card */}
-      <div className="glass-panel rounded-2xl border border-white/10 p-6 sm:p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-black/10 dark:border-white/10">
+      <div className="surface-card rounded-2xl border border-[#E5E6DE] p-6 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E5E6DE]">
           <div>
-            <span className="text-[11px] uppercase opacity-60 block font-semibold">BIB REFERENCE</span>
-            <p className="text-2xl font-black text-[#4d710d] dark:text-[#b8f04c] tracking-wider font-mono">
+            <span className="text-[11px] uppercase tracking-wider text-[#62645C] block font-semibold">BIB REFERENCE</span>
+            <p className="text-2xl font-black text-[#171914] tracking-wider font-mono">
               {registration.public_reference}
             </p>
           </div>
 
           <div className="text-left sm:text-right">
-            <span className="text-[11px] uppercase opacity-60 block font-semibold">AMOUNT DUE</span>
-            <p className="text-3xl sm:text-4xl font-black event-heading">
+            <span className="text-[11px] uppercase tracking-wider text-[#62645C] block font-semibold">TOTAL REGISTRATION FEE</span>
+            <p className="text-3xl sm:text-4xl font-black text-[#171914]">
               {formatINR(registration.amount_due_paise)}
             </p>
           </div>
         </div>
 
         {/* Specs */}
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="p-3.5 event-venue-box rounded-xl">
-            <span className="opacity-60 uppercase block text-[10px] font-semibold">RIDER</span>
-            <p className="font-bold event-heading text-sm">{registration.full_name}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="p-3.5 bg-[#F7F7F2] border border-[#E5E6DE] rounded-xl">
+            <span className="text-[#62645C] uppercase block text-[10px] font-semibold tracking-wider">RIDER NAME</span>
+            <p className="font-bold text-[#171914] text-sm mt-0.5">{registration.full_name}</p>
           </div>
-          <div className="p-3.5 event-venue-box rounded-xl">
-            <span className="opacity-60 uppercase block text-[10px] font-semibold">EVENT</span>
-            <p className="font-bold event-heading text-sm truncate">{event.title}</p>
+          <div className="p-3.5 bg-[#F7F7F2] border border-[#E5E6DE] rounded-xl">
+            <span className="text-[#62645C] uppercase block text-[10px] font-semibold tracking-wider">STAGE EVENT</span>
+            <p className="font-bold text-[#171914] text-sm mt-0.5 truncate">{event.title}</p>
           </div>
         </div>
       </div>
 
       {/* Mode selection */}
-      <div className="glass-panel rounded-2xl border border-white/10 p-6 sm:p-8 space-y-6">
-        <span className="text-xs uppercase text-[#4d710d] dark:text-[#b8f04c] font-black tracking-wider block">
-          SELECT SIMULATED GATEWAY
+      <div className="surface-card rounded-2xl border border-[#E5E6DE] p-6 sm:p-8 space-y-6">
+        <span className="text-xs uppercase text-[#171914] font-black tracking-wider block">
+          SELECT SIMULATED GATEWAY METHOD
         </span>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setSelectedMethod('upi')}
-            className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
+            className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
               selectedMethod === 'upi'
-                ? 'border-[#4d710d] bg-[#4d710d]/10 text-slate-900 dark:border-[#b8f04c] dark:bg-[#b8f04c]/10 dark:text-white'
-                : 'border-black/10 text-slate-600 hover:border-black/20 dark:border-white/10 dark:text-white/60 dark:hover:border-white/20'
+                ? 'border-[#171914] bg-[#EAEDE2] text-[#171914] shadow-xs'
+                : 'border-[#E5E6DE] bg-white text-[#62645C] hover:border-[#171914]/40 hover:text-[#171914]'
             }`}
           >
-            <Smartphone className="w-5 h-5 text-[#4d710d] dark:text-[#b8f04c]" />
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${selectedMethod === 'upi' ? 'bg-[#171914] text-[#C7F36B]' : 'bg-[#F7F7F2] text-[#171914]'}`}>
+              <Smartphone className="w-5 h-5" />
+            </div>
             <div>
-              <p className="font-bold uppercase event-heading">SIMULATED UPI / QR</p>
-              <p className="text-[10px] opacity-60">GPay, PhonePe, Paytm</p>
+              <p className="font-bold uppercase text-[#171914]">SIMULATED UPI / QR</p>
+              <p className="text-[10px] text-[#62645C]">Instant mock UPI scanner</p>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => setSelectedMethod('card')}
-            className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all ${
+            className={`p-4 rounded-xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
               selectedMethod === 'card'
-                ? 'border-[#4d710d] bg-[#4d710d]/10 text-slate-900 dark:border-[#b8f04c] dark:bg-[#b8f04c]/10 dark:text-white'
-                : 'border-black/10 text-slate-600 hover:border-black/20 dark:border-white/10 dark:text-white/60 dark:hover:border-white/20'
+                ? 'border-[#171914] bg-[#EAEDE2] text-[#171914] shadow-xs'
+                : 'border-[#E5E6DE] bg-white text-[#62645C] hover:border-[#171914]/40 hover:text-[#171914]'
             }`}
           >
-            <CreditCard className="w-5 h-5 text-[#4d710d] dark:text-[#b8f04c]" />
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${selectedMethod === 'card' ? 'bg-[#171914] text-[#C7F36B]' : 'bg-[#F7F7F2] text-[#171914]'}`}>
+              <CreditCard className="w-5 h-5" />
+            </div>
             <div>
-              <p className="font-bold uppercase event-heading">SIMULATED CARD / NETBANKING</p>
-              <p className="text-[10px] opacity-60">RuPay, Visa, SBI, HDFC</p>
+              <p className="font-bold uppercase text-[#171914]">SIMULATED CARD / NETBANKING</p>
+              <p className="text-[10px] text-[#62645C]">Mock RuPay, Visa, SBI netbanking</p>
             </div>
           </button>
         </div>
 
         {selectedMethod === 'upi' && (
-          <div className="p-6 rounded-2xl bg-[#f0f4ea] dark:bg-black/50 border border-black/10 dark:border-white/10 text-center space-y-3 max-w-xs mx-auto shadow-sm">
-            <div className="w-36 h-36 mx-auto bg-white p-3 rounded-xl flex items-center justify-center border border-black/5 shadow-sm">
-              <QrCode className="w-28 h-28 text-black" />
+          <div className="p-6 rounded-2xl bg-[#F7F7F2] border border-[#E5E6DE] text-center space-y-3 max-w-xs mx-auto">
+            <div className="w-36 h-36 mx-auto bg-white p-3 rounded-xl flex items-center justify-center border border-[#E5E6DE] shadow-xs">
+              <QrCode className="w-28 h-28 text-[#171914]" />
             </div>
-            <p className="text-xs event-body font-mono font-semibold uppercase">
-              UPI: <span className="text-[#4d710d] dark:text-[#b8f04c]">anandcycling@demo</span>
+            <p className="text-xs font-mono font-semibold uppercase text-[#171914]">
+              MOCK VPA: <span className="font-black">anandcycling@demo</span>
             </p>
           </div>
         )}
       </div>
 
-      {/* Action Buttons: FULLY GLOSSY BUTTONS */}
-      <div className="glass-panel rounded-2xl border border-white/10 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* Action Buttons: GLOSSY BUTTONS PRESERVED */}
+      <div className="surface-card rounded-2xl border border-[#E5E6DE] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <button
           type="button"
           disabled={loading}
