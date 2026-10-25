@@ -1,5 +1,6 @@
 export type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
 export type RideDifficulty = 'Easy / Leisure' | 'Moderate' | 'Challenging' | 'Endurance / Brevet';
+export type DifficultyLevel = RideDifficulty;
 
 export interface CyclingEvent {
   id: string;

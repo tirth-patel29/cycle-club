@@ -1,4 +1,3 @@
-import { createAuthClient } from '@neondatabase/auth/next';
 import { createNeonAuth } from '@neondatabase/auth/next/server';
 import { db } from '@/lib/db';
 import { setSessionCookie, ensureUuid, getSession } from '@/lib/auth';
@@ -26,22 +25,6 @@ export function getNeonAuthServer() {
     console.warn('Neon Auth initialization warning:', err);
     return null;
   }
-}
-
-/**
- * Official client-side Neon Auth client instance
- */
-let clientInstance: ReturnType<typeof createAuthClient> | null = null;
-export function getNeonAuthClient() {
-  if (typeof window === 'undefined') return null;
-  if (!clientInstance) {
-    try {
-      clientInstance = createAuthClient();
-    } catch (e) {
-      console.warn('Failed to initialize Neon Auth client:', e);
-    }
-  }
-  return clientInstance;
 }
 
 /**
