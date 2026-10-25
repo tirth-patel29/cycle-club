@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Bike, ArrowRight, AlertCircle, Loader2, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { CLUB_NAME } from '@/lib/constants';
-import { getNeonAuthClient } from '@/lib/auth/client';
 
 function GoogleIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -58,32 +57,29 @@ function LoginForm() {
     setSuccessMessage(null);
 
     try {
-      const authClient = getNeonAuthClient();
       const callbackURL = `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`;
 
-      if (authClient?.signIn?.social) {
-        // Official Neon Auth Better-Auth SDK social login
-        await authClient.signIn.social({
-          provider: 'google',
-          callbackURL
-        });
-        return;
-      }
-
-      // If Neon Auth client is operating in API proxy mode or dev mode
-      const res = await fetch('/api/auth/google', {
+      const res = await fetch('/api/auth/sign-in/social', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: 'rider.google@anandcyclingclub.in',
-          name: 'Anand Club Rider (Google)',
-          callbackURL: returnUrl
+          provider: 'google',
+          callbackURL,
+          returnUrl
         })
       });
 
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Failed to authenticate with Google.');
+      }
+
+      if (data.url) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('acc_auth_changed'));
+        }
+        window.location.href = data.url;
+        return;
       }
 
       setSuccessMessage('Successfully authenticated with Google!');
