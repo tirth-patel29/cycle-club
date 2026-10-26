@@ -27,8 +27,22 @@ export function ConfirmationPassView({ registration, event, payment }: Props) {
       } catch {
         // Fallback
       }
+    } else {
+      // Auto-check if payment was captured in the background
+      fetch('/api/payments/razorpay/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registration_reference: registration.public_reference })
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === 'confirmed') {
+            window.location.reload();
+          }
+        })
+        .catch(() => {});
     }
-  }, [isConfirmed]);
+  }, [isConfirmed, registration.public_reference]);
 
   const handlePrint = () => {
     window.print();

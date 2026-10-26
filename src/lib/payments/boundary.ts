@@ -114,6 +114,12 @@ export class RazorpayPaymentProvider implements PaymentProvider {
 
     return { success: true };
   }
+
+  async fetchOrderPayments(orderId: string): Promise<any[]> {
+    const { client } = this.getClient();
+    const res = await client.orders.fetchPayments(orderId);
+    return res?.items || [];
+  }
 }
 
 /**

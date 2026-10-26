@@ -867,7 +867,7 @@ class DatabaseService {
     const pool = getPool();
     if (pool) {
       try {
-        const res = await pool.query('SELECT * FROM payments WHERE registration_id::text = $1 LIMIT 1', [regId]);
+        const res = await pool.query('SELECT * FROM payments WHERE registration_id::text = $1 ORDER BY created_at DESC LIMIT 1', [regId]);
         if (res.rows.length > 0) {
           return mapPaymentRow(res.rows[0]);
         }

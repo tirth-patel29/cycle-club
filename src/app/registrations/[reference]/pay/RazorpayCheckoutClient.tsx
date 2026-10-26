@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Registration, CyclingEvent } from '@/types';
 import { formatINR } from '@/lib/constants';
-import { ShieldCheck, CheckCircle2, AlertTriangle, Loader2, CreditCard, Smartphone, Building2 } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, AlertTriangle, Loader2, CreditCard, Smartphone, Building2, RefreshCw } from 'lucide-react';
 
 interface Props {
   registration: Registration;
@@ -20,7 +20,73 @@ declare global {
 export function RazorpayCheckoutClient({ registration, event }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [checkingSync, setCheckingSync] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const razorpayInstanceRef = useRef<any>(null);
+
+  // Stop polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
+  const syncPaymentStatus = async (silent: boolean = false): Promise<boolean> => {
+    if (!silent) setCheckingSync(true);
+    try {
+      const res = await fetch('/api/payments/razorpay/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          registration_reference: registration.public_reference
+        })
+      });
+
+      const data = await res.json();
+      if (data.status === 'confirmed') {
+        stopPolling();
+        try {
+          if (razorpayInstanceRef.current?.close) {
+            razorpayInstanceRef.current.close();
+          }
+        } catch {
+          // ignore
+        }
+        router.push(`/registrations/${registration.public_reference}?payment=success`);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      if (!silent) {
+        console.error('[Razorpay Sync check error]:', err);
+      }
+      return false;
+    } finally {
+      if (!silent) setCheckingSync(false);
+    }
+  };
+
+  const startBackgroundPolling = () => {
+    stopPolling();
+    pollIntervalRef.current = setInterval(async () => {
+      const isConfirmed = await syncPaymentStatus(true);
+      if (isConfirmed) {
+        stopPolling();
+      }
+    }, 3500);
+  };
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -39,6 +105,7 @@ export function RazorpayCheckoutClient({ registration, event }: Props) {
   const handlePayNow = async () => {
     setLoading(true);
     setErrorMessage(null);
+    setInfoMessage(null);
 
     try {
       // 1. Ensure official Razorpay SDK is loaded
@@ -83,9 +150,19 @@ export function RazorpayCheckoutClient({ registration, event }: Props) {
           color: '#171914'
         },
         modal: {
-          ondismiss: () => {
+          ondismiss: async () => {
+            stopPolling();
             setLoading(false);
-            setErrorMessage('Payment was cancelled before completion. You can retry whenever you are ready.');
+            // Check if user actually completed UPI payment on their mobile app before closing modal
+            setCheckingSync(true);
+            const confirmed = await syncPaymentStatus(true);
+            setCheckingSync(false);
+
+            if (!confirmed) {
+              setInfoMessage(
+                'Payment window closed. If you already completed the payment via UPI, click "Check Payment Status" below to verify.'
+              );
+            }
           }
         },
         handler: async (response: {
@@ -93,6 +170,7 @@ export function RazorpayCheckoutClient({ registration, event }: Props) {
           razorpay_order_id: string;
           razorpay_signature: string;
         }) => {
+          stopPolling();
           try {
             setLoading(true);
             setErrorMessage(null);
@@ -115,7 +193,7 @@ export function RazorpayCheckoutClient({ registration, event }: Props) {
             }
 
             // 5. Verified successfully: redirect to rider pass
-            router.push(`/registrations/${registration.public_reference}`);
+            router.push(`/registrations/${registration.public_reference}?payment=success`);
           } catch (verifyErr: unknown) {
             const msg = verifyErr instanceof Error ? verifyErr.message : 'Failed to verify payment.';
             setErrorMessage(msg);
@@ -125,9 +203,11 @@ export function RazorpayCheckoutClient({ registration, event }: Props) {
       };
 
       const razorpay = new window.Razorpay(options);
+      razorpayInstanceRef.current = razorpay;
 
       razorpay.on('payment.failed', function (resp: any) {
         console.error('Razorpay payment failed:', resp.error);
+        stopPolling();
         setErrorMessage(
           resp.error?.description || 'Your payment could not be processed by your bank or UPI provider.'
         );
@@ -135,10 +215,24 @@ export function RazorpayCheckoutClient({ registration, event }: Props) {
       });
 
       razorpay.open();
+      // Start background polling while modal is visible (detects mobile UPI QR scans immediately)
+      startBackgroundPolling();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'An unexpected error occurred.';
       setErrorMessage(msg);
       setLoading(false);
+      stopPolling();
+    }
+  };
+
+  const handleManualSync = async () => {
+    setErrorMessage(null);
+    setInfoMessage(null);
+    const confirmed = await syncPaymentStatus(false);
+    if (!confirmed) {
+      setInfoMessage(
+        'Payment status is still pending confirmation from bank/UPI. If your account was debited, please wait 30-60 seconds and click Check Status again.'
+      );
     }
   };
 
@@ -156,6 +250,13 @@ export function RazorpayCheckoutClient({ registration, event }: Props) {
           RBI Compliant
         </div>
       </div>
+
+      {infoMessage && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-2.5">
+          <RefreshCw className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>{infoMessage}</span>
+        </div>
+      )}
 
       {errorMessage && (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2.5">
@@ -219,30 +320,52 @@ export function RazorpayCheckoutClient({ registration, event }: Props) {
         </div>
       </div>
 
-      {/* Action Button */}
+      {/* Action Buttons */}
       <div className="surface-card rounded-2xl border border-[#E5E6DE] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="text-xs text-[#62645C] font-medium">
+        <div className="text-xs text-[#62645C] font-medium text-center sm:text-left">
           Instant digital pass issued & sent via email immediately upon payment verification.
         </div>
 
-        <button
-          type="button"
-          disabled={loading}
-          onClick={handlePayNow}
-          className="btn-glossy-lime w-full sm:w-auto px-10 py-4 rounded-xl font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>LAUNCHING GATEWAY...</span>
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="w-4 h-4 stroke-[3]" />
-              <span>PROCEED TO PAY {formatINR(registration.amount_due_paise)}</span>
-            </>
-          )}
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <button
+            type="button"
+            disabled={checkingSync || loading}
+            onClick={handleManualSync}
+            className="w-full sm:w-auto px-5 py-4 rounded-xl font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-[#d2d7c5] bg-[#F7F7F2] hover:bg-[#EAEDE2] text-[#171914] cursor-pointer transition-colors disabled:opacity-50"
+            title="Check if payment was captured"
+          >
+            {checkingSync ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#171914]" />
+                <span>VERIFYING STATUS...</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 text-[#171914]" />
+                <span>CHECK STATUS</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            disabled={loading || checkingSync}
+            onClick={handlePayNow}
+            className="btn-glossy-lime w-full sm:w-auto px-8 py-4 rounded-xl font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>GATEWAY ACTIVE...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4 stroke-[3]" />
+                <span>PROCEED TO PAY {formatINR(registration.amount_due_paise)}</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
