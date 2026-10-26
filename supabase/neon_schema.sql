@@ -130,7 +130,20 @@ CREATE TABLE IF NOT EXISTS rider_profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 9. PERFORMANCE INDEXES
+-- 9. EMAIL DELIVERIES TABLE (Tracking & Idempotency)
+CREATE TABLE IF NOT EXISTS email_deliveries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  registration_id UUID NOT NULL REFERENCES registrations(id) ON DELETE CASCADE,
+  recipient_email TEXT NOT NULL,
+  email_type TEXT NOT NULL,
+  resend_email_id TEXT,
+  status TEXT NOT NULL CHECK (status IN ('sent', 'failed')),
+  error_message TEXT,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  UNIQUE(registration_id, email_type)
+);
+
+-- 10. PERFORMANCE INDEXES
 CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);
 CREATE INDEX IF NOT EXISTS idx_events_status_starts_at ON events(status, starts_at);
 CREATE INDEX IF NOT EXISTS idx_registrations_event_id ON registrations(event_id);
@@ -144,8 +157,9 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 CREATE INDEX IF NOT EXISTS idx_rider_profiles_mobile ON rider_profiles(mobile_number);
 CREATE INDEX IF NOT EXISTS idx_rider_profiles_bicycle_type ON rider_profiles(bicycle_type);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_email_deliveries_reg ON email_deliveries(registration_id, email_type);
 
--- 10. SEED EVENTS (INCLUDING FREE EVENT)
+-- 11. SEED EVENTS (INCLUDING FREE EVENT)
 INSERT INTO events (
   id, slug, title, description, cover_image_url, venue, location_description,
   starts_at, ends_at, distance_km, elevation_gain_m, difficulty,

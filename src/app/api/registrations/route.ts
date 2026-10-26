@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { registrationSchema } from '@/lib/validations/registration';
 import { ensureUuid } from '@/lib/auth';
+import { sendConfirmationEmailSafely } from '@/lib/email/service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,6 +89,18 @@ export async function POST(req: NextRequest) {
       currency,
       idempotency_key: normalizedIdempotencyKey
     });
+
+    // 6. Trigger confirmation email for confirmed free events (non-blocking)
+    if (isFree && newReg.status === 'confirmed') {
+      try {
+        await sendConfirmationEmailSafely({
+          registration: newReg,
+          event
+        });
+      } catch (emailErr) {
+        console.error('Non-blocking confirmation email dispatch error (free event):', emailErr);
+      }
+    }
 
     return NextResponse.json({
       success: true,

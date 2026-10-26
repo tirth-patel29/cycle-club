@@ -228,6 +228,16 @@ class DatabaseService {
       timestamp: new Date().toISOString()
     }
   ];
+  private emailDeliveries: Array<{
+    id: string;
+    registration_id: string;
+    recipient_email: string;
+    email_type: string;
+    resend_email_id?: string;
+    status: 'sent' | 'failed';
+    error_message?: string;
+    sent_at: string;
+  }> = [];
 
   // RIDER PROFILES
   async getRiderProfile(userId: string): Promise<RiderProfile | null> {
@@ -1067,6 +1077,105 @@ class DatabaseService {
       totalEvents: this.events.length,
       publishedEvents: this.events.filter((e) => e.status === 'published').length
     };
+  }
+
+  // EMAIL DELIVERIES TRACKING & IDEMPOTENCY
+  async isEmailDelivered(registrationId: string, emailType: string = 'event_confirmation'): Promise<boolean> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS email_deliveries (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            registration_id UUID NOT NULL REFERENCES registrations(id) ON DELETE CASCADE,
+            recipient_email TEXT NOT NULL,
+            email_type TEXT NOT NULL,
+            resend_email_id TEXT,
+            status TEXT NOT NULL,
+            error_message TEXT,
+            sent_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(registration_id, email_type)
+          );
+        `);
+        const res = await pool.query(
+          "SELECT id FROM email_deliveries WHERE registration_id::text = $1 AND email_type = $2 AND status = 'sent' LIMIT 1",
+          [registrationId, emailType]
+        );
+        if (res.rows.length > 0) return true;
+      } catch {
+        // Fall back to memory check
+      }
+    }
+    return this.emailDeliveries.some(
+      (d) => d.registration_id === registrationId && d.email_type === emailType && d.status === 'sent'
+    );
+  }
+
+  async recordEmailDelivery(data: {
+    registrationId: string;
+    recipientEmail: string;
+    emailType: string;
+    resendEmailId?: string;
+    status: 'sent' | 'failed';
+    errorMessage?: string;
+  }): Promise<void> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS email_deliveries (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            registration_id UUID NOT NULL REFERENCES registrations(id) ON DELETE CASCADE,
+            recipient_email TEXT NOT NULL,
+            email_type TEXT NOT NULL,
+            resend_email_id TEXT,
+            status TEXT NOT NULL,
+            error_message TEXT,
+            sent_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(registration_id, email_type)
+          );
+        `);
+        await pool.query(`
+          INSERT INTO email_deliveries (
+            registration_id, recipient_email, email_type, resend_email_id, status, error_message
+          ) VALUES ($1, $2, $3, $4, $5, $6)
+          ON CONFLICT (registration_id, email_type)
+          DO UPDATE SET
+            status = EXCLUDED.status,
+            resend_email_id = COALESCE(EXCLUDED.resend_email_id, email_deliveries.resend_email_id),
+            error_message = EXCLUDED.error_message,
+            sent_at = NOW();
+        `, [
+          data.registrationId,
+          data.recipientEmail,
+          data.emailType,
+          data.resendEmailId || null,
+          data.status,
+          data.errorMessage || null
+        ]);
+      } catch {
+        // Fall back to memory
+      }
+    }
+
+    const existingIdx = this.emailDeliveries.findIndex(
+      (d) => d.registration_id === data.registrationId && d.email_type === data.emailType
+    );
+    const entry = {
+      id: `eml-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      registration_id: data.registrationId,
+      recipient_email: data.recipientEmail,
+      email_type: data.emailType,
+      resend_email_id: data.resendEmailId,
+      status: data.status,
+      error_message: data.errorMessage,
+      sent_at: new Date().toISOString()
+    };
+    if (existingIdx >= 0) {
+      this.emailDeliveries[existingIdx] = entry;
+    } else {
+      this.emailDeliveries.unshift(entry);
+    }
   }
 
   getPool(): pg.Pool | null {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
+import { sendConfirmationEmailSafely } from '@/lib/email/service';
 
 const demoPaymentSchema = z.object({
   registration_reference: z.string().min(1, 'Registration reference is required'),
@@ -44,6 +45,22 @@ export async function POST(req: NextRequest) {
     );
 
     if (outcome === 'success') {
+      // Trigger confirmation email for verified paid registration (non-blocking)
+      if (updatedReg.status === 'confirmed') {
+        try {
+          const event = await db.getEventById(updatedReg.event_id);
+          if (event) {
+            await sendConfirmationEmailSafely({
+              registration: updatedReg,
+              event,
+              payment: updatedPayment
+            });
+          }
+        } catch (emailErr) {
+          console.error('Non-blocking confirmation email dispatch error (paid event):', emailErr);
+        }
+      }
+
       return NextResponse.json({
         success: true,
         public_reference: updatedReg.public_reference,
