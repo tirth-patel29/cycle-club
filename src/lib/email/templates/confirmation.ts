@@ -8,14 +8,28 @@ interface EmailTemplateProps {
   appUrl?: string;
 }
 
+function resolveAppUrl(provided?: string): string {
+  if (provided && !provided.includes('localhost')) {
+    return provided.replace(/\/$/, '');
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes('localhost')) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`.replace(/\/$/, '');
+  }
+  return 'https://cycleclub.tirthpatel.tech';
+}
+
 export function generateConfirmationEmailHtml({
   registration,
   event,
   payment,
-  appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  appUrl
 }: EmailTemplateProps): string {
   const isFree = registration.amount_due_paise === 0;
-  const passUrl = `${appUrl.replace(/\/$/, '')}/registrations/${encodeURIComponent(registration.public_reference)}`;
+  const baseUrl = resolveAppUrl(appUrl);
+  const passUrl = `${baseUrl}/registrations/${encodeURIComponent(registration.public_reference)}`;
   const venueMapQuery = encodeURIComponent(`${event.venue}, ${CLUB_LOCATION}`);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${venueMapQuery}`;
 
@@ -297,10 +311,11 @@ export function generateConfirmationEmailText({
   registration,
   event,
   payment,
-  appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  appUrl
 }: EmailTemplateProps): string {
   const isFree = registration.amount_due_paise === 0;
-  const passUrl = `${appUrl.replace(/\/$/, '')}/registrations/${encodeURIComponent(registration.public_reference)}`;
+  const baseUrl = resolveAppUrl(appUrl);
+  const passUrl = `${baseUrl}/registrations/${encodeURIComponent(registration.public_reference)}`;
   const feeDisplay = isFree ? 'FREE ENTRY (₹0)' : formatINR(registration.amount_due_paise);
   const paymentStatus = isFree ? 'Complimentary Access' : (payment?.status === 'succeeded' || registration.status === 'confirmed' ? 'Payment Verified' : 'Pending');
 
