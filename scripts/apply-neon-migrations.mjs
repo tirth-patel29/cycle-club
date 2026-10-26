@@ -2,7 +2,11 @@ import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_ASeXmfdZ42PK@ep-billowing-sunset-az44yy0j-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('DATABASE_URL environment variable is required');
+  process.exit(1);
+}
 
 async function migrate() {
   console.log('Connecting to Neon PostgreSQL...');

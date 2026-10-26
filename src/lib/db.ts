@@ -7,7 +7,7 @@ let pgPool: pg.Pool | null = null;
 
 function getPool(): pg.Pool | null {
   if (typeof window !== 'undefined') return null;
-  const dbUrl = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_ASeXmfdZ42PK@ep-billowing-sunset-az44yy0j-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+  const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) return null;
   if (!pgPool) {
     pgPool = new pg.Pool({

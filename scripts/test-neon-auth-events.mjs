@@ -5,7 +5,11 @@ import { syncGoogleUserToRiderProfile } from '../src/lib/auth/neon';
 import { isAdminUser } from '../src/lib/supabase/server';
 import { ensureUuid } from '../src/lib/auth';
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_ASeXmfdZ42PK@ep-billowing-sunset-az44yy0j-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('DATABASE_URL environment variable is required');
+  process.exit(1);
+}
 
 let passed = 0;
 let failed = 0;
