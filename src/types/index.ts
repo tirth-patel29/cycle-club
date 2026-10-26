@@ -77,7 +77,7 @@ export interface Registration {
   updated_at: string;
 }
 
-export type PaymentStatus = 'pending' | 'succeeded' | 'failed';
+export type PaymentStatus = 'initiated' | 'pending' | 'succeeded' | 'failed' | 'refunded';
 
 export interface Payment {
   id: string;
@@ -89,6 +89,9 @@ export interface Payment {
   status: PaymentStatus;
   idempotency_key?: string;
   failure_reason?: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  razorpay_signature?: string;
   created_at: string;
   updated_at: string;
 }

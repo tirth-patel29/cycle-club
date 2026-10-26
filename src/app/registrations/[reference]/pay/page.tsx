@@ -2,7 +2,9 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
+import { getPaymentProviderName } from '@/lib/payments/config';
 import { DemoPaymentSimulator } from './DemoPaymentSimulator';
+import { RazorpayCheckoutClient } from './RazorpayCheckoutClient';
 import { ChevronLeft, Lock } from 'lucide-react';
 
 interface Props {
@@ -54,11 +56,15 @@ export default async function DemoPaymentPage({ params }: Props) {
 
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[#62645C]">
             <Lock className="w-3.5 h-3.5 text-[#3F6212]" />
-            <span>128-bit Encrypted Session</span>
+            <span>256-bit Encrypted Checkout</span>
           </div>
         </div>
 
-        <DemoPaymentSimulator registration={registration} event={event} />
+        {getPaymentProviderName() === 'razorpay' ? (
+          <RazorpayCheckoutClient registration={registration} event={event} />
+        ) : (
+          <DemoPaymentSimulator registration={registration} event={event} />
+        )}
       </div>
     </div>
   );

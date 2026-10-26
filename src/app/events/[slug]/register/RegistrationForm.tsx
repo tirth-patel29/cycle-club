@@ -366,7 +366,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
           <div className="text-right">
             <span className="text-[10px] font-mono text-[#62645C] block uppercase font-bold">Gateway Status</span>
             <span className="text-xs font-bold text-[#3F6212]">
-              {isFreeEvent ? 'Instant Pass Allocation' : 'Demo Checkout Mode'}
+              {isFreeEvent ? 'Instant Pass Allocation' : 'Secure Checkout Gateway'}
             </span>
           </div>
         </div>
@@ -388,7 +388,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
             </>
           ) : (
             <>
-              <span>CONTINUE TO DEMO CHECKOUT ({formatINR(event.registration_fee_paise)})</span>
+              <span>CONTINUE TO PAYMENT ({formatINR(event.registration_fee_paise)})</span>
               <ArrowRight className="w-4 h-4 stroke-[3]" />
             </>
           )}

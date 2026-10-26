@@ -1,8 +1,12 @@
+import crypto from 'crypto';
+import Razorpay from 'razorpay';
+import { getPaymentProviderName, getRazorpayConfig } from './config';
+
 /**
  * Payment Provider Abstraction Layer
- * 
- * Strict boundary ensuring that ONLY the DEMO provider is active now.
- * Live Razorpay transactions are strictly disabled in this phase.
+ *
+ * Supports both Demo Simulated and Razorpay Payment Gateways.
+ * Provider is selected via PAYMENT_PROVIDER environment variable.
  */
 
 export interface CreateOrderParams {
@@ -20,14 +24,16 @@ export interface PaymentOrderResult {
   isDemo: boolean;
 }
 
+export interface VerifyPaymentPayload {
+  orderId: string;
+  paymentId: string;
+  signature?: string;
+}
+
 export interface PaymentProvider {
   name: 'demo' | 'razorpay';
   createOrder(params: CreateOrderParams): Promise<PaymentOrderResult>;
-  verifyPayment(payload: {
-    orderId: string;
-    paymentId: string;
-    signature?: string;
-  }): Promise<{ success: boolean; error?: string }>;
+  verifyPayment(payload: VerifyPaymentPayload): Promise<{ success: boolean; error?: string }>;
 }
 
 export class DemoPaymentProvider implements PaymentProvider {
@@ -43,7 +49,7 @@ export class DemoPaymentProvider implements PaymentProvider {
     };
   }
 
-  async verifyPayment(payload: { orderId: string; paymentId: string }): Promise<{ success: boolean; error?: string }> {
+  async verifyPayment(payload: VerifyPaymentPayload): Promise<{ success: boolean; error?: string }> {
     if (!payload.orderId || !payload.paymentId) {
       return { success: false, error: 'Missing demo order or payment reference' };
     }
@@ -51,28 +57,73 @@ export class DemoPaymentProvider implements PaymentProvider {
   }
 }
 
-/**
- * Razorpay implementation stub (Disabled by default)
- * To enable in Phase 2:
- * 1. Obtain RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET from dashboard.razorpay.com
- * 2. Add to server environment variables (NEVER NEXT_PUBLIC_)
- * 3. Implement HMAC SHA256 signature verification:
- *    crypto.createHmac('sha256', secret).update(`${orderId}|${paymentId}`).digest('hex') === signature
- * 4. Register official webhook endpoint /api/webhooks/razorpay with raw body verification.
- */
 export class RazorpayPaymentProvider implements PaymentProvider {
   name = 'razorpay' as const;
 
-  async createOrder(): Promise<PaymentOrderResult> {
-    throw new Error('Razorpay live payments are disabled in this phase. Use DemoPaymentProvider.');
+  private getClient(): { client: Razorpay; keyId: string; keySecret: string; isTestMode: boolean } {
+    const config = getRazorpayConfig();
+    const client = new Razorpay({
+      key_id: config.keyId,
+      key_secret: config.keySecret
+    });
+    return { client, keyId: config.keyId, keySecret: config.keySecret, isTestMode: config.isTestMode };
   }
 
-  async verifyPayment(): Promise<{ success: boolean; error?: string }> {
-    throw new Error('Razorpay verification is disabled in this phase.');
+  async createOrder(params: CreateOrderParams): Promise<PaymentOrderResult> {
+    const { client, isTestMode } = this.getClient();
+
+    const order = await client.orders.create({
+      amount: params.amountPaise,
+      currency: params.currency || 'INR',
+      receipt: params.receiptReference.slice(0, 40),
+      notes: {
+        registration_id: params.registrationId,
+        receipt_reference: params.receiptReference
+      }
+    });
+
+    return {
+      provider: 'razorpay',
+      orderId: order.id,
+      amountPaise: Number(order.amount),
+      currency: order.currency,
+      isDemo: isTestMode
+    };
+  }
+
+  async verifyPayment(payload: VerifyPaymentPayload): Promise<{ success: boolean; error?: string }> {
+    const { orderId, paymentId, signature } = payload;
+    if (!orderId || !paymentId || !signature) {
+      return { success: false, error: 'Missing required Razorpay order, payment, or signature parameters.' };
+    }
+
+    const { keySecret } = this.getClient();
+    const body = `${orderId}|${paymentId}`;
+
+    const expectedSignature = crypto
+      .createHmac('sha256', keySecret)
+      .update(body)
+      .digest('hex');
+
+    const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+    const actualBuf = Buffer.from(signature, 'utf8');
+
+    if (expectedBuf.length !== actualBuf.length || !crypto.timingSafeEqual(expectedBuf, actualBuf)) {
+      return { success: false, error: 'Invalid HMAC payment signature. Verification failed.' };
+    }
+
+    return { success: true };
   }
 }
 
-// Factory returns ONLY the demo provider currently
+/**
+ * Returns active provider depending on environment configuration.
+ * Never silently falls back if razorpay is chosen but missing credentials.
+ */
 export function getActivePaymentProvider(): PaymentProvider {
+  const provider = getPaymentProviderName();
+  if (provider === 'razorpay') {
+    return new RazorpayPaymentProvider();
+  }
   return new DemoPaymentProvider();
 }

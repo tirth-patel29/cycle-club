@@ -102,6 +102,10 @@ function mapPaymentRow(row: any): Payment {
     currency: row.currency || 'INR',
     status: row.status,
     idempotency_key: row.idempotency_key,
+    failure_reason: row.failure_reason || undefined,
+    razorpay_order_id: row.razorpay_order_id || undefined,
+    razorpay_payment_id: row.razorpay_payment_id || undefined,
+    razorpay_signature: row.razorpay_signature || undefined,
     created_at: new Date(row.created_at).toISOString(),
     updated_at: new Date(row.updated_at).toISOString()
   };
@@ -982,6 +986,295 @@ class DatabaseService {
       });
 
       return { registration: reg, payment: payment! };
+    }
+  }
+
+  // RAZORPAY PAYMENTS
+  async getPaymentByRazorpayOrderId(orderId: string): Promise<Payment | null> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        const res = await pool.query(
+          'SELECT * FROM payments WHERE razorpay_order_id = $1 OR provider_payment_reference = $1 LIMIT 1',
+          [orderId]
+        );
+        if (res.rows.length > 0) {
+          return mapPaymentRow(res.rows[0]);
+        }
+      } catch {
+        // Fall back
+      }
+    }
+    const pay = this.payments.find(
+      (p) => p.razorpay_order_id === orderId || p.provider_payment_reference === orderId
+    );
+    return pay ? { ...pay } : null;
+  }
+
+  async recordRazorpayOrder({
+    registrationId,
+    orderId,
+    amountPaise,
+    currency
+  }: {
+    registrationId: string;
+    orderId: string;
+    amountPaise: number;
+    currency: string;
+  }): Promise<Payment> {
+    const pool = getPool();
+    const now = new Date().toISOString();
+
+    if (pool) {
+      try {
+        const existingRes = await pool.query(
+          'SELECT * FROM payments WHERE registration_id::text = $1 LIMIT 1',
+          [registrationId]
+        );
+
+        if (existingRes.rows.length > 0) {
+          const updated = await pool.query(
+            `UPDATE payments
+             SET provider = 'razorpay',
+                 provider_payment_reference = $1,
+                 razorpay_order_id = $1,
+                 amount_paise = $2,
+                 currency = $3,
+                 status = 'initiated',
+                 updated_at = NOW()
+             WHERE id = $4
+             RETURNING *;`,
+            [orderId, amountPaise, currency, existingRes.rows[0].id]
+          );
+          return mapPaymentRow(updated.rows[0]);
+        } else {
+          const inserted = await pool.query(
+            `INSERT INTO payments (
+               registration_id, provider, provider_payment_reference,
+               razorpay_order_id, amount_paise, currency, status, idempotency_key
+             ) VALUES ($1, 'razorpay', $2, $2, $3, $4, 'initiated', gen_random_uuid())
+             RETURNING *;`,
+            [registrationId, orderId, amountPaise, currency]
+          );
+          return mapPaymentRow(inserted.rows[0]);
+        }
+      } catch (err) {
+        console.error('Error recording Razorpay order in DB:', err);
+      }
+    }
+
+    let payment = this.payments.find((p) => p.registration_id === registrationId);
+    if (payment) {
+      payment.provider = 'razorpay';
+      payment.provider_payment_reference = orderId;
+      payment.razorpay_order_id = orderId;
+      payment.amount_paise = amountPaise;
+      payment.currency = currency;
+      payment.status = 'initiated';
+      payment.updated_at = now;
+      return { ...payment };
+    }
+
+    payment = {
+      id: `pay-rzp-${Date.now()}`,
+      registration_id: registrationId,
+      provider: 'razorpay',
+      provider_payment_reference: orderId,
+      razorpay_order_id: orderId,
+      amount_paise: amountPaise,
+      currency,
+      status: 'initiated',
+      created_at: now,
+      updated_at: now
+    };
+    this.payments.unshift(payment);
+    return payment;
+  }
+
+  async confirmRazorpayPayment({
+    registrationReference,
+    orderId,
+    paymentId,
+    signature
+  }: {
+    registrationReference: string;
+    orderId: string;
+    paymentId: string;
+    signature?: string;
+  }): Promise<{ registration: Registration; payment: Payment; alreadyConfirmed?: boolean }> {
+    const pool = getPool();
+    if (pool) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        const regRes = await client.query(
+          'SELECT * FROM registrations WHERE UPPER(public_reference) = UPPER($1) FOR UPDATE',
+          [registrationReference]
+        );
+
+        if (regRes.rows.length === 0) {
+          throw new Error(`Registration not found for reference ${registrationReference}`);
+        }
+
+        const regRow = regRes.rows[0];
+
+        if (regRow.status === 'confirmed') {
+          const payRes = await client.query(
+            'SELECT * FROM payments WHERE registration_id = $1 LIMIT 1',
+            [regRow.id]
+          );
+          await client.query('COMMIT');
+          return {
+            registration: mapRegistrationRow(regRow),
+            payment: payRes.rows.length > 0 ? mapPaymentRow(payRes.rows[0]) : ({} as Payment),
+            alreadyConfirmed: true
+          };
+        }
+
+        await client.query(
+          `UPDATE registrations
+           SET status = 'confirmed', updated_at = NOW()
+           WHERE id = $1`,
+          [regRow.id]
+        );
+
+        const updatedPayRes = await client.query(
+          `UPDATE payments
+           SET status = 'succeeded',
+               provider = 'razorpay',
+               provider_payment_reference = $1,
+               razorpay_payment_id = $1,
+               razorpay_order_id = COALESCE(razorpay_order_id, $2),
+               razorpay_signature = COALESCE($3, razorpay_signature),
+               updated_at = NOW()
+           WHERE registration_id = $4
+           RETURNING *;`,
+          [paymentId, orderId, signature || null, regRow.id]
+        );
+
+        let paymentObj: Payment;
+        if (updatedPayRes.rows.length > 0) {
+          paymentObj = mapPaymentRow(updatedPayRes.rows[0]);
+        } else {
+          const insPay = await client.query(
+            `INSERT INTO payments (
+               registration_id, provider, provider_payment_reference,
+               razorpay_order_id, razorpay_payment_id, razorpay_signature,
+               amount_paise, currency, status, idempotency_key
+             ) VALUES ($1, 'razorpay', $2, $3, $2, $4, $5, $6, 'succeeded', gen_random_uuid())
+             RETURNING *;`,
+            [regRow.id, paymentId, orderId, signature || null, regRow.amount_due_paise, regRow.currency]
+          );
+          paymentObj = mapPaymentRow(insPay.rows[0]);
+        }
+
+        await client.query('COMMIT');
+
+        const updatedRegRes = await pool.query('SELECT * FROM registrations WHERE id = $1', [regRow.id]);
+        const finalReg = mapRegistrationRow(updatedRegRes.rows[0]);
+
+        await this.logAudit('system', 'RAZORPAY_PAYMENT_SUCCEEDED', 'payment', paymentObj.id, {
+          reference: finalReg.public_reference,
+          razorpay_order_id: orderId,
+          razorpay_payment_id: paymentId,
+          amount_paise: paymentObj.amount_paise
+        });
+
+        return {
+          registration: finalReg,
+          payment: paymentObj,
+          alreadyConfirmed: false
+        };
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+
+    const reg = await this.getRegistrationByReference(registrationReference);
+    if (!reg) throw new Error('Registration not found');
+
+    if (reg.status === 'confirmed') {
+      const existingPay = await this.getPaymentByRegistrationId(reg.id);
+      return { registration: reg, payment: existingPay!, alreadyConfirmed: true };
+    }
+
+    const now = new Date().toISOString();
+    const updatedReg: Registration = { ...reg, status: 'confirmed', updated_at: now };
+    const regIdx = this.registrations.findIndex((r) => r.id === reg.id);
+    this.registrations[regIdx] = updatedReg;
+
+    let payment = await this.getPaymentByRegistrationId(reg.id);
+    if (payment) {
+      payment.status = 'succeeded';
+      payment.provider = 'razorpay';
+      payment.provider_payment_reference = paymentId;
+      payment.razorpay_payment_id = paymentId;
+      payment.razorpay_order_id = orderId;
+      payment.razorpay_signature = signature;
+      payment.updated_at = now;
+    } else {
+      payment = {
+        id: `pay-${Date.now()}`,
+        registration_id: reg.id,
+        provider: 'razorpay',
+        provider_payment_reference: paymentId,
+        razorpay_payment_id: paymentId,
+        razorpay_order_id: orderId,
+        razorpay_signature: signature,
+        amount_paise: reg.amount_due_paise,
+        currency: reg.currency,
+        status: 'succeeded',
+        created_at: now,
+        updated_at: now
+      };
+      this.payments.unshift(payment);
+    }
+
+    await this.logAudit('system', 'RAZORPAY_PAYMENT_SUCCEEDED', 'payment', payment.id, {
+      reference: reg.public_reference,
+      razorpay_payment_id: paymentId
+    });
+
+    return { registration: updatedReg, payment };
+  }
+
+  async recordRazorpayFailure({
+    orderId,
+    paymentId,
+    reason
+  }: {
+    orderId: string;
+    paymentId?: string;
+    reason?: string;
+  }): Promise<void> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        const check = await pool.query(
+          'SELECT status FROM payments WHERE razorpay_order_id = $1 OR provider_payment_reference = $1 LIMIT 1',
+          [orderId]
+        );
+        if (check.rows.length > 0 && check.rows[0].status === 'succeeded') {
+          return;
+        }
+
+        await pool.query(
+          `UPDATE payments
+           SET status = 'failed',
+               failure_reason = $1,
+               razorpay_payment_id = COALESCE($2, razorpay_payment_id),
+               updated_at = NOW()
+           WHERE (razorpay_order_id = $3 OR provider_payment_reference = $3)
+             AND status != 'succeeded'`,
+          [reason || 'Payment failed', paymentId || null, orderId]
+        );
+      } catch (err) {
+        console.error('Error recording Razorpay failure in DB:', err);
+      }
     }
   }
 
