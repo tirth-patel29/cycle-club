@@ -39,13 +39,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Query Razorpay API directly to check if the order has any captured payments
+    let paymentsCount = 0;
+    let rzpErrorMsg: string | null = null;
     try {
       const provider = new RazorpayPaymentProvider();
       const payments = await provider.fetchOrderPayments(orderId);
+      paymentsCount = Array.isArray(payments) ? payments.length : 0;
 
-      const successfulPayment = payments.find(
-        (p: any) => p.status === 'captured' || p.status === 'authorized'
-      );
+      const successfulPayment = Array.isArray(payments)
+        ? payments.find((p: any) => p.status === 'captured' || p.status === 'authorized')
+        : null;
 
       if (successfulPayment) {
         const { registration: updatedReg, payment: updatedPayment, alreadyConfirmed } =
@@ -79,13 +82,15 @@ export async function POST(req: NextRequest) {
         });
       }
     } catch (rzpErr: unknown) {
+      rzpErrorMsg = rzpErr instanceof Error ? rzpErr.message : String(rzpErr);
       console.warn('[Razorpay Sync API] Could not fetch payments from Razorpay:', rzpErr);
     }
 
     return NextResponse.json({
       success: true,
       status: 'pending',
-      order_id: orderId
+      order_id: orderId,
+      debug: { payments_count: paymentsCount, error: rzpErrorMsg }
     });
   } catch (err: unknown) {
     console.error('[Razorpay Sync Error]:', err);
