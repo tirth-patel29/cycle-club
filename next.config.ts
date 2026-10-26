@@ -11,6 +11,30 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async rewrites() {
+    return [
+      {
+        source: '/',
+        has: [
+          {
+            type: 'header',
+            key: 'x-razorpay-signature',
+          },
+        ],
+        destination: '/api/webhooks/razorpay',
+      },
+      {
+        source: '/',
+        has: [
+          {
+            type: 'header',
+            key: 'x-razorpay-event-id',
+          },
+        ],
+        destination: '/api/webhooks/razorpay',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
