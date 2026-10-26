@@ -51,13 +51,13 @@ export async function sendEmail({
   const from = getSenderEmail();
 
   if (!client) {
-    console.warn(
-      `[Resend Notice] RESEND_API_KEY is not configured. Email to [${recipientList.join(', ')}] with subject "${subject}" was simulated.`
+    console.error(
+      `[Resend Error] RESEND_API_KEY is not configured on the server. Outbound email to [${recipientList.join(', ')}] was aborted.`
     );
     return {
-      success: true,
-      id: `simulated-${Date.now()}`,
-      simulated: true
+      success: false,
+      error: 'RESEND_API_KEY is not configured in server environment variables',
+      simulated: false
     };
   }
 
