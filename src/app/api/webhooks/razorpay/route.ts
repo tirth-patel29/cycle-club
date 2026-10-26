@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
           registrationReference: registration.public_reference,
           orderId: orderId || '',
           paymentId: paymentId || '',
-          signature: signature
+          signature: signature || undefined
         });
 
       if (!alreadyConfirmed && updatedReg.status === 'confirmed') {
