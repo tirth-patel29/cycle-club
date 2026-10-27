@@ -16,63 +16,63 @@ interface GalleryItem {
 const GALLERY_COLLECTION: GalleryItem[] = [
   {
     id: 'gal-01',
-    title: 'Dawn Roll-Out from Town Hall',
-    tag: 'Sunrise Stage',
-    location: 'Anand Town Hall, Anand',
-    description: 'Riders gathering in crisp morning air for safety briefings and gear checks before sunrise roll-out.',
-    imageUrl: 'https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Cyclists gathering at dawn before flag off',
+    title: 'Statue of Unity Expedition',
+    tag: 'Landmark Brevet',
+    location: 'Statue of Unity, Kevadia',
+    description: 'Anand Cycling Club peloton gathered before the iconic 182-metre national landmark with the Indian Tricolor.',
+    imageUrl: '/IMG_2032.JPG.jpeg',
+    alt: 'The Anand Cycling Club riders at Statue of Unity holding the Indian flag',
     category: 'peloton'
   },
   {
     id: 'gal-02',
-    title: 'Mahi Canal Paceline Cadence',
-    tag: 'Paceline Training',
-    location: 'Mahi Irrigation Canal Route',
-    description: 'A disciplined rotating double echelon averaging 28 km/h along the smooth tarmac canal service roads.',
-    imageUrl: 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Road cyclists in close paceline formation along canal road',
-    category: 'peloton'
+    title: 'Charotar Green Canopy Roll',
+    tag: 'Weekend Group Ride',
+    location: 'Charotar Rural Corridor, Anand',
+    description: 'Lush morning road tour under ancient tree canopies featuring road, hybrid, and mountain bike riders.',
+    imageUrl: '/IMG_0934.JPG.jpeg',
+    alt: 'Anand Cycling Club riders lined up with bikes on scenic tree-lined highway',
+    category: 'route'
   },
   {
     id: 'gal-03',
-    title: 'Charotar Century Highway Brevet',
-    tag: '100K Century',
-    location: 'Karamsad – Borsad Highway',
-    description: 'Endurance riders conquering headwind stretches through lush banana and tobacco plantation corridors.',
-    imageUrl: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Endurance cyclist cruising along scenic rural highway',
-    category: 'route'
+    title: 'Dawn Muster & Roll-Out',
+    tag: 'Club Muster',
+    location: 'R. K. & Sons Cycle Shop, Anand',
+    description: 'Riders lined up with bicycles prepped, tires inflated, and helmets secured before morning roll-out.',
+    imageUrl: '/IMG_1293.JPG.jpeg',
+    alt: 'Cyclists on bikes gathered in the morning outside R. K. & Sons Cycle Shop',
+    category: 'community'
   },
   {
     id: 'gal-04',
-    title: 'SAG Vehicle & Mechanical Checkpoint',
-    tag: 'Zero-Drop Escort',
-    location: 'Mogar Highway Junction',
-    description: 'Route marshals providing instant tire changes, floor pump air, and high-electrolyte hydration refills.',
-    imageUrl: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Bicycle maintenance check and floor pump at support station',
-    category: 'safety'
+    title: 'National Day Cycling Rally',
+    tag: 'Community Ride',
+    location: 'Anand City Center',
+    description: 'Celebrating national pride and fitness with junior riders, families, and seasoned endurance cyclists.',
+    imageUrl: '/IMG_6852.JPG.jpeg',
+    alt: 'Club riders with national flag and cycles outside R. K. & Sons',
+    category: 'community'
   },
   {
     id: 'gal-05',
-    title: 'Mahi River Vantage Point',
-    tag: 'Gravel & Canal Trails',
-    location: 'Umreth River Bank',
-    description: 'Evening leisure squad pausing by the water for sunset reflections and community camaraderie.',
-    imageUrl: 'https://images.unsplash.com/photo-1471506480208-91b3a4cc78be?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Cyclist silhouette overlooking serene river at dusk',
-    category: 'route'
+    title: 'The Anand Cycling Club Fellowship',
+    tag: 'Official Club Portrait',
+    location: 'R. K. & Sons Cycle Shop, Anand',
+    description: 'Our diverse rider community in signature club jerseys united by the passion for two wheels.',
+    imageUrl: '/main.jpeg',
+    alt: 'Official group photograph of The Anand Cycling Club outside R. K. & Sons',
+    category: 'peloton'
   },
   {
     id: 'gal-06',
-    title: 'Post-Ride Chai & Finishers Fellowship',
-    tag: 'Club Culture',
-    location: 'Anand Pelotons Grounds',
-    description: 'Celebrating personal bests over steaming Gujarati masala chai, fresh breakfast, and route storytelling.',
-    imageUrl: 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Group of happy cyclists celebrating post-ride completion',
-    category: 'community'
+    title: 'SAG Support & Zero-Drop Checkpoint',
+    tag: 'Zero-Drop Support',
+    location: 'Mahi Expressway Corridor',
+    description: 'Every Anand Cycling Club ride is backed by hydration points, mobile mechanics, and a zero-drop escort van.',
+    imageUrl: 'https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=1200&q=80',
+    alt: 'Cyclists riding safely in paceline with route support',
+    category: 'safety'
   }
 ];
 

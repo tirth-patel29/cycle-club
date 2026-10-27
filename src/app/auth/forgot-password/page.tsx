@@ -38,8 +38,12 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#F7F7F2]">
       <div className="w-full max-w-md p-8 rounded-3xl surface-card border border-[#E5E6DE] shadow-xl">
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-xl bg-[#EAEDE2] text-[#171914] flex items-center justify-center mx-auto mb-3 border border-[#E5E6DE]">
-            <Bike className="w-6 h-6 stroke-[2.5]" />
+          <div className="w-14 h-14 rounded-2xl bg-white border border-[#E5E6DE] flex items-center justify-center mx-auto mb-3 p-1 shadow-sm overflow-hidden">
+            <img
+              src="/logo.webp"
+              alt="THE ANAND CYCLING CLUB Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-2xl font-black uppercase tracking-tight text-[#171914]">
             Reset Password

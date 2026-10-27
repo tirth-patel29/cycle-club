@@ -168,8 +168,12 @@ function LoginForm() {
     <div className="max-w-md w-full mx-auto px-4 py-24 sm:py-32 space-y-8">
       {/* Brand Header */}
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-2xl bg-[#C7F36B]/40 text-[#171914] flex items-center justify-center mx-auto mb-3 border border-[#C7F36B] shadow-xs">
-          <Bike className="w-6 h-6 stroke-[2.5]" />
+        <div className="w-14 h-14 rounded-2xl bg-white border border-[#E5E6DE] flex items-center justify-center mx-auto mb-3 p-1 shadow-sm overflow-hidden">
+          <img
+            src="/logo.webp"
+            alt="THE ANAND CYCLING CLUB Logo"
+            className="w-full h-full object-contain"
+          />
         </div>
         <h1 className="text-3xl font-black uppercase tracking-tight text-[#171914] font-sans">
           Rider Sign In

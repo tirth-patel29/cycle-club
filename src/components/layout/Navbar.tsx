@@ -44,8 +44,12 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-[#C7F36B] text-[#171914] flex items-center justify-center font-bold shadow-[0_2px_10px_rgba(199,243,107,0.45)] group-hover:scale-105 transition-transform">
-              <Bike className="w-5 h-5 stroke-[2.5]" />
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white border border-[#E5E6DE] flex items-center justify-center p-0.5 shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
+              <img
+                src="/logo.webp"
+                alt="THE ANAND CYCLING CLUB Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-base sm:text-lg text-[#171914] tracking-tight uppercase leading-none font-sans">

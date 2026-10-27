@@ -35,8 +35,12 @@ export function AdminHeader() {
         <div className="flex items-center justify-between h-16">
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#C7F36B] text-[#171914] flex items-center justify-center font-bold shadow-xs">
-              <Bike className="w-5 h-5 stroke-[2.5]" />
+            <div className="w-8 h-8 rounded-lg bg-white border border-[#E5E6DE] flex items-center justify-center p-0.5 shadow-xs overflow-hidden">
+              <img
+                src="/logo.webp"
+                alt="THE ANAND CYCLING CLUB Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <span className="font-extrabold text-base tracking-tight text-[#171914]">

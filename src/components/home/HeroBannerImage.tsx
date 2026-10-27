@@ -8,21 +8,20 @@ interface Props {
 }
 
 export function HeroBannerImage({ alt }: Props) {
-  const [imgSrc, setImgSrc] = useState<string>('/banner.jpg');
+  const [imgSrc, setImgSrc] = useState<string>('/main.jpeg');
 
   return (
     <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-[#E5E6DE] shadow-xl bg-[#171914]">
-      <div className="relative w-full h-[280px] sm:h-[420px] lg:h-[500px]">
+      <div className="relative w-full h-[320px] sm:h-[460px] lg:h-[540px]">
         <img
           src={imgSrc}
           onError={() => {
-            // Fallback to high-resolution peloton asset if public/banner.jpg is pending upload
-            if (imgSrc !== '/bg.avif' && !imgSrc.includes('unsplash')) {
-              setImgSrc('https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=2000&q=80');
+            if (imgSrc !== '/banner.jpg') {
+              setImgSrc('/banner.jpg');
             }
           }}
           alt={alt}
-          className="w-full h-full object-cover object-center transition-opacity duration-300"
+          className="w-full h-full object-cover object-[center_30%] transition-opacity duration-300"
           loading="eager"
         />
         {/* Editorial Contrast Overlay */}
