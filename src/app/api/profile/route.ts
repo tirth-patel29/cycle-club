@@ -30,13 +30,13 @@ export async function GET() {
   }
 
   if (!profile) {
-    profile = (await db.getRiderProfile(user.id)) || null;
+    profile = (await db.getRiderProfile(user.id)) || (user.email ? await db.getRiderProfile(user.email) : null);
   }
 
   // Also fetch user's event registrations
   let registrations: any[] = [];
   try {
-    const fetched = await db.getRegistrations({ riderId: user.id });
+    const fetched = await db.getRegistrations({ riderId: profile?.id || user.id });
     if (Array.isArray(fetched)) {
       registrations = fetched;
     }
@@ -47,7 +47,7 @@ export async function GET() {
 
   return NextResponse.json({
     user: {
-      id: user.id,
+      id: profile?.id || user.id,
       email: user.email,
     },
     profile,
@@ -85,30 +85,16 @@ export async function PUT(request: NextRequest) {
     bicycle_brand: parsed.data.bicycle_brand || undefined,
     bicycle_model: parsed.data.bicycle_model || undefined,
     tshirt_size: parsed.data.tshirt_size || 'None',
+    email: user.email,
+    auth_user_id: user.id
   };
 
   let savedProfile: RiderProfile;
 
   try {
-    const supabase = await createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from('rider_profiles')
-      .upsert({
-        id: user.id,
-        ...payload,
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.warn('Supabase profile upsert error, falling back to local store:', error.message);
-      savedProfile = await db.upsertRiderProfile(user.id, payload);
-    } else {
-      savedProfile = data as RiderProfile;
-      await db.upsertRiderProfile(user.id, payload);
-    }
-  } catch {
+    savedProfile = await db.upsertRiderProfile(user.id, payload);
+  } catch (err) {
+    console.warn('Profile upsert fallback:', err);
     savedProfile = await db.upsertRiderProfile(user.id, payload);
   }
 

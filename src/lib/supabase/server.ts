@@ -28,10 +28,14 @@ export async function createServerSupabaseClient() {
   });
 }
 
+import { getNeonAuthServer, syncGoogleUserToRiderProfile } from '@/lib/auth/neon';
+
 /**
- * Authoritatively retrieves current authenticated user from session cookie or Supabase session
+ * Authoritatively retrieves current authenticated user from session cookie, Neon Auth session, or Supabase session
  */
 export async function getAuthUser() {
+  const cookieStore = await cookies();
+
   // 1. Check local session cookie (works directly with Neon DB without external Supabase project)
   try {
     const session = await getSession();
@@ -46,10 +50,86 @@ export async function getAuthUser() {
       } as any;
     }
   } catch {
+    // Continue
+  }
+
+  // 2. Check Neon Auth session cookie (Google login / Better-Auth)
+  try {
+    const neonToken =
+      cookieStore.get('__Secure-neon-auth.session_token')?.value ||
+      cookieStore.get('neon-auth.session_token')?.value ||
+      cookieStore.get('better-auth.session_token')?.value ||
+      cookieStore.get('__Secure-better-auth.session_token')?.value;
+
+    if (neonToken) {
+      const neonUser = await db.getNeonAuthUser(neonToken);
+      if (neonUser?.email) {
+        // Ensure profile exists in rider_profiles
+        let profile = await db.getRiderProfile(neonUser.id);
+        if (!profile && neonUser.email) {
+          profile = await db.getRiderProfile(neonUser.email);
+        }
+        if (!profile) {
+          profile = await syncGoogleUserToRiderProfile(neonUser);
+        }
+
+        const resolvedId = profile ? profile.id : ensureUuid(neonUser.id);
+        const fullName = profile?.full_name || neonUser.name || neonUser.email.split('@')[0];
+
+        return {
+          id: resolvedId,
+          email: neonUser.email,
+          user_metadata: {
+            full_name: fullName,
+            role: 'rider',
+            image: neonUser.image
+          }
+        } as any;
+      }
+    }
+  } catch (err) {
+    console.warn('Neon auth getAuthUser check error:', err);
+  }
+
+  // 3. Check official Neon Auth getSession
+  try {
+    const neonAuth = getNeonAuthServer();
+    if (neonAuth) {
+      const sessionRes = await neonAuth.getSession();
+      const u = sessionRes?.data?.user;
+      if (u?.email) {
+        let profile = await db.getRiderProfile(u.id);
+        if (!profile && u.email) {
+          profile = await db.getRiderProfile(u.email);
+        }
+        if (!profile) {
+          profile = await syncGoogleUserToRiderProfile({
+            id: u.id,
+            email: u.email,
+            name: u.name || undefined,
+            picture: (u as any).image || undefined
+          });
+        }
+
+        const resolvedId = profile ? profile.id : ensureUuid(u.id);
+        const fullName = profile?.full_name || u.name || u.email.split('@')[0];
+
+        return {
+          id: resolvedId,
+          email: u.email,
+          user_metadata: {
+            full_name: fullName,
+            role: 'rider',
+            image: (u as any).image
+          }
+        } as any;
+      }
+    }
+  } catch {
     // Continue to Supabase check
   }
 
-  // 2. Check Supabase session if configured with real project
+  // 4. Check Supabase session if configured with real project
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
     try {
       const supabase = await createServerSupabaseClient();
@@ -72,7 +152,10 @@ export async function getAuthRiderProfile(): Promise<RiderProfile | null> {
 
   // Retrieve from Neon DB / database service
   try {
-    const profile = await db.getRiderProfile(user.id);
+    let profile = await db.getRiderProfile(user.id);
+    if (!profile && user.email) {
+      profile = await db.getRiderProfile(user.email);
+    }
     if (profile) return profile;
   } catch {
     // Fall back
@@ -115,8 +198,13 @@ export async function isAdminUser(): Promise<boolean> {
     // Fall back
   }
 
-  // Explicit authorized admin accounts only
-  if (user.email === 'admin@anandcyclingclub.in' || user.email === 'tirthhpatel29@gmail.com') {
+  // Check configured admin emails from environment or fallback list
+  const adminEmails = (process.env.ADMIN_EMAILS || 'admin@anandcyclingclub.in,tirthhpatel29@gmail.com')
+    .toLowerCase()
+    .split(',')
+    .map(e => e.trim());
+
+  if (user.email && adminEmails.includes(user.email.toLowerCase())) {
     return true;
   }
 

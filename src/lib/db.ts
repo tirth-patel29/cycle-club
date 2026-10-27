@@ -266,29 +266,20 @@ class DatabaseService {
   async getNeonAuthUser(sessionToken?: string | null): Promise<{ id: string; email: string; name?: string; image?: string } | null> {
     const pool = getPool();
     if (!pool) return null;
-    try {
-      if (sessionToken) {
-        const res = await pool.query(
-          `SELECT u.id, u.email, u.name, u.image 
-           FROM neon_auth.session s 
-           JOIN neon_auth.user u ON s."userId" = u.id 
-           WHERE s.token = $1 AND s."expiresAt" > NOW() 
-           LIMIT 1`,
-          [sessionToken]
-        );
-        if (res.rows.length > 0) {
-          return res.rows[0];
-        }
-      }
+    if (!sessionToken || typeof sessionToken !== 'string') return null;
 
-      // Fallback: check most recently created user in neon_auth.user within last 5 minutes
-      const recent = await pool.query(
-        `SELECT id, email, name, image FROM neon_auth.user 
-         WHERE "createdAt" > NOW() - INTERVAL '5 minutes' 
-         ORDER BY "createdAt" DESC LIMIT 1`
+    try {
+      const cleanToken = sessionToken.split('.')[0].trim();
+      const res = await pool.query(
+        `SELECT u.id, u.email, u.name, u.image 
+         FROM neon_auth.session s 
+         JOIN neon_auth.user u ON s."userId" = u.id 
+         WHERE (s.token = $1 OR s.token = $2) AND s."expiresAt" > NOW() 
+         LIMIT 1`,
+        [sessionToken.trim(), cleanToken]
       );
-      if (recent.rows.length > 0) {
-        return recent.rows[0];
+      if (res.rows.length > 0) {
+        return res.rows[0];
       }
     } catch (err) {
       console.warn('getNeonAuthUser lookup warning:', err);

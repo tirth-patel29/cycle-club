@@ -127,7 +127,20 @@ export async function setSessionCookie(session: UserSession) {
 export async function clearSessionCookie() {
   try {
     const cookieStore = await cookies();
-    cookieStore.delete(SESSION_COOKIE_NAME);
+    const cookiesToClear = [
+      SESSION_COOKIE_NAME,
+      '__Secure-neon-auth.session_token',
+      'neon-auth.session_token',
+      '__Secure-neon-auth.session_data',
+      'neon-auth.session_data',
+      '__Secure-neon-auth.session_challenge',
+      'neon-auth.session_challenge',
+      'better-auth.session_token',
+      '__Secure-better-auth.session_token'
+    ];
+    for (const name of cookiesToClear) {
+      cookieStore.delete(name);
+    }
   } catch {
     // Non-request context
   }

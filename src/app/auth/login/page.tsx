@@ -133,36 +133,6 @@ function LoginForm() {
     }
   };
 
-  // Quick Demo Login
-  const handleQuickDemo = async (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('AnandRider2026!');
-    setLoading(true);
-    setErrorMessage(null);
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: demoEmail,
-          password: 'AnandRider2026!'
-        })
-      });
-
-      if (response.ok) {
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('acc_auth_changed'));
-        }
-        router.push(returnUrl);
-        router.refresh();
-      } else {
-        setLoading(false);
-      }
-    } catch {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="max-w-md w-full mx-auto px-4 py-24 sm:py-32 space-y-8">
@@ -297,28 +267,6 @@ function LoginForm() {
           </button>
         </form>
 
-        {/* Quick Demo Pre-fills */}
-        <div className="pt-4 border-t border-[#E5E6DE] space-y-2.5">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[#62645C] block font-bold">
-            QUICK DEMO ACCOUNTS:
-          </span>
-          <div className="flex flex-wrap gap-2 text-xs font-mono">
-            <button
-              type="button"
-              onClick={() => handleQuickDemo('rajesh.patel@example.in')}
-              className="px-3 py-1.5 rounded-lg bg-[#EAEDE2] border border-[#E5E6DE] hover:border-[#8cc427] text-[#171914] transition-colors cursor-pointer font-bold"
-            >
-              Rajesh (Hybrid)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo('ananya.sharma@example.in')}
-              className="px-3 py-1.5 rounded-lg bg-[#EAEDE2] border border-[#E5E6DE] hover:border-[#8cc427] text-[#171914] transition-colors cursor-pointer font-bold"
-            >
-              Ananya (Road)
-            </button>
-          </div>
-        </div>
 
         <div className="pt-2 text-center text-xs">
           <span className="text-[#62645C]">New to THE ANAND CYCLING CLUB? </span>

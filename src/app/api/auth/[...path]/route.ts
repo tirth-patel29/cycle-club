@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNeonAuthServer, syncGoogleUserToRiderProfile, NEON_AUTH_DEFAULT_BASE_URL } from '@/lib/auth/neon';
+import { db } from '@/lib/db';
+import { getSession, ensureUuid } from '@/lib/auth';
 
 function sanitizeReturnUrl(urlStr: string | null): string {
   if (!urlStr) return '/profile';
@@ -40,10 +42,62 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (neonAuth) {
     try {
       const handler = neonAuth.handler();
-      return await handler.GET(request, { params: Promise.resolve({ path }) });
+      const res = await handler.GET(request, { params: Promise.resolve({ path }) });
+      if (res && res.status !== 404) {
+        return res;
+      }
     } catch (err) {
       console.warn('Neon Auth GET handler fallback:', err);
     }
+  }
+
+  // 3. Fallback for /api/auth/get-session or /api/auth/session
+  if (fullPath === 'get-session' || fullPath === 'session') {
+    try {
+      const session = await getSession();
+      if (session) {
+        return NextResponse.json({
+          session: {
+            id: ensureUuid(session.userId),
+            userId: ensureUuid(session.userId),
+            expiresAt: new Date(Date.now() + 7 * 86400000).toISOString()
+          },
+          user: {
+            id: ensureUuid(session.userId),
+            email: session.email,
+            name: session.fullName
+          }
+        });
+      }
+
+      const neonToken = request.cookies.get('__Secure-neon-auth.session_token')?.value ||
+                         request.cookies.get('neon-auth.session_token')?.value ||
+                         request.cookies.get('better-auth.session_token')?.value ||
+                         request.cookies.get('__Secure-better-auth.session_token')?.value;
+
+      if (neonToken) {
+        const dbUser = await db.getNeonAuthUser(neonToken);
+        if (dbUser?.email) {
+          return NextResponse.json({
+            session: {
+              id: dbUser.id,
+              userId: dbUser.id,
+              expiresAt: new Date(Date.now() + 7 * 86400000).toISOString()
+            },
+            user: {
+              id: dbUser.id,
+              email: dbUser.email,
+              name: dbUser.name,
+              image: dbUser.image
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('get-session fallback error:', err);
+    }
+
+    return NextResponse.json(null);
   }
 
   return NextResponse.json({ error: `Auth route /api/auth/${fullPath} not found` }, { status: 404 });
@@ -73,6 +127,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Origin': origin,
           ...(request.headers.get('cookie') ? { 'Cookie': request.headers.get('cookie')! } : {})
         },
         body: JSON.stringify({
@@ -84,16 +139,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const data = await neonRes.json();
       const response = NextResponse.json(data, { status: neonRes.status });
 
-      // Forward any cookies set by Neon Auth
-      const setCookieHeaders = (neonRes.headers as any).getSetCookie ? (neonRes.headers as any).getSetCookie() : [];
-      if (setCookieHeaders && setCookieHeaders.length > 0) {
-        for (const cookieStr of setCookieHeaders) {
-          response.headers.append('Set-Cookie', cookieStr);
-        }
-      } else {
-        const rawSetCookie = neonRes.headers.get('set-cookie');
-        if (rawSetCookie) {
-          response.headers.set('Set-Cookie', rawSetCookie);
+      // Forward any cookies set by Neon Auth, standardizing SameSite and compatibility
+      const setCookieHeaders = (neonRes.headers as any).getSetCookie
+        ? (neonRes.headers as any).getSetCookie()
+        : [neonRes.headers.get('set-cookie')].filter(Boolean);
+
+      for (const cookieStr of setCookieHeaders) {
+        if (!cookieStr) continue;
+        const sanitized = cookieStr
+          .replace(/SameSite=None/gi, 'SameSite=Lax')
+          .replace(/;\s*Partitioned/gi, '');
+
+        response.headers.append('Set-Cookie', sanitized);
+
+        // If on non-HTTPS, also emit non-Secure prefixed cookie
+        if (sanitized.includes('__Secure-neon-auth.') && !origin.startsWith('https://')) {
+          const nonSecure = sanitized.replace('__Secure-neon-auth.', 'neon-auth.').replace(/;\s*Secure/gi, '');
+          response.headers.append('Set-Cookie', nonSecure);
         }
       }
 
