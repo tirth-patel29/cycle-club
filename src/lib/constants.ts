@@ -1,6 +1,6 @@
 import { CyclingEvent } from '@/types';
 
-export const CLUB_NAME = 'Anand Cycling Club';
+export const CLUB_NAME = 'THE ANAND CYCLING CLUB';
 export const CLUB_TAGLINE = 'Ride with Passion • Explore with Pride';
 export const CLUB_LOCATION = 'Anand, Gujarat, India';
 export const CLUB_CONTACT_PHONE = '+91 98250 12345';

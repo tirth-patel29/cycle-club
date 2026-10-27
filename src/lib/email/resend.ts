@@ -17,7 +17,7 @@ export function getResendClient(): Resend | null {
 
 export function getSenderEmail(): string {
   // Use verified sender configured in environment or default to verified domain sender
-  return process.env.RESEND_FROM_EMAIL?.trim() || 'Anand Cycling Club <rides@tirthpatel.tech>';
+  return process.env.RESEND_FROM_EMAIL?.trim() || 'THE ANAND CYCLING CLUB <rides@tirthpatel.tech>';
 }
 
 export interface SendEmailOptions {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CyclingEvent, RiderProfile, BicycleType } from '@/types';
 import { formatINR } from '@/lib/constants';
@@ -167,7 +168,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
       {initialProfile && (
         <div className="p-4 rounded-xl bg-[#EAEDE2] border border-[#E5E6DE] text-[#3F6212] text-xs flex items-center gap-2.5 font-medium">
           <Sparkles className="w-4 h-4 text-[#3F6212] shrink-0" />
-          <span>Prefilled from your saved Anand Cycling Club profile. Any adjustments here will apply to this ride.</span>
+          <span>Prefilled from your saved THE ANAND CYCLING CLUB profile. Any adjustments here will apply to this ride.</span>
         </div>
       )}
 
@@ -349,7 +350,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
               className="mt-0.5 w-4 h-4 rounded border-[#E5E6DE] text-lime-600 focus:ring-lime-500 shrink-0"
             />
             <span className="text-xs text-[#171914] leading-relaxed font-medium">
-              I agree to the Anand Cycling Club safety terms. I confirm I will wear a certified cycling helmet throughout the ride, obey route marshals, and ride within my physical limits.
+              I agree to <Link href="/terms" target="_blank" className="underline font-bold text-[#3F6212] hover:text-[#171914]">THE ANAND CYCLING CLUB safety terms</Link>. I confirm I will wear a certified cycling helmet throughout the ride, obey route marshals, and ride within my physical limits.
             </span>
           </label>
         </div>

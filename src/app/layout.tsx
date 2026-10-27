@@ -21,8 +21,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: `${CLUB_NAME} • Official Events & Races`,
   description: `${CLUB_NAME} - ${CLUB_TAGLINE}. Endurance brevets, sunrise pacelines, and community cycling across Anand & Charotar, Gujarat.`,
-  keywords: ['Anand Cycling Club', 'Cycling Gujarat', 'Amul cycling', 'Brevets India', 'Charotar cycling', 'Weekend rides Anand'],
-  authors: [{ name: 'Anand Cycling Club' }],
+  keywords: ['THE ANAND CYCLING CLUB', 'Anand Cycling Club', 'Cycling Gujarat', 'Amul cycling', 'Brevets India', 'Charotar cycling', 'Weekend rides Anand'],
+  authors: [{ name: 'THE ANAND CYCLING CLUB' }],
 };
 
 export default function RootLayout({

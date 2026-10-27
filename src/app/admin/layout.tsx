@@ -2,7 +2,7 @@ import React from 'react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 
 export const metadata = {
-  title: 'Admin Console • Anand Cycling Club',
+  title: 'Admin Console • THE ANAND CYCLING CLUB',
   description: 'Manage events, registrations, payment records, and participant exports.'
 };
 

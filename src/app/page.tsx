@@ -1,6 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { CLUB_NAME } from '@/lib/constants';
+import { HeroBannerImage } from '@/components/home/HeroBannerImage';
+import { GallerySection } from '@/components/home/GallerySection';
 import {
   ChevronRight,
   ShieldCheck,
@@ -58,34 +60,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Hero Cycling Photography Showcase */}
-          <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-[#E5E6DE] shadow-xl bg-[#171914]">
-            <div className="relative w-full h-[260px] sm:h-[420px] lg:h-[480px]">
-              <img
-                src="https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=2000&q=80"
-                alt="Anand Cycling Club peloton riding at dawn"
-                className="w-full h-full object-cover object-center"
-                loading="eager"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#171914]/90 via-[#171914]/20 to-transparent" />
-
-              {/* Verified Safety Overlay Pills */}
-              <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
-                <div className="photo-overlay-pill px-3.5 py-1.5 rounded-lg flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#C7F36B]" />
-                  <span>Helmets Compulsory</span>
-                </div>
-                <div className="photo-overlay-pill px-3.5 py-1.5 rounded-lg flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#C7F36B]" />
-                  <span>Backup SAG Support Van</span>
-                </div>
-                <div className="photo-overlay-pill px-3.5 py-1.5 rounded-lg flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#C7F36B]" />
-                  <span>Road • Hybrid • MTB • City • Gravel</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Hero Cycling Photography Showcase with /banner.jpg */}
+          <HeroBannerImage alt={`${CLUB_NAME} peloton riding at dawn across Charotar`} />
         </div>
       </section>
 
@@ -102,7 +78,7 @@ export default function HomePage() {
               DISCIPLINE. CADENCE. COMMUNITY.
             </h2>
             <p className="text-sm sm:text-base text-[#62645C] leading-relaxed font-medium">
-              Anand Cycling Club was born out of the milk capital of India with a single principle: road safety, athletic progression, and zero barriers to entry. Whether you ride a carbon aero racer, a gravel grinder, or a trusty city hybrid, our pacelines roll together.
+              {CLUB_NAME} was born out of the milk capital of India with a single principle: road safety, athletic progression, and zero barriers to entry. Whether you ride a carbon aero racer, a gravel grinder, or a trusty city hybrid, our pacelines roll together.
             </p>
           </div>
 
@@ -204,7 +180,12 @@ export default function HomePage() {
       </section>
 
       {/* ========================================================
-          SECTION 4: INVITATION TO RIDE BANNER (Muted Sage & Lime)
+          SECTION 4: REAL GALLERY SECTION (Phase 8)
+          ======================================================== */}
+      <GallerySection />
+
+      {/* ========================================================
+          SECTION 5: INVITATION TO RIDE BANNER (Muted Sage & Lime)
           ======================================================== */}
       <section className="w-full bg-[#FFFFFF] border-t border-[#E5E6DE] py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

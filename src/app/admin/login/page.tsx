@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { Shield, Lock, Mail, ArrowRight, AlertCircle, KeyRound } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -43,11 +43,6 @@ export default function AdminLoginPage() {
     }
   }
 
-  function fillDemoAdmin() {
-    setEmail('tirthhpatel29@gmail.com');
-    setPassword('tirth#2957');
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#F7F7F2]">
       <div className="w-full max-w-md p-8 rounded-3xl surface-card border border-[#E5E6DE] shadow-xl">
@@ -85,7 +80,7 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tirthhpatel29@gmail.com"
+                placeholder="admin@anandcyclingclub.in"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-[#171914] focus:outline-hidden focus:border-[#171914] focus:bg-white text-sm transition-all"
               />
             </div>
@@ -126,21 +121,6 @@ export default function AdminLoginPage() {
             )}
           </button>
         </form>
-
-        {/* Demo Admin Quick Access */}
-        <div className="mt-6 pt-5 border-t border-[#E5E6DE] text-center">
-          <p className="text-[11px] text-[#62645C] mb-2 font-mono">
-            Development / Organizer Quick-fill:
-          </p>
-          <button
-            type="button"
-            onClick={fillDemoAdmin}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EAEDE2] border border-[#E5E6DE] text-xs font-mono text-[#171914] hover:bg-[#d8ddce] transition-colors cursor-pointer"
-          >
-            <KeyRound className="w-3.5 h-3.5 text-[#171914]" />
-            Fill Admin Credentials
-          </button>
-        </div>
       </div>
     </div>
   );

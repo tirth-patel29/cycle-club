@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNeonAuthServer, syncGoogleUserToRiderProfile, NEON_AUTH_DEFAULT_BASE_URL } from '@/lib/auth/neon';
 
+function sanitizeReturnUrl(urlStr: string | null): string {
+  if (!urlStr) return '/profile';
+  if (urlStr.startsWith('/') && !urlStr.startsWith('//') && !urlStr.startsWith('/\\')) {
+    return urlStr;
+  }
+  return '/profile';
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const resolvedParams = await params;
   const path = resolvedParams.path || [];
@@ -9,7 +17,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // 1. Direct handling for Google OAuth Callback
   if (fullPath === 'callback/google' || fullPath === 'callback') {
     const url = new URL(request.url);
-    const returnUrl = url.searchParams.get('returnUrl') || url.searchParams.get('state') || '/profile';
+    const rawReturnUrl = url.searchParams.get('returnUrl') || url.searchParams.get('state');
+    const returnUrl = sanitizeReturnUrl(rawReturnUrl);
     const email = url.searchParams.get('email');
     const name = url.searchParams.get('name');
 

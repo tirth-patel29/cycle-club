@@ -1216,6 +1216,8 @@ class DatabaseService {
       payment.razorpay_order_id = orderId;
       payment.razorpay_signature = signature;
       payment.updated_at = now;
+      const pIdx = this.payments.findIndex((p) => p.id === payment!.id);
+      if (pIdx >= 0) this.payments[pIdx] = payment;
     } else {
       payment = {
         id: `pay-${Date.now()}`,
@@ -1272,9 +1274,18 @@ class DatabaseService {
              AND status != 'succeeded'`,
           [reason || 'Payment failed', paymentId || null, orderId]
         );
+        return;
       } catch (err) {
         console.error('Error recording Razorpay failure in DB:', err);
       }
+    }
+
+    const pay = this.payments.find(p => p.razorpay_order_id === orderId || p.provider_payment_reference === orderId);
+    if (pay && pay.status !== 'succeeded') {
+      pay.status = 'failed';
+      pay.failure_reason = reason || 'Payment failed';
+      if (paymentId) pay.razorpay_payment_id = paymentId;
+      pay.updated_at = new Date().toISOString();
     }
   }
 

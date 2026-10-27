@@ -317,7 +317,7 @@ function LoginForm() {
         </div>
 
         <div className="pt-2 text-center text-xs">
-          <span className="text-[#62645C]">New to Anand Cycling Club? </span>
+          <span className="text-[#62645C]">New to THE ANAND CYCLING CLUB? </span>
           <Link
             href={`/auth/signup?returnUrl=${encodeURIComponent(returnUrl)}`}
             className="text-[#3F6212] font-black uppercase hover:underline"

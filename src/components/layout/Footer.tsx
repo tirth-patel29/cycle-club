@@ -37,6 +37,9 @@ export function Footer() {
             <Link href="/profile" className="text-[#62645C] hover:text-[#171914] transition-colors">
               Rider Profile
             </Link>
+            <Link href="/contact" className="text-[#62645C] hover:text-[#171914] transition-colors">
+              Contact
+            </Link>
           </div>
 
           {/* Contact Details */}
@@ -45,6 +48,30 @@ export function Footer() {
               Rider Helpline: <strong className="text-[#171914] font-bold">{CLUB_CONTACT_PHONE}</strong>
             </p>
             <p className="font-medium">{CLUB_CONTACT_EMAIL}</p>
+          </div>
+        </div>
+
+        {/* Legal & Policy Links */}
+        <div className="flex flex-wrap items-center justify-between gap-4 text-[11px] font-mono text-[#62645C] pt-2 border-b border-[#D3D5CA] pb-6">
+          <div className="flex flex-wrap items-center gap-5">
+            <Link href="/terms" className="hover:text-[#171914] transition-colors underline-offset-4 hover:underline">
+              Terms & Conditions
+            </Link>
+            <span className="text-[#A2A49B]">•</span>
+            <Link href="/privacy" className="hover:text-[#171914] transition-colors underline-offset-4 hover:underline">
+              Privacy Policy
+            </Link>
+            <span className="text-[#A2A49B]">•</span>
+            <Link href="/refund-policy" className="hover:text-[#171914] transition-colors underline-offset-4 hover:underline">
+              Cancellation & Refund Policy
+            </Link>
+            <span className="text-[#A2A49B]">•</span>
+            <Link href="/contact" className="hover:text-[#171914] transition-colors underline-offset-4 hover:underline">
+              Support & SAG Helpline
+            </Link>
+          </div>
+          <div className="text-[#8B8D83]">
+            Payments Powered by Razorpay (RBI Compliant)
           </div>
         </div>
 

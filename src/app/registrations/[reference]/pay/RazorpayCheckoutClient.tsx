@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Registration, CyclingEvent } from '@/types';
-import { formatINR } from '@/lib/constants';
+import { formatINR, CLUB_NAME } from '@/lib/constants';
 import { ShieldCheck, CheckCircle2, AlertTriangle, Loader2, CreditCard, Smartphone, Building2, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -138,7 +138,7 @@ export function RazorpayCheckoutClient({ registration, event }: Props) {
         key: orderData.key_id,
         amount: orderData.amount_paise,
         currency: orderData.currency || 'INR',
-        name: 'Anand Cycling Club',
+        name: CLUB_NAME,
         description: `Entry Pass: ${event.title}`,
         order_id: orderData.order_id,
         prefill: {

@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Account created successfully! Welcome to Anand Cycling Club, ${full_name}.`,
+      message: `Account created successfully! Welcome to THE ANAND CYCLING CLUB, ${full_name}.`,
       user: {
         id: userId,
         email,

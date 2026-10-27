@@ -170,7 +170,7 @@ export default function ProfilePage() {
               {formData.full_name || 'Rider Profile'}
             </h1>
             <p className="text-xs sm:text-sm text-[#62645C] font-mono font-medium">
-              {userEmail} • Anand Cycling Club
+              {userEmail} • THE ANAND CYCLING CLUB
             </p>
           </div>
 
@@ -416,7 +416,7 @@ export default function ProfilePage() {
                 <span>Your Event Passes ({Array.isArray(registrations) ? registrations.length : 0})</span>
               </h3>
               <p className="text-xs text-[#62645C] font-medium">
-                Live digital bib confirmations and official passes for Anand Cycling Club rides.
+                Live digital bib confirmations and official passes for THE ANAND CYCLING CLUB rides.
               </p>
 
               {!Array.isArray(registrations) || registrations.length === 0 ? (

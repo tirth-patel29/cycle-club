@@ -244,7 +244,7 @@ function SignupForm() {
 
             <div className="p-4 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-xs text-left font-mono space-y-1.5">
               <p className="text-[#62645C]">Rider ID: <span className="text-[#171914] font-bold">{registeredEmail}</span></p>
-              <p className="text-[#62645C]">Club: <span className="text-[#171914] font-bold">Anand Cycling Club</span></p>
+              <p className="text-[#62645C]">Club: <span className="text-[#171914] font-bold">THE ANAND CYCLING CLUB</span></p>
               <p className="text-[#62645C]">Bicycle: <span className="text-[#3F6212] font-bold">{bicycleType}</span></p>
             </div>
 
