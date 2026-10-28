@@ -5,14 +5,8 @@ import { HeroBannerImage } from '@/components/home/HeroBannerImage';
 import { GallerySection } from '@/components/home/GallerySection';
 import {
   ChevronRight,
-  ShieldCheck,
-  Bike,
   Compass,
-  Zap,
-  Radio,
-  CheckCircle2,
-  ArrowRight,
-  Users2
+  ArrowRight
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -83,9 +77,9 @@ export default function HomePage() {
           </div>
 
           {/* Metric Tiles */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
-              <p className="text-3xl sm:text-4xl font-black text-[#171914] font-mono">1,250+</p>
+              <p className="text-3xl sm:text-4xl font-black text-[#171914] font-mono">350+</p>
               <p className="text-xs text-[#62645C] uppercase tracking-wider font-bold mt-1">Active Riders</p>
             </div>
             <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
@@ -95,85 +89,6 @@ export default function HomePage() {
             <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
               <p className="text-3xl sm:text-4xl font-black text-[#171914] font-mono">100%</p>
               <p className="text-xs text-[#62645C] uppercase tracking-wider font-bold mt-1">Zero-Drop Guarantee</p>
-            </div>
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
-              <p className="text-3xl sm:text-4xl font-black text-[#3F6212] font-mono">5</p>
-              <p className="text-xs text-[#62645C] uppercase tracking-wider font-bold mt-1">Bicycle Classes</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================
-          SECTION 3: THREE PILLARS (Warm Ivory #F7F7F2 + White Cards)
-          ======================================================== */}
-      <section className="w-full bg-[#F7F7F2] py-16 sm:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#3F6212]">
-              STANDARDS OF THE PELOTON
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-black uppercase text-[#171914] tracking-tight">
-              ENGINEERED FOR SAFE ENDURANCE
-            </h2>
-            <p className="text-xs sm:text-sm text-[#62645C] font-medium">
-              Every stage organized under strict safety protocols, verified timing, and marshaled escort.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {/* Pillar 1 */}
-            <div className="surface-card p-6 sm:p-8 rounded-2xl flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-xl bg-[#C7F36B]/30 text-[#3F6212] flex items-center justify-center border border-[#C7F36B]/60 shadow-xs">
-                  <Radio className="w-6 h-6 stroke-[2.2]" />
-                </div>
-                <h3 className="text-lg font-black uppercase text-[#171914] tracking-wide">
-                  TELEMETRY & RFID TIMING
-                </h3>
-                <p className="text-xs sm:text-sm text-[#62645C] leading-relaxed">
-                  Live chip-timed checkpoints on all major stages. Instant digital bib allocation, split times, and verified digital finisher certificates.
-                </p>
-              </div>
-              <div className="pt-6 mt-6 border-t border-[#E5E6DE] text-[11px] font-mono font-bold text-[#8B8D83]">
-                PILLAR 01 // PRECISION
-              </div>
-            </div>
-
-            {/* Pillar 2 */}
-            <div className="surface-card p-6 sm:p-8 rounded-2xl flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-xl bg-[#C7F36B]/30 text-[#3F6212] flex items-center justify-center border border-[#C7F36B]/60 shadow-xs">
-                  <ShieldCheck className="w-6 h-6 stroke-[2.2]" />
-                </div>
-                <h3 className="text-lg font-black uppercase text-[#171914] tracking-wide">
-                  ZERO-DROP ESCORT
-                </h3>
-                <p className="text-xs sm:text-sm text-[#62645C] leading-relaxed">
-                  No rider gets left behind on Gujarat highways. Every ride features trained ride captains, sweep marshals, and a dedicated mechanical SAG van with spare tubes and hydration.
-                </p>
-              </div>
-              <div className="pt-6 mt-6 border-t border-[#E5E6DE] text-[11px] font-mono font-bold text-[#8B8D83]">
-                PILLAR 02 // SAFETY
-              </div>
-            </div>
-
-            {/* Pillar 3 */}
-            <div className="surface-card p-6 sm:p-8 rounded-2xl flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-xl bg-[#C7F36B]/30 text-[#3F6212] flex items-center justify-center border border-[#C7F36B]/60 shadow-xs">
-                  <Zap className="w-6 h-6 stroke-[2.2]" />
-                </div>
-                <h3 className="text-lg font-black uppercase text-[#171914] tracking-wide">
-                  PACELINE TRAINING
-                </h3>
-                <p className="text-xs sm:text-sm text-[#62645C] leading-relaxed">
-                  Learn group drafting techniques, rotating echelons, hand signals, and cadence discipline to preserve watts and conquer 100km+ routes with ease.
-                </p>
-              </div>
-              <div className="pt-6 mt-6 border-t border-[#E5E6DE] text-[11px] font-mono font-bold text-[#8B8D83]">
-                PILLAR 03 // VELOCITY
-              </div>
             </div>
           </div>
         </div>

@@ -90,8 +90,8 @@ export default function RefundPolicyPage() {
           </p>
           <div className="p-4 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE] text-xs font-mono text-[#171914] space-y-1">
             <p><strong>{CLUB_NAME} • Accounts & Refunds</strong></p>
-            <p>Email: {CLUB_CONTACT_EMAIL}</p>
-            <p>Helpline: {CLUB_CONTACT_PHONE}</p>
+            <p>Email: <a href={`mailto:${CLUB_CONTACT_EMAIL}`} className="underline hover:text-[#3F6212]">{CLUB_CONTACT_EMAIL}</a></p>
+            <p>Helpline: <a href={`tel:${CLUB_CONTACT_PHONE}`} className="underline hover:text-[#3F6212]">{CLUB_CONTACT_PHONE}</a></p>
             <p>Location: {CLUB_LOCATION}</p>
           </div>
         </section>

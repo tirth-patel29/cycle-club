@@ -35,9 +35,6 @@ export function Footer() {
             <Link href="/events" className="text-[#62645C] hover:text-[#171914] transition-colors">
               Rides & Events
             </Link>
-            <Link href="/registrations/lookup" className="text-[#3F6212] hover:text-[#171914] transition-colors">
-              Find My Pass
-            </Link>
             <Link href="/profile" className="text-[#62645C] hover:text-[#171914] transition-colors">
               Rider Profile
             </Link>
@@ -49,9 +46,16 @@ export function Footer() {
           {/* Contact Details */}
           <div className="text-xs text-[#62645C] space-y-1">
             <p className="font-medium">
-              Rider Helpline: <strong className="text-[#171914] font-bold">{CLUB_CONTACT_PHONE}</strong>
+              Rider Helpline:{' '}
+              <a href="tel:7043066800" className="hover:text-[#171914] transition-colors">
+                <strong className="text-[#171914] font-bold">{CLUB_CONTACT_PHONE}</strong>
+              </a>
             </p>
-            <p className="font-medium">{CLUB_CONTACT_EMAIL}</p>
+            <p className="font-medium">
+              <a href={`mailto:${CLUB_CONTACT_EMAIL}`} className="hover:text-[#171914] transition-colors hover:underline">
+                {CLUB_CONTACT_EMAIL}
+              </a>
+            </p>
           </div>
         </div>
 

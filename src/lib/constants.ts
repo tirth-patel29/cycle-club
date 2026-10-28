@@ -2,9 +2,9 @@ import { CyclingEvent } from '@/types';
 
 export const CLUB_NAME = 'THE ANAND CYCLING CLUB';
 export const CLUB_TAGLINE = 'Ride with Passion • Explore with Pride';
-export const CLUB_LOCATION = 'Anand, Gujarat, India';
-export const CLUB_CONTACT_PHONE = '+91 98250 12345';
-export const CLUB_CONTACT_EMAIL = 'support@anandcyclingclub.in';
+export const CLUB_LOCATION = 'Vallabh Vidyanagar, Anand, Gujarat, India';
+export const CLUB_CONTACT_PHONE = '7043066800';
+export const CLUB_CONTACT_EMAIL = 'theanandcyclingclub@gmail.com';
 
 export const INITIAL_EVENTS: CyclingEvent[] = [
   {

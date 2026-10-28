@@ -68,7 +68,7 @@ export async function sendEmail({
       subject,
       html,
       text,
-      replyTo: replyTo || process.env.RESEND_REPLY_TO || 'support@anandcyclingclub.in'
+      replyTo: replyTo || process.env.RESEND_REPLY_TO || 'theanandcyclingclub@gmail.com'
     });
 
     if (error) {

@@ -196,7 +196,10 @@ export default async function EventDetailPage({ params }: Props) {
               )}
 
               <p className="text-xs text-center text-[#62645C] pt-2 border-t border-[#E5E6DE] font-medium">
-                Helpline: <strong className="text-[#171914]">{CLUB_CONTACT_PHONE}</strong>
+                Helpline:{' '}
+                <a href={`tel:${CLUB_CONTACT_PHONE}`} className="text-[#171914] font-bold hover:underline">
+                  {CLUB_CONTACT_PHONE}
+                </a>
               </p>
             </div>
           </div>

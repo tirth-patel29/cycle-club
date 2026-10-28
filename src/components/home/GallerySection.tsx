@@ -46,7 +46,7 @@ const GALLERY_COLLECTION: GalleryItem[] = [
   },
   {
     id: 'gal-04',
-    title: 'National Day Cycling Rally',
+    title: 'Independence Day Cycling Rally',
     tag: 'Community Ride',
     location: 'Anand City Center',
     description: 'Celebrating national pride and fitness with junior riders, families, and seasoned endurance cyclists.',

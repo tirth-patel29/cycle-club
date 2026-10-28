@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
 
 interface Props {
   alt: string;
@@ -26,22 +25,6 @@ export function HeroBannerImage({ alt }: Props) {
         />
         {/* Editorial Contrast Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#171914]/90 via-[#171914]/25 to-transparent pointer-events-none" />
-
-        {/* Verified Safety Overlay Pills */}
-        <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2 text-xs font-bold pointer-events-none">
-          <div className="photo-overlay-pill px-3.5 py-1.5 rounded-lg flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#C7F36B]" />
-            <span>Helmets Compulsory</span>
-          </div>
-          <div className="photo-overlay-pill px-3.5 py-1.5 rounded-lg flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#C7F36B]" />
-            <span>Backup SAG Support Van</span>
-          </div>
-          <div className="photo-overlay-pill px-3.5 py-1.5 rounded-lg flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#C7F36B]" />
-            <span>Road • Hybrid • MTB • City • Gravel</span>
-          </div>
-        </div>
       </div>
     </div>
   );

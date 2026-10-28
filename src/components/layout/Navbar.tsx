@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Bike, Search, ChevronRight, User } from 'lucide-react';
+import { Menu, X, Bike, ChevronRight, User } from 'lucide-react';
 import { CLUB_NAME } from '@/lib/constants';
 
 export function Navbar() {
@@ -83,13 +83,6 @@ export function Navbar() {
             >
               Rides & Events
             </Link>
-            <Link
-              href="/registrations/lookup"
-              className="px-4 py-2.5 rounded-lg text-[#3F6212] hover:text-[#171914] hover:bg-[#C7F36B]/25 transition-colors flex items-center gap-1.5 font-extrabold"
-            >
-              <Search className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Find My Pass</span>
-            </Link>
           </nav>
 
           {/* Desktop Actions */}
@@ -122,13 +115,6 @@ export function Navbar() {
 
           {/* Mobile Navigation Controls */}
           <div className="flex md:hidden items-center gap-2">
-            <Link
-              href="/registrations/lookup"
-              className="p-2.5 rounded-xl text-[#3F6212] bg-[#EAEDE2]/80 hover:bg-[#C7F36B]/30"
-              aria-label="Find Rider Pass"
-            >
-              <Search className="w-5 h-5 stroke-[2.5]" />
-            </Link>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -181,14 +167,6 @@ export function Navbar() {
               <span>Rider Sign In</span>
             </Link>
           )}
-          <Link
-            href="/registrations/lookup"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2.5 py-3 px-3.5 rounded-xl text-[#3F6212] bg-[#C7F36B]/20 font-bold"
-          >
-            <Search className="w-4 h-4" />
-            <span>Find My Rider Pass</span>
-          </Link>
           <div className="pt-3">
             <Link
               href="/events"
