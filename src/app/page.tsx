@@ -76,21 +76,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Metric Tiles */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
-              <p className="text-3xl sm:text-4xl font-black text-[#171914] font-mono">350+</p>
-              <p className="text-xs text-[#62645C] uppercase tracking-wider font-bold mt-1">Active Riders</p>
-            </div>
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
-              <p className="text-3xl sm:text-4xl font-black text-[#3F6212] font-mono">48+</p>
-              <p className="text-xs text-[#62645C] uppercase tracking-wider font-bold mt-1">Organized Rides</p>
-            </div>
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
-              <p className="text-3xl sm:text-4xl font-black text-[#171914] font-mono">100%</p>
-              <p className="text-xs text-[#62645C] uppercase tracking-wider font-bold mt-1">Zero-Drop Guarantee</p>
-            </div>
-          </div>
+
         </div>
       </section>
 

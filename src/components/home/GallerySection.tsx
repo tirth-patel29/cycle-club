@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, MapPin, Sparkles, Trophy } from 'lucide-react';
+import { Camera, MapPin, Sparkles } from 'lucide-react';
 import { CLUB_NAME } from '@/lib/constants';
 
 interface GalleryItem {
@@ -85,10 +85,7 @@ export function GallerySection() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 text-xs font-mono text-[#62645C]">
-            <Trophy className="w-4 h-4 text-[#3F6212]" />
-            <span>Over 48+ Verified Club Rides Recorded</span>
-          </div>
+
         </div>
 
         {/* Gallery Grid */}
