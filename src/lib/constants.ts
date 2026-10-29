@@ -66,7 +66,7 @@ export const INITIAL_EVENTS: CyclingEvent[] = [
     published_at: '2026-10-16T00:00:00+05:30',
     created_at: '2026-10-16T00:00:00+05:30',
     updated_at: '2026-10-16T00:00:00+05:30',
-    pace_guide: '22 - 30 km/h (Endurance Peloton)',
+    pace_guide: '22 - 30 km/h (Endurance Pace)',
     reporting_time: '05:00 AM IST',
     flag_off_time: '05:30 AM IST',
     amenities: [

@@ -121,7 +121,7 @@ export default async function EventDetailPage({ params }: Props) {
                     <span>{event.pace_guide || '20 - 28 KM/H'}</span>
                   </p>
                   <p className="text-xs text-[#62645C] font-medium">
-                    Ride marshals guiding front and rear peloton
+                    Ride marshals guiding front and rear of the pack
                   </p>
                 </div>
               </div>

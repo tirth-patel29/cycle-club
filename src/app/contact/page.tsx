@@ -20,7 +20,7 @@ export default function ContactPage() {
           <span>Back to Home</span>
         </Link>
         <span className="text-xs font-bold uppercase tracking-widest text-[#3F6212] block mb-2">
-          REACH THE PELOTON
+          REACH THE ANAND CYCLING CLUB
         </span>
         <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-[#171914]">
           Contact & Support
@@ -111,14 +111,14 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Contact Card 4: Peloton Ride Schedule */}
+        {/* Contact Card 4: Club Ride Schedule */}
         <div className="surface-card p-6 sm:p-8 rounded-3xl border border-[#E5E6DE] space-y-4">
           <div className="w-12 h-12 rounded-xl bg-[#C7F36B]/30 text-[#3F6212] flex items-center justify-center border border-[#C7F36B]/60 shadow-xs">
             <Clock className="w-6 h-6 stroke-[2.2]" />
           </div>
           <div>
             <span className="text-[10px] uppercase tracking-wider font-mono text-[#62645C] font-bold block">
-              PELOTON RIDE SCHEDULE
+              REGULAR RIDE SCHEDULE
             </span>
             <h2 className="text-lg font-black text-[#171914] mt-1">Wednesdays & Sundays</h2>
             <p className="text-xs text-[#62645C] mt-1">

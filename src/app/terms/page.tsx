@@ -45,7 +45,7 @@ export default function TermsPage() {
             2. Mandatory Rider Safety Regulations
           </h2>
           <p>
-            Safety is non-negotiable in the peloton. Every participant agrees to the following standards:
+            Safety is non-negotiable in THE ANAND CYCLING CLUB. Every participant agrees to the following standards:
           </p>
           <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm">
             <li><strong>Helmets Compulsory:</strong> A certified, undamaged cycling helmet must be worn and strapped on at all times while mounted on the bicycle. Failure to wear a helmet results in immediate disqualification with no refund.</li>

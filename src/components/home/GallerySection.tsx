@@ -10,7 +10,7 @@ interface GalleryItem {
   description: string;
   imageUrl: string;
   alt: string;
-  category: 'peloton' | 'route' | 'safety' | 'community';
+  category: 'THE ANAND CYCLING CLUB' | 'route' | 'safety' | 'community';
 }
 
 const GALLERY_COLLECTION: GalleryItem[] = [
@@ -19,10 +19,10 @@ const GALLERY_COLLECTION: GalleryItem[] = [
     title: 'Statue of Unity Expedition',
     tag: 'Landmark Brevet',
     location: 'Statue of Unity, Kevadia',
-    description: 'Anand Cycling Club peloton gathered before the iconic 182-metre national landmark with the Indian Tricolor.',
+    description: 'Anand Cycling Club THE ANAND CYCLING CLUB gathered before the iconic 182-metre national landmark with the Indian Tricolor.',
     imageUrl: '/IMG_2032.JPG.jpeg',
     alt: 'The Anand Cycling Club riders at Statue of Unity holding the Indian flag',
-    category: 'peloton'
+    category: 'THE ANAND CYCLING CLUB'
   },
   {
     id: 'gal-02',
@@ -60,20 +60,10 @@ const GALLERY_COLLECTION: GalleryItem[] = [
     tag: 'Official Club Portrait',
     location: 'R. K. & Sons Cycle Shop, Anand',
     description: 'Our diverse rider community in signature club jerseys united by the passion for two wheels.',
-    imageUrl: '/main.jpeg',
+    imageUrl: '/main.HEIC',
     alt: 'Official group photograph of The Anand Cycling Club outside R. K. & Sons',
-    category: 'peloton'
+    category: 'THE ANAND CYCLING CLUB'
   },
-  {
-    id: 'gal-06',
-    title: 'SAG Support & Zero-Drop Checkpoint',
-    tag: 'Zero-Drop Support',
-    location: 'Mahi Expressway Corridor',
-    description: 'Every Anand Cycling Club ride is backed by hydration points, mobile mechanics, and a zero-drop escort van.',
-    imageUrl: 'https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=1200&q=80',
-    alt: 'Cyclists riding safely in paceline with route support',
-    category: 'safety'
-  }
 ];
 
 export function GallerySection() {
@@ -85,7 +75,7 @@ export function GallerySection() {
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAEDE2] border border-[#E5E6DE] text-[#3F6212] text-xs font-bold uppercase tracking-wider">
               <Camera className="w-3.5 h-3.5" />
-              <span>THE PELOTON IN ACTION</span>
+              <span>THE ANAND CYCLING CLUB IN ACTION</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-[#171914] leading-tight">
               Moments from the Tarmac
