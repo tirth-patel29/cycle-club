@@ -1,5 +1,5 @@
 ---
-name: Peloton Club
+name: THE ANAND CYCLING CLUB Club
 colors:
   surface: '#faf9f4'
   surface-dim: '#dbdad5'

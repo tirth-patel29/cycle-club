@@ -795,22 +795,9 @@ class DatabaseService {
         if (res.rows.length > 0) {
           const reg = mapRegistrationRow(res.rows[0]);
           this.registrations.unshift(reg);
-          if (!isFree) {
-            await pool.query(`
-              INSERT INTO payments (
-                registration_id, provider, provider_payment_reference, amount_paise,
-                currency, status, idempotency_key
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-            `, [
-              reg.id,
-              'demo',
-              `DEMO_PENDING_${Date.now()}`,
-              reg.amount_due_paise,
-              reg.currency,
-              'initiated',
-              data.idempotency_key
-            ]);
-          }
+          // Do NOT pre-create a payment row here.
+          // For Razorpay: recordRazorpayOrder() creates it when the order is placed.
+          // For Demo: processDemoPayment() creates it when simulated.
           return reg;
         }
       } catch (err) {
@@ -834,21 +821,9 @@ class DatabaseService {
         reference: newReg.public_reference,
         event_id: newReg.event_id
       });
-    } else {
-      const payment: Payment = {
-        id: `pay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        registration_id: newReg.id,
-        provider: 'demo',
-        provider_payment_reference: `DEMO_PENDING_${Date.now()}`,
-        amount_paise: newReg.amount_due_paise,
-        currency: newReg.currency,
-        status: 'pending',
-        idempotency_key: data.idempotency_key,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      this.payments.unshift(payment);
     }
+    // Do NOT pre-create payment for paid events here.
+    // Payment row is created by recordRazorpayOrder() or processDemoPayment().
 
     return newReg;
   }
@@ -880,21 +855,35 @@ class DatabaseService {
         const regRes = await pool.query('SELECT * FROM registrations WHERE UPPER(public_reference) = UPPER($1)', [registrationReference]);
         if (regRes.rows.length > 0) {
           const regRow = regRes.rows[0];
-          const providerRef = `DEMO_TXN_${Date.now().toString(36).toUpperCase()}_${Math.floor(1000 + Math.random() * 9000)}`;
 
           if (outcome === 'success') {
             await pool.query('UPDATE registrations SET status = $1, updated_at = NOW() WHERE id = $2', ['confirmed', regRow.id]);
-            await pool.query(`
-              UPDATE payments 
-              SET status = $1, provider_payment_reference = $2, updated_at = NOW() 
-              WHERE registration_id = $3
-            `, ['succeeded', providerRef, regRow.id]);
+            const providerRef = `DEMO_TXN_${Date.now().toString(36).toUpperCase()}_${Math.floor(1000 + Math.random() * 9000)}`;
+            // Check if a payment row already exists for this registration
+            const existingPay = await pool.query('SELECT id FROM payments WHERE registration_id = $1 LIMIT 1', [regRow.id]);
+            if (existingPay.rows.length > 0) {
+              await pool.query(
+                `UPDATE payments SET status = 'succeeded', provider_payment_reference = $1, provider = 'demo', updated_at = NOW() WHERE id = $2`,
+                [providerRef, existingPay.rows[0].id]
+              );
+            } else {
+              await pool.query(
+                `INSERT INTO payments (registration_id, provider, provider_payment_reference, amount_paise, currency, status, idempotency_key)
+                 VALUES ($1, 'demo', $2, $3, $4, 'succeeded', gen_random_uuid())`,
+                [regRow.id, providerRef, regRow.amount_due_paise, regRow.currency || 'INR']
+              );
+            }
           } else {
-            await pool.query(`
-              UPDATE payments 
-              SET status = $1, updated_at = NOW() 
-              WHERE registration_id = $2
-            `, ['failed', regRow.id]);
+            const existingPay = await pool.query('SELECT id FROM payments WHERE registration_id = $1 LIMIT 1', [regRow.id]);
+            if (existingPay.rows.length > 0) {
+              await pool.query(`UPDATE payments SET status = 'failed', updated_at = NOW() WHERE id = $1`, [existingPay.rows[0].id]);
+            } else {
+              await pool.query(
+                `INSERT INTO payments (registration_id, provider, provider_payment_reference, amount_paise, currency, status, idempotency_key)
+                 VALUES ($1, 'demo', $2, $3, $4, 'failed', gen_random_uuid())`,
+                [regRow.id, `DEMO_FAIL_${Date.now()}`, regRow.amount_due_paise, regRow.currency || 'INR']
+              );
+            }
           }
 
           const updatedRegRes = await pool.query('SELECT * FROM registrations WHERE id = $1', [regRow.id]);

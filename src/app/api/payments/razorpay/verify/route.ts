@@ -102,9 +102,12 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      if (Number(paymentDetails.amount) !== Number(reg.amount_due_paise)) {
+      // Razorpay returns amount in paise as a number or string — normalise both sides
+      const paidPaise = Math.round(Number(paymentDetails.amount));
+      const duePaise = Math.round(Number(reg.amount_due_paise));
+      if (paidPaise !== duePaise) {
         console.error(
-          `[Security] Amount tampering detected: expected ${reg.amount_due_paise} paise, received ${paymentDetails.amount} paise.`
+          `[Security] Amount mismatch: expected ${duePaise} paise, Razorpay reports ${paidPaise} paise for payment ${razorpay_payment_id}.`
         );
         return NextResponse.json(
           { error: 'Paid amount does not match authoritative registration fee.' },
@@ -127,7 +130,8 @@ export async function POST(req: NextRequest) {
         );
       }
     } catch (fetchErr) {
-      console.warn('Could not fetch payment from Razorpay API for secondary validation, relying on signature:', fetchErr);
+      // Razorpay secondary validation unavailable — rely on HMAC signature alone (already verified above)
+      console.warn('[Razorpay Verify] Secondary payment fetch failed — trusting HMAC signature:', fetchErr);
     }
 
     // 6. Transactionally confirm registration & payment in database
