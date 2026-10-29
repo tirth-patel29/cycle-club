@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { CyclingEvent, DifficultyLevel, EventStatus } from '@/types';
 import { formatINR, formatDateIndian } from '@/lib/constants';
-import { Plus, ExternalLink, Calendar, MapPin, X, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Plus, ExternalLink, Calendar, MapPin, X, Loader2, AlertCircle, CheckCircle2, Pencil, Trash2 } from 'lucide-react';
 
 interface Props {
   initialEvents: CyclingEvent[];
@@ -21,7 +21,10 @@ const STATUSES: { value: EventStatus; label: string }[] = [
 export function AdminEventsManager({ initialEvents }: Props) {
   const [events, setEvents] = useState<CyclingEvent[]>(initialEvents);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CyclingEvent | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -136,6 +139,76 @@ export function AdminEventsManager({ initialEvents }: Props) {
     }
   };
 
+  const openEditModal = (evt: CyclingEvent) => {
+    setEditingEvent({ ...evt });
+    setErrorMessage(null);
+    setShowEditModal(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const payload = {
+        id: editingEvent.id,
+        title: editingEvent.title,
+        description: editingEvent.description,
+        cover_image_url: editingEvent.cover_image_url,
+        venue: editingEvent.venue,
+        location_description: editingEvent.location_description,
+        starts_at: editingEvent.starts_at,
+        ends_at: editingEvent.ends_at,
+        distance_km: editingEvent.distance_km,
+        elevation_gain_m: editingEvent.elevation_gain_m,
+        difficulty: editingEvent.difficulty,
+        registration_fee_paise: editingEvent.registration_fee_paise,
+        status: editingEvent.status,
+        registration_closes_at: editingEvent.registration_closes_at,
+      };
+      const res = await fetch('/api/admin/events', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update event.');
+      setEvents(events.map((ev) => (ev.id === editingEvent.id ? data.event : ev)));
+      setSuccessMessage(`"${data.event.title}" updated successfully!`);
+      setShowEditModal(false);
+      setEditingEvent(null);
+    } catch (err: any) {
+      setErrorMessage(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (evt: CyclingEvent) => {
+    const confirmed = window.confirm(
+      `DELETE "${evt.title}"?\n\nThis will remove the event and all its pending registrations permanently. Confirmed (paid) registrations will block deletion.\n\nType OK to confirm.`
+    );
+    if (!confirmed) return;
+    setIsDeleting(evt.id);
+    setErrorMessage(null);
+    try {
+      const res = await fetch('/api/admin/events', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: evt.id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete event.');
+      setEvents(events.filter((e) => e.id !== evt.id));
+      setSuccessMessage(data.message || `"${evt.title}" deleted.`);
+    } catch (err: any) {
+      setErrorMessage(err.message);
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
   return (
     <div className="space-y-6 font-sans text-xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E5E6DE]">
@@ -214,7 +287,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <select
                 value={evt.status}
                 onChange={(e) => handleToggleStatus(evt.id, e.target.value as EventStatus)}
@@ -226,6 +299,27 @@ export function AdminEventsManager({ initialEvents }: Props) {
                   </option>
                 ))}
               </select>
+
+              <button
+                onClick={() => openEditModal(evt)}
+                className="bg-[#F7F7F2] border border-[#E5E6DE] hover:border-[#171914] text-[#171914] px-3 py-2 rounded-xl text-xs uppercase flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Edit event"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Edit</span>
+              </button>
+
+              <button
+                onClick={() => handleDelete(evt)}
+                disabled={isDeleting === evt.id}
+                className="bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 px-3 py-2 rounded-xl text-xs uppercase flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                title="Delete event"
+              >
+                {isDeleting === evt.id
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <Trash2 className="w-3.5 h-3.5" />}
+                <span>Delete</span>
+              </button>
 
               <Link
                 href={`/events/${evt.slug}`}
@@ -524,6 +618,142 @@ export function AdminEventsManager({ initialEvents }: Props) {
                 >
                   {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isSubmitting ? 'Saving to Neon...' : 'Save Stage'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===== EDIT EVENT MODAL ===== */}
+      {showEditModal && editingEvent && (
+        <div className="fixed inset-0 z-50 bg-[#171914]/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-[#E5E6DE] rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#E5E6DE] pb-4">
+              <div>
+                <span className="text-[10px] font-black uppercase text-[#62645C] tracking-wider block">EDIT STAGE</span>
+                <h2 className="font-extrabold text-[#171914] uppercase text-lg truncate max-w-md">{editingEvent.title}</h2>
+              </div>
+              <button
+                onClick={() => { setShowEditModal(false); setEditingEvent(null); }}
+                className="text-[#62645C] hover:text-[#171914] cursor-pointer p-1.5 rounded-lg hover:bg-[#F7F7F2]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleEdit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">TITLE *</label>
+                  <input type="text" required value={editingEvent.title}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value })}
+                    className="w-full px-3 py-2.5 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] text-sm focus:border-[#171914] outline-hidden" />
+                </div>
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">VENUE *</label>
+                  <input type="text" required value={editingEvent.venue}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, venue: e.target.value })}
+                    className="w-full px-3 py-2.5 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] focus:border-[#171914] outline-hidden" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[#171914] block mb-1 font-bold">DESCRIPTION</label>
+                <textarea rows={3} value={editingEvent.description}
+                  onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
+                  className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] focus:border-[#171914] outline-hidden" />
+              </div>
+
+              <div>
+                <label className="text-[#171914] block mb-1 font-bold">COVER IMAGE URL</label>
+                <input type="url" value={editingEvent.cover_image_url}
+                  onChange={(e) => setEditingEvent({ ...editingEvent, cover_image_url: e.target.value })}
+                  className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs focus:border-[#171914] outline-hidden" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">FLAG OFF (STARTS AT) *</label>
+                  <input type="datetime-local" required
+                    value={editingEvent.starts_at.slice(0, 16)}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, starts_at: new Date(e.target.value).toISOString() })}
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
+                </div>
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">ENDS AT *</label>
+                  <input type="datetime-local" required
+                    value={editingEvent.ends_at.slice(0, 16)}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, ends_at: new Date(e.target.value).toISOString() })}
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">DISTANCE (KM) *</label>
+                  <input type="number" min={1} required value={editingEvent.distance_km}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, distance_km: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
+                </div>
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">ELEVATION (M)</label>
+                  <input type="number" min={0} value={editingEvent.elevation_gain_m}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, elevation_gain_m: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
+                </div>
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">DIFFICULTY *</label>
+                  <select value={editingEvent.difficulty}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, difficulty: e.target.value as DifficultyLevel })}
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]">
+                    {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">ENTRY FEE (PAISE — e.g. 29900 = ₹299)</label>
+                  <input type="number" min={0} value={editingEvent.registration_fee_paise}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, registration_fee_paise: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
+                </div>
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">REGISTRATION CLOSES AT *</label>
+                  <input type="datetime-local" required
+                    value={editingEvent.registration_closes_at.slice(0, 16)}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, registration_closes_at: new Date(e.target.value).toISOString() })}
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[#171914] block mb-1 font-bold">STATUS</label>
+                <select value={editingEvent.status}
+                  onChange={(e) => setEditingEvent({ ...editingEvent, status: e.target.value as EventStatus })}
+                  className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]">
+                  {STATUSES.map((st) => <option key={st.value} value={st.value}>{st.label}</option>)}
+                </select>
+              </div>
+
+              <div className="pt-3 border-t border-[#E5E6DE] flex justify-end gap-3">
+                <button type="button" disabled={isSubmitting}
+                  onClick={() => { setShowEditModal(false); setEditingEvent(null); }}
+                  className="btn-glossy-dark px-5 py-2.5 rounded-xl cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSubmitting}
+                  className="btn-glossy-lime px-6 py-2.5 rounded-xl font-bold uppercase flex items-center gap-2 cursor-pointer">
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{isSubmitting ? 'Saving...' : 'Save Changes'}</span>
                 </button>
               </div>
             </form>

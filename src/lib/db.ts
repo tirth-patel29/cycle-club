@@ -1476,6 +1476,56 @@ class DatabaseService {
   getPool(): pg.Pool | null {
     return getPool();
   }
+
+  async getRegistrationsByEventId(eventId: string): Promise<Registration[]> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        const result = await pool.query(
+          'SELECT * FROM registrations WHERE event_id = $1 ORDER BY created_at DESC',
+          [eventId]
+        );
+        return result.rows.map(mapRegistrationRow);
+      } catch (err) {
+        console.error('DB getRegistrationsByEventId error:', err);
+        return [];
+      }
+    }
+    return this.registrations.filter((r) => r.event_id === eventId);
+  }
+
+  async deleteRegistrationsByEventId(eventId: string): Promise<void> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        // Delete payments first (FK constraint)
+        await pool.query(
+          'DELETE FROM payments WHERE registration_id IN (SELECT id FROM registrations WHERE event_id = $1)',
+          [eventId]
+        );
+        await pool.query('DELETE FROM registrations WHERE event_id = $1', [eventId]);
+      } catch (err) {
+        console.error('DB deleteRegistrationsByEventId error:', err);
+        throw err;
+      }
+      return;
+    }
+    this.registrations = this.registrations.filter((r) => r.event_id !== eventId);
+  }
+
+  async deleteEvent(eventId: string): Promise<void> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        await pool.query('DELETE FROM events WHERE id = $1', [eventId]);
+      } catch (err) {
+        console.error('DB deleteEvent error:', err);
+        throw err;
+      }
+      return;
+    }
+    this.events = this.events.filter((e) => e.id !== eventId);
+  }
 }
 
 const globalForDb = global as unknown as { dbService?: DatabaseService };

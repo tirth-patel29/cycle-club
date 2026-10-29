@@ -125,7 +125,6 @@ export async function POST(req: NextRequest) {
 
     const createdEvent = await db.createEvent(eventPayload);
 
-    // Revalidate paths so public and admin listings immediately reflect the new event
     revalidatePath('/admin');
     revalidatePath('/admin/events');
     revalidatePath('/events');
@@ -171,6 +170,11 @@ export async function PATCH(req: NextRequest) {
       updates.published_at = new Date().toISOString();
     }
 
+    // Sanitize numeric fields if present
+    if (updates.distance_km !== undefined) updates.distance_km = Number(updates.distance_km);
+    if (updates.elevation_gain_m !== undefined) updates.elevation_gain_m = Number(updates.elevation_gain_m);
+    if (updates.registration_fee_paise !== undefined) updates.registration_fee_paise = Math.round(Number(updates.registration_fee_paise));
+
     const updatedEvent = await db.updateEvent(id, updates);
     if (!updatedEvent) {
       return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
@@ -192,6 +196,57 @@ export async function PATCH(req: NextRequest) {
     console.error('Error in PATCH /api/admin/events:', err);
     return NextResponse.json({
       error: err.message || 'Failed to update event in database.'
+    }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const isAuthorized = await isAdminUser();
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized: Admin privileges required.' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Event ID is required.' }, { status: 400 });
+    }
+
+    // Safety: check if event has paid/confirmed registrations before deleting
+    const event = await db.getEventById(id);
+    if (!event) {
+      return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
+    }
+
+    // Get registrations count for this event
+    const registrations = await db.getRegistrationsByEventId(id);
+    const confirmedCount = registrations.filter((r: any) => r.status === 'confirmed').length;
+    if (confirmedCount > 0) {
+      return NextResponse.json({
+        error: `Cannot delete: ${confirmedCount} confirmed registration(s) exist for this event. Cancel the event instead.`
+      }, { status: 409 });
+    }
+
+    // Delete pending registrations first, then the event
+    await db.deleteRegistrationsByEventId(id);
+    await db.deleteEvent(id);
+
+    revalidatePath('/admin');
+    revalidatePath('/admin/events');
+    revalidatePath('/events');
+    revalidatePath('/');
+
+    return NextResponse.json({
+      success: true,
+      message: `Event "${event.title}" deleted successfully.`
+    });
+
+  } catch (err: any) {
+    console.error('Error in DELETE /api/admin/events:', err);
+    return NextResponse.json({
+      error: err.message || 'Failed to delete event.'
     }, { status: 500 });
   }
 }
