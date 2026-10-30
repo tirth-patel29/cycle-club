@@ -204,6 +204,20 @@ export default async function AdminDashboardPage() {
                       />
                     </div>
                   )}
+
+                  <div className="pt-2 flex items-center justify-between border-t border-[#E5E6DE]/60 text-[10px]">
+                    <span className="text-[#62645C] font-mono">
+                      Export full roster:
+                    </span>
+                    <a
+                      href={`/api/admin/export-csv?eventId=${evt.id}`}
+                      className="inline-flex items-center gap-1 font-bold text-[#171914] hover:text-[#3F6212] transition-colors py-0.5 px-2 rounded-md bg-white border border-[#E5E6DE] hover:border-[#3F6212]"
+                      title={`Download full Excel/CSV report with all rider details for ${evt.title}`}
+                    >
+                      <Download className="w-3 h-3 text-[#3F6212]" />
+                      <span>DOWNLOAD EXCEL</span>
+                    </a>
+                  </div>
                 </div>
               );
             })}

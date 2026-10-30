@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { CyclingEvent, DifficultyLevel, EventStatus } from '@/types';
 import { formatINR, formatDateIndian } from '@/lib/constants';
-import { Plus, ExternalLink, Calendar, MapPin, X, Loader2, AlertCircle, CheckCircle2, Pencil, Trash2 } from 'lucide-react';
+import { Plus, ExternalLink, Calendar, MapPin, X, Loader2, AlertCircle, CheckCircle2, Pencil, Trash2, Download } from 'lucide-react';
 
 interface Props {
   initialEvents: CyclingEvent[];
@@ -327,6 +327,15 @@ export function AdminEventsManager({ initialEvents }: Props) {
                   : <Trash2 className="w-3.5 h-3.5" />}
                 <span>Delete</span>
               </button>
+
+              <a
+                href={`/api/admin/export-csv?eventId=${evt.id}`}
+                className="bg-[#EAEDE2] border border-[#E5E6DE] hover:border-[#3F6212] text-[#171914] px-3 py-2 rounded-xl text-xs uppercase flex items-center gap-1.5 transition-colors cursor-pointer font-bold"
+                title="Download full event report & rider data in Excel"
+              >
+                <Download className="w-3.5 h-3.5 text-[#3F6212]" />
+                <span>Export</span>
+              </a>
 
               <Link
                 href={`/events/${evt.slug}`}

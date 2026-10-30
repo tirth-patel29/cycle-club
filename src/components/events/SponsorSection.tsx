@@ -24,23 +24,20 @@ export function SponsorSection({ sponsors, className = '' }: Props) {
       </div>
 
       {/* Responsive layout: 3-column row on desktop, neat wrap/stack on mobile */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
         {activeSponsors.map((sponsor, idx) => (
           <div
             key={sponsor.id || `sponsor-${idx}`}
-            className="group flex flex-col items-center justify-center p-3.5 rounded-xl bg-[#FFFFFF] border border-[#E5E6DE] hover:border-[#3F6212]/40 transition-all text-center min-h-[96px]"
+            className="group flex items-center justify-center p-3 rounded-xl bg-[#FFFFFF] border border-[#E5E6DE] hover:border-[#3F6212]/40 transition-all text-center h-20 sm:h-22 shadow-2xs"
           >
-            <div className="w-full h-12 flex items-center justify-center mb-2 px-1">
+            <div className="w-full h-full flex items-center justify-center p-1">
               <img
                 src={sponsor.logo_url}
-                alt={sponsor.name}
+                alt={sponsor.name || `Partner logo ${idx + 1}`}
                 loading="lazy"
-                className="max-h-10 max-w-full object-contain filter group-hover:scale-105 transition-transform duration-200"
+                className="max-h-12 sm:max-h-14 max-w-full object-contain filter group-hover:scale-105 transition-transform duration-200"
               />
             </div>
-            <span className="text-[11px] font-bold text-[#171914] tracking-tight uppercase line-clamp-1">
-              {sponsor.name}
-            </span>
           </div>
         ))}
       </div>

@@ -51,10 +51,11 @@ export function AdminRegistrationsManager({ initialRegistrations, events }: Prop
 
         <a
           href={exportUrl}
-          className="btn-glossy-lime px-4 py-2.5 rounded-xl uppercase font-black flex items-center gap-2 w-fit"
+          className="btn-glossy-lime px-4 py-2.5 rounded-xl uppercase font-black flex items-center gap-2 w-fit cursor-pointer"
+          title="Download complete rider details & event report in Excel-compatible CSV format"
         >
           <Download className="w-4 h-4 stroke-[3]" />
-          <span>EXPORT CSV</span>
+          <span>{selectedEventId !== 'all' ? 'DOWNLOAD EVENT EXCEL/CSV' : 'DOWNLOAD ALL EXCEL/CSV'}</span>
         </a>
       </div>
 
