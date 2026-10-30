@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { Camera, MapPin, Sparkles } from 'lucide-react';
 import { CLUB_NAME } from '@/lib/constants';
 
@@ -9,6 +11,7 @@ interface GalleryItem {
   location: string;
   description: string;
   imageUrl: string;
+  fallbackUrl: string;
   alt: string;
   category: 'THE ANAND CYCLING CLUB' | 'route' | 'safety' | 'community';
 }
@@ -20,7 +23,8 @@ const GALLERY_COLLECTION: GalleryItem[] = [
     tag: 'Landmark Brevet',
     location: 'Statue of Unity, Kevadia',
     description: 'Anand Cycling Club THE ANAND CYCLING CLUB gathered before the iconic 182-metre national landmark with the Indian Tricolor.',
-    imageUrl: '/IMG_2032.JPG.jpeg',
+    imageUrl: '/gallerypic1.webp',
+    fallbackUrl: '/IMG_2032.JPG.jpeg',
     alt: 'The Anand Cycling Club riders at Statue of Unity holding the Indian flag',
     category: 'THE ANAND CYCLING CLUB'
   },
@@ -30,7 +34,8 @@ const GALLERY_COLLECTION: GalleryItem[] = [
     tag: 'Weekend Group Ride',
     location: 'Charotar Rural Corridor, Anand',
     description: 'Lush morning road tour under ancient tree canopies featuring road, hybrid, and mountain bike riders.',
-    imageUrl: '/IMG_0934.JPG.jpeg',
+    imageUrl: '/gallerypic2.webp',
+    fallbackUrl: '/IMG_0934.JPG.jpeg',
     alt: 'Anand Cycling Club riders lined up with bikes on scenic tree-lined highway',
     category: 'route'
   },
@@ -40,7 +45,8 @@ const GALLERY_COLLECTION: GalleryItem[] = [
     tag: 'Club Muster',
     location: 'R. K. & Sons Cycle Shop, Anand',
     description: 'Riders lined up with bicycles prepped, tires inflated, and helmets secured before morning roll-out.',
-    imageUrl: '/IMG_1293.JPG.jpeg',
+    imageUrl: '/gallerypic3.webp',
+    fallbackUrl: '/IMG_1293.JPG.jpeg',
     alt: 'Cyclists on bikes gathered in the morning outside R. K. & Sons Cycle Shop',
     category: 'community'
   },
@@ -50,7 +56,8 @@ const GALLERY_COLLECTION: GalleryItem[] = [
     tag: 'Community Ride',
     location: 'Anand City Center',
     description: 'Celebrating national pride and fitness with junior riders, families, and seasoned endurance cyclists.',
-    imageUrl: '/IMG_6852.JPG.jpeg',
+    imageUrl: '/gallerypic4.webp',
+    fallbackUrl: '/IMG_6852.JPG.jpeg',
     alt: 'Club riders with national flag and cycles outside R. K. & Sons',
     category: 'community'
   },
@@ -60,11 +67,31 @@ const GALLERY_COLLECTION: GalleryItem[] = [
     tag: 'Official Club Portrait',
     location: 'R. K. & Sons Cycle Shop, Anand',
     description: 'Our diverse rider community in signature club jerseys united by the passion for two wheels.',
-    imageUrl: '/main.HEIC',
+    imageUrl: '/gallerypic5.webp',
+    fallbackUrl: '/main.HEIC',
     alt: 'Official group photograph of The Anand Cycling Club outside R. K. & Sons',
     category: 'THE ANAND CYCLING CLUB'
   },
 ];
+
+function GalleryItemImage({ item }: { item: GalleryItem }) {
+  const [src, setSrc] = useState(item.imageUrl);
+
+  return (
+    <img
+      src={src}
+      onError={() => {
+        if (src !== item.fallbackUrl) {
+          setSrc(item.fallbackUrl);
+        }
+      }}
+      alt={item.alt}
+      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+      loading="lazy"
+      decoding="async"
+    />
+  );
+}
 
 export function GallerySection() {
   return (
@@ -97,12 +124,7 @@ export function GallerySection() {
             >
               {/* Photo Container */}
               <div className="relative w-full aspect-[4/3] bg-[#171914] overflow-hidden">
-                <img
-                  src={item.imageUrl}
-                  alt={item.alt}
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
+                <GalleryItemImage item={item} />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#171914]/80 via-transparent to-transparent pointer-events-none" />
 
                 <div className="absolute top-3.5 left-3.5">

@@ -10,6 +10,13 @@ export interface EventSponsor {
   tier?: string;
 }
 
+export interface EventInclusion {
+  id?: string;
+  icon?: string;
+  title: string;
+  description?: string;
+}
+
 export interface CyclingEvent {
   id: string;
   slug: string;
@@ -28,6 +35,7 @@ export interface CyclingEvent {
   status: EventStatus;
   max_capacity?: number | null; // Nullable = unlimited, positive whole number
   sponsors?: EventSponsor[];
+  inclusions?: EventInclusion[];
   registration_opens_at: string;
   registration_closes_at: string;
   published_at?: string;

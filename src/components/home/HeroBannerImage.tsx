@@ -7,7 +7,7 @@ interface Props {
 }
 
 export function HeroBannerImage({ alt }: Props) {
-  const [imgSrc, setImgSrc] = useState<string>('/IMG_3955.jpeg');
+  const [imgSrc, setImgSrc] = useState<string>('/main.webp');
 
   return (
     <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-[#E5E6DE] shadow-xl bg-[#171914]">
@@ -15,13 +15,16 @@ export function HeroBannerImage({ alt }: Props) {
         <img
           src={imgSrc}
           onError={() => {
-            if (imgSrc !== '/IMG_0934.JPG.jpeg') {
+            if (imgSrc === '/main.webp') {
+              setImgSrc('/IMG_3955.jpeg');
+            } else if (imgSrc !== '/IMG_0934.JPG.jpeg') {
               setImgSrc('/IMG_0934.JPG.jpeg');
             }
           }}
           alt={alt}
           className="w-full h-full object-cover object-[center_30%] transition-opacity duration-300"
           loading="eager"
+          fetchPriority="high"
         />
         {/* Editorial Contrast Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#171914]/90 via-[#171914]/25 to-transparent pointer-events-none" />

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser, createServerSupabaseClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
 import { riderProfileSchema } from '@/lib/validations/registration';
 import { RiderProfile } from '@/types';
@@ -12,38 +12,25 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 });
   }
 
-  let profile: RiderProfile | null = null;
-
-  try {
-    const supabase = await createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from('rider_profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!error && data) {
-      profile = data as RiderProfile;
-    }
-  } catch {
-    // Fall back to in-memory store
-  }
-
-  if (!profile) {
-    profile = (await db.getRiderProfile(user.id)) || (user.email ? await db.getRiderProfile(user.email) : null);
-  }
-
-  // Also fetch user's event registrations
-  let registrations: any[] = [];
-  try {
-    const fetched = await db.getRegistrations({ riderId: profile?.id || user.id });
-    if (Array.isArray(fetched)) {
-      registrations = fetched;
-    }
-  } catch (err) {
-    console.error('Failed to get registrations for rider:', err);
-    registrations = [];
-  }
+  // Fast direct parallel lookup via Neon PostgreSQL / db service
+  const [profile, registrations] = await Promise.all([
+    (async () => {
+      let p = await db.getRiderProfile(user.id);
+      if (!p && user.email) {
+        p = await db.getRiderProfile(user.email);
+      }
+      return p;
+    })(),
+    (async () => {
+      try {
+        const fetched = await db.getRegistrations({ riderId: user.id });
+        return Array.isArray(fetched) ? fetched : [];
+      } catch (err) {
+        console.error('Failed to get registrations for rider:', err);
+        return [];
+      }
+    })()
+  ]);
 
   return NextResponse.json({
     user: {

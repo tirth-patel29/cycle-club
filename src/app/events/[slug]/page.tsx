@@ -4,13 +4,51 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { formatINR, formatDateIndian, formatTimeIndian, CLUB_CONTACT_PHONE } from '@/lib/constants';
 import {
-  Calendar, Clock, MapPin, CheckCircle2, ArrowRight, ChevronLeft, ShieldCheck, Mountain, Gauge
+  Calendar, Clock, MapPin, CheckCircle2, ArrowRight, ChevronLeft, ShieldCheck, Mountain, Gauge,
+  Bed, UtensilsCrossed, Bus, Coffee, Shirt, Award, Timer
 } from 'lucide-react';
 import { LiveRegistrationProgress } from '@/components/events/LiveRegistrationProgress';
 import { SponsorSection } from '@/components/events/SponsorSection';
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+function getInclusionIcon(icon?: string) {
+  switch (icon?.toLowerCase()) {
+    case 'hotel':
+    case 'stay':
+    case 'bed':
+      return <Bed className="w-5 h-5 text-[#3F6212]" />;
+    case 'utensils':
+    case 'food':
+    case 'meal':
+    case 'dinner':
+      return <UtensilsCrossed className="w-5 h-5 text-[#3F6212]" />;
+    case 'bus':
+    case 'transport':
+    case 'truck':
+      return <Bus className="w-5 h-5 text-[#3F6212]" />;
+    case 'coffee':
+    case 'nutrition':
+      return <Coffee className="w-5 h-5 text-[#3F6212]" />;
+    case 'shirt':
+    case 'jersey':
+      return <Shirt className="w-5 h-5 text-[#3F6212]" />;
+    case 'award':
+    case 'medal':
+    case 'trophy':
+      return <Award className="w-5 h-5 text-[#3F6212]" />;
+    case 'shield':
+    case 'safety':
+    case 'marshal':
+      return <ShieldCheck className="w-5 h-5 text-[#3F6212]" />;
+    case 'clock':
+    case 'timer':
+      return <Timer className="w-5 h-5 text-[#3F6212]" />;
+    default:
+      return <CheckCircle2 className="w-5 h-5 text-[#3F6212]" />;
+  }
 }
 
 export default async function EventDetailPage({ params }: Props) {
@@ -89,10 +127,13 @@ export default async function EventDetailPage({ params }: Props) {
 
       {/* Two-Column Details & Registration Dock */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column (8 cols): Route specs & Inclusions */}
-          <div className="lg:col-span-8 space-y-8">
-            {/* Spec Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column (7-8 cols): Proud Sponsors -> Route specs -> Inclusions */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+            {/* 1. OUR PROUD SPONSORS SECTION */}
+            <SponsorSection sponsors={event.sponsors} />
+
+            {/* 2. RIDE SCHEDULE & ROUTE SPECIFICATIONS */}
             <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6">
               <h2 className="text-xs font-bold uppercase text-[#3F6212] tracking-wider font-mono">
                 RIDE SCHEDULE & ROUTE SPECIFICATIONS
@@ -143,28 +184,44 @@ export default async function EventDetailPage({ params }: Props) {
               </div>
             </div>
 
-            {/* Inclusions */}
-            {event.amenities && (
+            {/* 3. DYNAMIC INCLUSIONS SECTION */}
+            {((event.inclusions && event.inclusions.length > 0) || (event.amenities && event.amenities.length > 0)) && (
               <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-5">
                 <h3 className="text-xs font-bold uppercase text-[#3F6212] tracking-wider font-mono">
                   WHAT IS INCLUDED WITH YOUR REGISTRATION
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {event.amenities.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 p-3.5 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-[#3F6212] shrink-0 mt-0.5" />
-                      <span className="text-[#171914]">{item}</span>
-                    </div>
-                  ))}
+                  {event.inclusions && event.inclusions.length > 0 ? (
+                    event.inclusions.map((item, idx) => (
+                      <div key={item.id || idx} className="flex items-start gap-3 p-3.5 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE]">
+                        <div className="p-2 rounded-lg bg-[#EAEDE2] shrink-0 mt-0.5">
+                          {getInclusionIcon(item.icon)}
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[#171914] font-bold text-xs sm:text-sm">{item.title}</p>
+                          {item.description && (
+                            <p className="text-[#62645C] text-[11px] leading-relaxed font-medium">{item.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    event.amenities?.map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-2.5 p-3.5 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] font-medium">
+                        <CheckCircle2 className="w-4 h-4 text-[#3F6212] shrink-0 mt-0.5" />
+                        <span className="text-[#171914]">{item}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Right Column (4 cols): Sticky Registration Dock & Sponsors */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6">
+          {/* Right Column (4-5 cols): Sticky Registration & Payment Card */}
+          <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-28 space-y-6">
+            <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#62645C] block font-mono">
                   ENTRY FEE
@@ -228,9 +285,6 @@ export default async function EventDetailPage({ params }: Props) {
                 </a>
               </p>
             </div>
-
-            {/* EVENT SPONSORS */}
-            <SponsorSection sponsors={event.sponsors} />
           </div>
         </div>
       </section>

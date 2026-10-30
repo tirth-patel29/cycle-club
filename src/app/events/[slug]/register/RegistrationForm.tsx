@@ -286,6 +286,21 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
             </select>
           </div>
 
+          <div className="space-y-1.5">
+            <label className="text-[#171914] uppercase block font-bold">Blood Group *</label>
+            <select
+              value={bloodGroup}
+              onChange={(e) => setBloodGroup(e.target.value as BloodGroup)}
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm font-bold focus:border-lime-500 outline-none"
+            >
+              {BLOOD_GROUPS.map((bg) => (
+                <option key={bg} value={bg}>
+                  {bg}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="space-y-1.5 sm:col-span-2">
             <label className="text-[#171914] uppercase block font-bold">Residential Address *</label>
             <textarea
@@ -325,7 +340,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 sm:col-span-2">
             <label className="text-[#171914] uppercase block font-bold">Emergency Contact Number *</label>
             <input
               type="tel"
@@ -336,21 +351,6 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
               placeholder="Enter emergency contact mobile number"
               className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm font-bold focus:border-lime-500 outline-none"
             />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[#171914] uppercase block font-bold">Blood Group *</label>
-            <select
-              value={bloodGroup}
-              onChange={(e) => setBloodGroup(e.target.value as BloodGroup)}
-              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm font-bold focus:border-lime-500 outline-none"
-            >
-              {BLOOD_GROUPS.map((bg) => (
-                <option key={bg} value={bg}>
-                  {bg}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 

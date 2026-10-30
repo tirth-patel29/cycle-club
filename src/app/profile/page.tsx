@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { BICYCLE_TYPES, TSHIRT_SIZES, normalizeIndianMobile } from '@/lib/validations/registration';
-import { BicycleType, RiderProfile, Registration } from '@/types';
-import { Bike, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, UserCheck, Calendar, LogOut, Ticket } from 'lucide-react';
+import { BICYCLE_TYPES, TSHIRT_SIZES, normalizeIndianMobile, BLOOD_GROUPS } from '@/lib/validations/registration';
+import { BicycleType, RiderProfile, Registration, BloodGroup } from '@/types';
+import { Bike, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, UserCheck, Calendar, LogOut, Ticket, HeartPulse } from 'lucide-react';
 
 const BICYCLE_ICONS: Record<BicycleType, { title: string; desc: string }> = {
   Road: { title: 'Road Bike', desc: 'Drop bars, lightweight, tarmac speed' },
@@ -28,6 +28,7 @@ export default function ProfilePage() {
     mobile_number: string;
     age: string;
     gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
+    blood_group: BloodGroup;
     bicycle_type: BicycleType;
     bicycle_brand: string;
     bicycle_model: string;
@@ -37,6 +38,7 @@ export default function ProfilePage() {
     mobile_number: '',
     age: '26',
     gender: 'Male',
+    blood_group: "Don't Know",
     bicycle_type: 'Road',
     bicycle_brand: '',
     bicycle_model: '',
@@ -65,6 +67,7 @@ export default function ProfilePage() {
             mobile_number: p.mobile_number || '',
             age: p.age ? String(p.age) : '26',
             gender: p.gender || 'Male',
+            blood_group: (p.blood_group as BloodGroup) || "Don't Know",
             bicycle_type: p.bicycle_type || 'Road',
             bicycle_brand: p.bicycle_brand || '',
             bicycle_model: p.bicycle_model || '',
@@ -98,6 +101,7 @@ export default function ProfilePage() {
       bicycle_type: formData.bicycle_type,
       age: parseInt(formData.age, 10) || undefined,
       gender: formData.gender,
+      blood_group: formData.blood_group,
       bicycle_brand: formData.bicycle_brand.trim() || undefined,
       bicycle_model: formData.bicycle_model.trim() || undefined,
       tshirt_size: formData.tshirt_size
@@ -147,10 +151,44 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7F7F2] flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-3 border-[#8cc427] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-xs uppercase font-mono tracking-widest text-[#62645C] font-bold">Loading Rider Profile...</p>
+      <div className="min-h-screen bg-[#F7F7F2] pt-24 sm:pt-28 pb-20 px-4 sm:px-6 lg:px-8 animate-pulse">
+        <div className="max-w-5xl mx-auto space-y-8">
+          {/* Header Skeleton */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#E5E6DE] pb-6">
+            <div className="space-y-2.5">
+              <div className="h-6 w-36 bg-[#EAEDE2] rounded-full"></div>
+              <div className="h-9 w-64 bg-[#E5E6DE] rounded-xl"></div>
+              <div className="h-4 w-48 bg-[#EAEDE2] rounded-lg"></div>
+            </div>
+            <div className="flex gap-3">
+              <div className="h-10 w-32 bg-[#E5E6DE] rounded-xl"></div>
+              <div className="h-10 w-24 bg-[#E5E6DE] rounded-xl"></div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Form Skeleton */}
+            <div className="lg:col-span-2 surface-card rounded-2xl p-6 sm:p-8 space-y-6">
+              <div className="h-6 w-48 bg-[#E5E6DE] rounded-lg"></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="h-14 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE]"></div>
+                <div className="h-14 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE]"></div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="h-14 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE]"></div>
+                <div className="h-14 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE]"></div>
+                <div className="h-14 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE]"></div>
+              </div>
+              <div className="h-28 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE]"></div>
+            </div>
+
+            {/* Right Card Skeleton */}
+            <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-4">
+              <div className="h-5 w-40 bg-[#E5E6DE] rounded-lg"></div>
+              <div className="h-20 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE]"></div>
+              <div className="h-20 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE]"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -260,8 +298,8 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Age & Gender */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Age, Gender & Blood Group */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-mono uppercase tracking-wider text-[#171914] font-bold mb-1.5">
                     Age
@@ -289,6 +327,23 @@ export default function ProfilePage() {
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                     <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[#171914] font-bold mb-1.5">
+                    Blood Group
+                  </label>
+                  <select
+                    value={formData.blood_group}
+                    onChange={(e) => setFormData({ ...formData, blood_group: e.target.value as BloodGroup })}
+                    className="w-full px-4 py-2.5 rounded-lg bg-[#FFFFFF] border border-[#E5E6DE] text-[#171914] text-sm font-bold focus:border-lime-500 outline-none"
+                  >
+                    {BLOOD_GROUPS.map((bg) => (
+                      <option key={bg} value={bg}>
+                        {bg}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

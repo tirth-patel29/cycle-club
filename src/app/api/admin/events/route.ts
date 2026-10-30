@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       status = 'published',
       max_capacity,
       sponsors,
+      inclusions,
       registration_opens_at,
       registration_closes_at
     } = body;
@@ -131,6 +132,7 @@ export async function POST(req: NextRequest) {
       status,
       max_capacity: finalMaxCapacity,
       sponsors: sponsors || undefined,
+      inclusions: inclusions || undefined,
       registration_opens_at: regOpens.toISOString(),
       registration_closes_at: regCloses.toISOString(),
       published_at: status === 'published' ? new Date().toISOString() : undefined

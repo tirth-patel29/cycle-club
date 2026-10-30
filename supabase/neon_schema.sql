@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS events (
   published_at TIMESTAMPTZ,
   max_capacity INTEGER CHECK (max_capacity IS NULL OR max_capacity > 0),
   sponsors JSONB DEFAULT '[]'::jsonb,
+  inclusions JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );

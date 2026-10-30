@@ -49,6 +49,7 @@ function mapEventRow(row: any): CyclingEvent {
     status: row.status as EventStatus,
     max_capacity: row.max_capacity !== null && row.max_capacity !== undefined ? Number(row.max_capacity) : null,
     sponsors: row.sponsors ? (typeof row.sponsors === 'string' ? JSON.parse(row.sponsors) : row.sponsors) : undefined,
+    inclusions: row.inclusions ? (typeof row.inclusions === 'string' ? JSON.parse(row.inclusions) : row.inclusions) : undefined,
     registration_opens_at: new Date(row.registration_opens_at).toISOString(),
     registration_closes_at: new Date(row.registration_closes_at).toISOString(),
     published_at: row.published_at ? new Date(row.published_at).toISOString() : undefined,
@@ -536,19 +537,20 @@ class DatabaseService {
             starts_at, ends_at, distance_km, elevation_gain_m, difficulty,
             registration_fee_paise, currency, status,
             registration_opens_at, registration_closes_at, published_at,
-            max_capacity, sponsors
+            max_capacity, sponsors, inclusions
           ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10, $11,
             $12, $13, $14,
             $15, $16, $17,
-            $18, $19
+            $18, $19, $20
           )
           RETURNING *;
         `;
         const publishedAt = eventData.status === 'published' ? (eventData.published_at || new Date().toISOString()) : null;
         const maxCapacity = eventData.max_capacity !== undefined && eventData.max_capacity !== null ? Number(eventData.max_capacity) : null;
         const sponsorsJson = eventData.sponsors ? JSON.stringify(eventData.sponsors) : JSON.stringify([]);
+        const inclusionsJson = eventData.inclusions ? JSON.stringify(eventData.inclusions) : JSON.stringify([]);
 
         const values = [
           eventData.slug,
@@ -569,7 +571,8 @@ class DatabaseService {
           new Date(eventData.registration_closes_at).toISOString(),
           publishedAt ? new Date(publishedAt).toISOString() : null,
           maxCapacity,
-          sponsorsJson
+          sponsorsJson,
+          inclusionsJson
         ];
         const res = await pool.query(query, values);
         const created = mapEventRow(res.rows[0]);
@@ -635,7 +638,8 @@ class DatabaseService {
           registration_closes_at: 'registration_closes_at',
           published_at: 'published_at',
           max_capacity: 'max_capacity',
-          sponsors: 'sponsors'
+          sponsors: 'sponsors',
+          inclusions: 'inclusions'
         };
 
         for (const [key, dbCol] of Object.entries(fieldMap)) {
@@ -643,7 +647,7 @@ class DatabaseService {
             let val = (updates as any)[key];
             if (['starts_at', 'ends_at', 'registration_opens_at', 'registration_closes_at', 'published_at'].includes(key) && val) {
               val = new Date(val).toISOString();
-            } else if (key === 'sponsors' && val) {
+            } else if ((key === 'sponsors' || key === 'inclusions') && val) {
               val = typeof val === 'string' ? val : JSON.stringify(val);
             } else if (key === 'max_capacity') {
               val = val === null || val === '' ? null : Number(val);

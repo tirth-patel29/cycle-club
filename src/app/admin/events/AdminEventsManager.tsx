@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { CyclingEvent, DifficultyLevel, EventStatus } from '@/types';
+import { CyclingEvent, DifficultyLevel, EventStatus, EventInclusion } from '@/types';
 import { formatINR, formatDateIndian } from '@/lib/constants';
-import { Plus, ExternalLink, Calendar, MapPin, X, Loader2, AlertCircle, CheckCircle2, Pencil, Trash2, Download } from 'lucide-react';
+import { Plus, ExternalLink, Calendar, MapPin, X, Loader2, AlertCircle, CheckCircle2, Pencil, Trash2, Download, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface Props {
   initialEvents: CyclingEvent[];
@@ -17,6 +17,153 @@ const STATUSES: { value: EventStatus; label: string }[] = [
   { value: 'cancelled', label: 'Cancelled' },
   { value: 'completed', label: 'Completed' },
 ];
+
+const INCLUSION_ICON_OPTIONS = [
+  { value: 'hotel', label: 'Hotel / Stay / Room' },
+  { value: 'utensils', label: 'Food / Dinner / Meal' },
+  { value: 'bus', label: 'Transport / Sag Bus' },
+  { value: 'coffee', label: 'Nutrition / Hydration' },
+  { value: 'shirt', label: 'Jersey / Club T-shirt' },
+  { value: 'award', label: 'Medal / Trophy / Certificate' },
+  { value: 'shield', label: 'Safety / Medical / Marshals' },
+  { value: 'clock', label: 'Timing / RFID' },
+  { value: 'check', label: 'Standard Checkmark' }
+];
+
+function InclusionsEditor({
+  inclusions,
+  onChange
+}: {
+  inclusions: EventInclusion[];
+  onChange: (items: EventInclusion[]) => void;
+}) {
+  const handleAdd = () => {
+    onChange([
+      ...inclusions,
+      {
+        id: `inc-${Date.now()}-${inclusions.length}`,
+        icon: 'check',
+        title: '',
+        description: ''
+      }
+    ]);
+  };
+
+  const handleUpdate = (index: number, field: keyof EventInclusion, value: string) => {
+    const updated = [...inclusions];
+    updated[index] = { ...updated[index], [field]: value };
+    onChange(updated);
+  };
+
+  const handleRemove = (index: number) => {
+    onChange(inclusions.filter((_, i) => i !== index));
+  };
+
+  const handleMove = (index: number, direction: 'up' | 'down') => {
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === inclusions.length - 1)) {
+      return;
+    }
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const updated = [...inclusions];
+    const [moved] = updated.splice(index, 1);
+    updated.splice(targetIdx, 0, moved);
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <label className="text-[#171914] font-bold text-xs uppercase tracking-wide">
+          Event Inclusions & Perks ({inclusions.length})
+        </label>
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="text-[11px] font-bold uppercase tracking-wider text-[#3F6212] bg-[#EAEDE2] hover:bg-[#DDE2CF] px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+          <span>Add Inclusion</span>
+        </button>
+      </div>
+
+      {inclusions.length === 0 ? (
+        <p className="text-[11px] text-[#62645C] italic bg-[#FFFFFF] p-3 rounded-xl border border-[#E5E6DE]">
+          No custom inclusions configured. Click &quot;Add Inclusion&quot; to define event perks (e.g., Stay at hotel, Cruise with dinner, Bicycle transport, Cycling jersey, Nutrition on course).
+        </p>
+      ) : (
+        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+          {inclusions.map((item, idx) => (
+            <div
+              key={item.id || idx}
+              className="p-3 bg-white border border-[#E5E6DE] rounded-xl space-y-2 shadow-2xs"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold text-[#62645C] w-4">{idx + 1}.</span>
+                <select
+                  value={item.icon || 'check'}
+                  onChange={(e) => handleUpdate(idx, 'icon', e.target.value)}
+                  className="px-2 py-1.5 bg-[#F7F7F2] border border-[#E5E6DE] rounded-lg text-xs text-[#171914] font-semibold"
+                >
+                  {INCLUSION_ICON_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  required
+                  placeholder="Perk title (e.g. Stay at hotel)"
+                  value={item.title}
+                  onChange={(e) => handleUpdate(idx, 'title', e.target.value)}
+                  className="flex-1 px-3 py-1.5 bg-white border border-[#E5E6DE] rounded-lg text-xs font-bold text-[#171914] placeholder:font-normal placeholder:text-[#62645C]/50"
+                />
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => handleMove(idx, 'up')}
+                    className="p-1 rounded text-[#62645C] hover:text-[#171914] disabled:opacity-30 cursor-pointer"
+                    title="Move Up"
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === inclusions.length - 1}
+                    onClick={() => handleMove(idx, 'down')}
+                    className="p-1 rounded text-[#62645C] hover:text-[#171914] disabled:opacity-30 cursor-pointer"
+                    title="Move Down"
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(idx)}
+                    className="p-1 rounded text-rose-500 hover:text-rose-700 cursor-pointer"
+                    title="Remove"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Optional description (e.g. 3-star AC room on twin-sharing basis)"
+                value={item.description || ''}
+                onChange={(e) => handleUpdate(idx, 'description', e.target.value)}
+                className="w-full px-3 py-1.5 bg-[#F7F7F2] border border-[#E5E6DE] rounded-lg text-[11px] text-[#171914] placeholder:text-[#62645C]/50"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AdminEventsManager({ initialEvents }: Props) {
   const [events, setEvents] = useState<CyclingEvent[]>(initialEvents);
@@ -45,6 +192,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
   const [status, setStatus] = useState<EventStatus>('published');
   const [registrationClosesAt, setRegistrationClosesAt] = useState('2026-12-19T18:00');
   const [maxCapacity, setMaxCapacity] = useState<string>('');
+  const [inclusions, setInclusions] = useState<EventInclusion[]>([]);
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
@@ -90,7 +238,8 @@ export function AdminEventsManager({ initialEvents }: Props) {
         status,
         registration_opens_at: new Date().toISOString(),
         registration_closes_at: new Date(registrationClosesAt).toISOString(),
-        max_capacity: maxCapacity.trim() ? parseInt(maxCapacity.trim(), 10) : null
+        max_capacity: maxCapacity.trim() ? parseInt(maxCapacity.trim(), 10) : null,
+        inclusions: inclusions.filter(i => i.title.trim().length > 0)
       };
 
       const res = await fetch('/api/admin/events', {
@@ -113,6 +262,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
       setTitle('');
       setSlug('');
       setDescription('');
+      setInclusions([]);
     } catch (err: any) {
       setErrorMessage(err.message || 'An unexpected error occurred while saving the event.');
     } finally {
@@ -142,7 +292,10 @@ export function AdminEventsManager({ initialEvents }: Props) {
   };
 
   const openEditModal = (evt: CyclingEvent) => {
-    setEditingEvent({ ...evt });
+    setEditingEvent({
+      ...evt,
+      inclusions: evt.inclusions ? [...evt.inclusions] : []
+    });
     setErrorMessage(null);
     setShowEditModal(true);
   };
@@ -169,6 +322,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
         status: editingEvent.status,
         registration_closes_at: editingEvent.registration_closes_at,
         max_capacity: editingEvent.max_capacity ?? null,
+        inclusions: (editingEvent.inclusions || []).filter(i => i.title.trim().length > 0)
       };
       const res = await fetch('/api/admin/events', {
         method: 'PATCH',
@@ -614,10 +768,22 @@ export function AdminEventsManager({ initialEvents }: Props) {
                 </div>
               </div>
 
-              {/* GROUP 7: Publication Status */}
+              {/* GROUP 7: Event Inclusions & Perks */}
               <div className="p-4 rounded-2xl bg-[#F7F7F2] border border-[#E5E6DE] space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-[#171914] text-[#C7F36B] text-[10px] font-black flex items-center justify-center">7</span>
+                  <h4 className="font-bold uppercase tracking-wider text-[#171914]">Event Inclusions & Perks</h4>
+                </div>
+                <InclusionsEditor
+                  inclusions={inclusions}
+                  onChange={setInclusions}
+                />
+              </div>
+
+              {/* GROUP 8: Publication Status */}
+              <div className="p-4 rounded-2xl bg-[#F7F7F2] border border-[#E5E6DE] space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#171914] text-[#C7F36B] text-[10px] font-black flex items-center justify-center">8</span>
                   <h4 className="font-bold uppercase tracking-wider text-[#171914]">Publication Status</h4>
                 </div>
 
@@ -795,6 +961,14 @@ export function AdminEventsManager({ initialEvents }: Props) {
                   />
                   <p className="text-[10px] text-[#62645C] mt-1">Leave empty for unlimited. Cannot be reduced below confirmed riders.</p>
                 </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-[#F7F7F2] border border-[#E5E6DE] space-y-4">
+                <h4 className="font-bold uppercase tracking-wider text-[#171914]">Event Inclusions & Perks</h4>
+                <InclusionsEditor
+                  inclusions={editingEvent.inclusions || []}
+                  onChange={(items) => setEditingEvent({ ...editingEvent, inclusions: items })}
+                />
               </div>
 
               <div className="pt-3 border-t border-[#E5E6DE] flex justify-end gap-3">
