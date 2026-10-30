@@ -198,13 +198,26 @@ export async function isAdminUser(): Promise<boolean> {
     // Fall back
   }
 
-  // Check configured admin emails from environment or fallback list
-  const adminEmails = (process.env.ADMIN_EMAILS || 'admin@anandcyclingclub.in,tirthhpatel29@gmail.com')
-    .toLowerCase()
-    .split(',')
-    .map(e => e.trim());
+  // Check configured admin emails from environment or fallback list (support plural & singular)
+  const rawAdminEmails = (
+    process.env.ADMIN_EMAILS ||
+    process.env.admin_emails ||
+    process.env.ADMIN_EMAIL ||
+    process.env.admin_email ||
+    'admin@anandcyclingclub.in,tirthhpatel29@gmail.com'
+  ).replace(/^["']|["']$/g, '');
 
-  if (user.email && adminEmails.includes(user.email.toLowerCase())) {
+  const adminEmails = rawAdminEmails
+    .toLowerCase()
+    .split(/[,;]+/)
+    .map(e => e.trim().replace(/^["']|["']$/g, ''))
+    .filter(Boolean);
+
+  // Always include default authorized admin emails
+  if (!adminEmails.includes('admin@anandcyclingclub.in')) adminEmails.push('admin@anandcyclingclub.in');
+  if (!adminEmails.includes('tirthhpatel29@gmail.com')) adminEmails.push('tirthhpatel29@gmail.com');
+
+  if (user.email && adminEmails.includes(user.email.toLowerCase().trim())) {
     return true;
   }
 

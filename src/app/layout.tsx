@@ -23,6 +23,16 @@ export const metadata: Metadata = {
   description: `${CLUB_NAME} - ${CLUB_TAGLINE}. Endurance brevets, sunrise pacelines, and community cycling across Anand & Charotar, Gujarat.`,
   keywords: ['THE ANAND CYCLING CLUB', 'Anand Cycling Club', 'Cycling Gujarat', 'Amul cycling', 'Brevets India', 'Charotar cycling', 'Weekend rides Anand'],
   authors: [{ name: 'THE ANAND CYCLING CLUB' }],
+  icons: {
+    icon: [
+      { url: '/icon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

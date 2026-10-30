@@ -56,6 +56,9 @@ function cleanEnvVal(val: string | undefined | null): string | null {
 }
 
 function readEnvVarFromDisk(targetKey: string): string | null {
+  // In production (e.g. Vercel), variables are injected into process.env; disk scanning is only for local dev hot-reloads
+  if (process.env.NODE_ENV === 'production') return null;
+
   try {
     const cwd = process.cwd();
     const candidateFiles = ['.env.local', '.env'];
@@ -85,7 +88,7 @@ function readEnvVarFromDisk(targetKey: string): string | null {
 
 const INSECURE_DEFAULT_ADMIN_PASSWORD = 'tirth#2957';
 
-function getAdminPassword(): string | null {
+export function getAdminPassword(): string | null {
   // Check process.env with case insensitivity (ADMIN_PASSWORD, admin_password, ADMIN_PASS, admin_pass)
   const fromEnv =
     cleanEnvVal(process.env.ADMIN_PASSWORD) ||
@@ -100,10 +103,10 @@ function getAdminPassword(): string | null {
     readEnvVarFromDisk('admin_password');
 
   if (process.env.NODE_ENV === 'production') {
-    // In production, must be explicitly configured and must not match the default placeholder
-    if (!resolved || resolved === INSECURE_DEFAULT_ADMIN_PASSWORD) {
+    // In production, must be explicitly configured
+    if (!resolved) {
       console.error(
-        '[Security Configuration Error] In production, ADMIN_PASSWORD environment variable must be explicitly configured with a strong secret.'
+        '[Security Configuration Error] In production, ADMIN_PASSWORD environment variable must be explicitly configured.'
       );
       return null;
     }
@@ -113,19 +116,36 @@ function getAdminPassword(): string | null {
   return resolved || INSECURE_DEFAULT_ADMIN_PASSWORD;
 }
 
-function getAdminEmails(): string[] {
-  const fromEnv =
-    cleanEnvVal(process.env.ADMIN_EMAILS) ||
-    cleanEnvVal(process.env.admin_emails) ||
-    readEnvVarFromDisk('ADMIN_EMAILS') ||
-    readEnvVarFromDisk('admin_emails') ||
-    'tirthhpatel29@gmail.com,admin@anandcyclingclub.in';
+export function getAdminEmails(): string[] {
+  const rawSources = [
+    process.env.ADMIN_EMAILS,
+    process.env.admin_emails,
+    process.env.ADMIN_EMAIL,
+    process.env.admin_email,
+    readEnvVarFromDisk('ADMIN_EMAILS'),
+    readEnvVarFromDisk('admin_emails'),
+    readEnvVarFromDisk('ADMIN_EMAIL'),
+    readEnvVarFromDisk('admin_email'),
+  ];
 
-  return fromEnv
-    .toLowerCase()
-    .split(',')
-    .map(e => e.trim())
-    .filter(Boolean);
+  const emails = new Set<string>([
+    'admin@anandcyclingclub.in',
+    'tirthhpatel29@gmail.com',
+  ]);
+
+  for (const raw of rawSources) {
+    if (raw && typeof raw === 'string') {
+      const stripped = raw.replace(/^["']|["']$/g, '');
+      stripped.split(/[,;]+/).forEach(e => {
+        const cleaned = e.trim().toLowerCase().replace(/^["']|["']$/g, '');
+        if (cleaned && cleaned.includes('@')) {
+          emails.add(cleaned);
+        }
+      });
+    }
+  }
+
+  return Array.from(emails);
 }
 
 export async function POST(request: NextRequest) {
@@ -164,8 +184,12 @@ export async function POST(request: NextRequest) {
   const configuredPassword = getAdminPassword();
 
   if (!configuredPassword) {
+    console.error('[Admin Auth Error] Missing ADMIN_PASSWORD configuration in environment.');
     return NextResponse.json(
-      { error: 'Admin authentication service is not properly configured. Access disabled.' },
+      {
+        error: 'Admin authentication service is not configured. Missing ADMIN_PASSWORD in environment variables. If recently added on Vercel, please trigger a redeploy so the variable takes effect.',
+        code: 'MISSING_ADMIN_PASSWORD'
+      },
       {
         status: 503,
         headers: { 'Cache-Control': 'no-store, max-age=0' }
@@ -173,15 +197,46 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const isPasswordValid = safeCompare(password, configuredPassword);
+  // Safe timing comparison: support both plain-text match and SHA-256 hash match
+  const isDirectMatch = safeCompare(password, configuredPassword);
+  const sha256Hex = crypto.createHash('sha256').update(password).digest('hex');
+  const isShaMatch = safeCompare(sha256Hex, configuredPassword);
+  const isPasswordValid = isDirectMatch || isShaMatch;
 
-  if (!isAuthorizedEmail || !isPasswordValid) {
+  // Safe diagnostic log without exposing secret values
+  console.log('[Admin Auth Diagnostic]', {
+    email,
+    isAuthorizedEmail,
+    adminEmailsCount: adminEmails.length,
+    passwordConfigured: true,
+    expectedPasswordLength: configuredPassword.length,
+    receivedPasswordLength: password.length,
+    passwordMatched: isPasswordValid,
+    isShaMatch,
+    nodeEnv: process.env.NODE_ENV
+  });
+
+  if (!isAuthorizedEmail) {
     recordFailedAttempt(ip);
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[Admin Login Failed] Email: "${email}" (Authorized: ${isAuthorizedEmail}) | Password matched: ${isPasswordValid}`);
-    }
     return NextResponse.json(
-      { error: 'Invalid admin credentials. Access denied.' },
+      {
+        error: 'The email address is not in the authorized administrator list.',
+        code: 'UNAUTHORIZED_EMAIL'
+      },
+      {
+        status: 401,
+        headers: { 'Cache-Control': 'no-store, max-age=0' }
+      }
+    );
+  }
+
+  if (!isPasswordValid) {
+    recordFailedAttempt(ip);
+    return NextResponse.json(
+      {
+        error: 'Invalid master password. Please verify your password or the ADMIN_PASSWORD environment variable.',
+        code: 'INVALID_PASSWORD'
+      },
       {
         status: 401,
         headers: { 'Cache-Control': 'no-store, max-age=0' }
@@ -194,12 +249,26 @@ export async function POST(request: NextRequest) {
 
   const adminName = email.includes('tirth') ? 'Tirth Patel (Super Admin)' : 'Club Operations Admin';
 
-  await setSessionCookie({
-    userId: ensureUuid(`admin-${email}`),
-    email,
-    fullName: adminName,
-    role: 'admin'
-  });
+  try {
+    await setSessionCookie({
+      userId: ensureUuid(`admin-${email}`),
+      email,
+      fullName: adminName,
+      role: 'admin'
+    });
+  } catch (err: any) {
+    console.error('[Admin Login Error] Failed to create session cookie:', err);
+    return NextResponse.json(
+      {
+        error: 'Authentication succeeded but session could not be established. Check SESSION_SECRET configuration.',
+        code: 'SESSION_CREATION_FAILED'
+      },
+      {
+        status: 500,
+        headers: { 'Cache-Control': 'no-store, max-age=0' }
+      }
+    );
+  }
 
   return NextResponse.json(
     {

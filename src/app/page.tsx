@@ -4,7 +4,6 @@ import { CLUB_NAME } from '@/lib/constants';
 import { HeroBannerImage } from '@/components/home/HeroBannerImage';
 import { GallerySection } from '@/components/home/GallerySection';
 import {
-  ChevronRight,
   Compass,
   ArrowRight
 } from 'lucide-react';
@@ -37,18 +36,10 @@ export default function HomePage() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2 animate-fade-up animate-delay-3">
               <Link
-                href="/auth/signup?returnUrl=/events"
+                href="/events"
                 className="btn-glossy-lime py-4 px-8 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 text-center shadow-md hover:scale-[1.01]"
               >
-                <span>JOIN THE RIDE</span>
-                <ChevronRight className="w-4 h-4 stroke-[3]" />
-              </Link>
-
-              <Link
-                href="/events"
-                className="btn-glossy-dark py-4 px-7 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 text-center"
-              >
-                <Compass className="w-4 h-4 text-[#C7F36B]" />
+                <Compass className="w-4 h-4" />
                 <span>EXPLORE ALL EVENTS</span>
               </Link>
             </div>

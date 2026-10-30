@@ -1,263 +1,330 @@
-# Anand Cycling Club (ACC) • Production Platform
+# 🚴 The Anand Cycling Club (ACC)
 
-Production-ready cycling club and event registration platform built for **Anand Cycling Club (Anand, Gujarat, India)** using the Google Stitch THE ANAND CYCLING CLUB design system as the primary visual reference.
+<div align="center">
 
-Built with Next.js App Router, Supabase PostgreSQL, Supabase Auth, `@supabase/ssr`, Tailwind CSS, Zod, and full server-side validation.
+![The Anand Cycling Club](public/logo.webp)
 
----
+**Gujarat's Premier Community Cycling Collective • Anand, Gujarat, India**  
+*Dawn pacelines, Charotar canal routes, and endurance brevets across Anand and beyond.*
 
-## 1. Technology Stack
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.4.3_(Turbopack)-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x_Strict-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Neon PostgreSQL](https://img.shields.io/badge/Neon-Serverless_PostgreSQL-00E599?style=for-the-badge&logo=postgresql)](https://neon.tech/)
+[![Razorpay](https://img.shields.io/badge/Razorpay-Live_Payments-0C2340?style=for-the-badge&logo=razorpay)](https://razorpay.com/)
+[![Resend](https://img.shields.io/badge/Resend-Transactional_Email-000000?style=for-the-badge&logo=resend)](https://resend.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-Modern_Editorial-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 
-- **Framework**: Next.js 16 (App Router, Server Components by default)
-- **Language**: TypeScript (Strict Mode)
-- **Database & Auth**: Supabase PostgreSQL + Supabase Auth (`@supabase/ssr`)
-- **Styling**: Tailwind CSS with custom glassmorphism, athletic dark mode, and high-contrast light mode
-- **Typography**: Google Font *Plus Jakarta Sans*
-- **Validation**: Zod (Dual-layer client UX + authoritative server-side parsing)
-- **Testing**: Automated unit & integration verification runner (`scripts/run-tests.mjs`), Vitest
-- **Icons**: Lucide React
-- **Payments**: Isolated Demo Gateway simulator with verified atomic state transitions (Razorpay disabled)
+</div>
 
 ---
 
-## 2. Project Structure
+## 📖 Executive Overview
 
-```
-├── supabase/
-│   ├── migrations/
-│   │   ├── 20261024000001_initial_schema.sql             # Events, registrations, payments, RLS
-│   │   ├── 20261024000002_fix_rls_security_definer.sql    # Security definer helper functions
-│   │   ├── 20261024000003_admin_roles_and_indexes.sql    # RBAC and search indexes
-│   │   └── 20261024000004_rider_profiles_and_bicycle_types.sql # Profiles & 5 bicycle type constraints
-│   └── seed.sql                                          # Initial club events and demo data
-├── src/
-│   ├── app/
-│   │   ├── page.tsx                                      # Homepage: Hero, Manifesto, 3 Pillars, Join CTA
-│   │   ├── events/                                       # Dedicated Event Catalog
-│   │   │   ├── page.tsx                                  # Filterable by All, Upcoming, Past
-│   │   │   └── [slug]/                                   # Event Details & Itinerary
-│   │   │       └── register/                             # Authenticated & Prefilled Event Registration
-│   │   ├── auth/                                         # Rider Authentication
-│   │   │   ├── login/page.tsx                            # Rider Sign In with returnUrl redirect
-│   │   │   ├── signup/page.tsx                           # Rider Sign Up with Bicycle Type selector
-│   │   │   ├── forgot-password/page.tsx                  # Password Recovery
-│   │   │   └── callback/route.ts                         # Supabase OAuth/Email callback handler
-│   │   ├── profile/                                      # Rider Profile Management
-│   │   │   └── page.tsx                                  # Profile Editor & Historical Digital Passes
-│   │   ├── admin/                                        # Operations & Race Control
-│   │   │   ├── login/page.tsx                            # Dedicated Admin Portal
-│   │   │   ├── page.tsx                                  # Metrics Radar Dashboard
-│   │   │   ├── events/page.tsx                           # Event Creation, Price Setting, Publishing
-│   │   │   └── registrations/page.tsx                    # Searchable Participant Roster
-│   │   ├── registrations/
-│   │   │   ├── [reference]/                              # Official Rider Pass / Digital Bib
-│   │   │   │   └── pay/                                  # Demo Payment Simulation Gateway
-│   │   │   └── lookup/                                   # Public Reference Lookup
-│   │   └── api/
-│   │       ├── profile/route.ts                          # Authenticated Rider Profile API
-│   │       ├── registrations/route.ts                    # Server-Validated Bib Allocator
-│   │       ├── payments/demo/route.ts                    # Atomic Demo Payment Processor
-│   │       └── admin/export-csv/route.ts                 # Sanitized Participant CSV Export
-│   ├── components/
-│   │   ├── events/                                       # EventCard, EventsFilterView, EventPoster
-│   │   ├── layout/                                       # Navbar, Footer
-│   │   └── theme/                                        # ThemeToggle (Dark/Light mode switch)
-│   ├── lib/
-│   │   ├── db.ts                                         # Database Service & In-Memory Fallback
-│   │   ├── supabase/                                     # SSR Supabase Client & Server Helpers
-│   │   ├── validations/                                  # Canonical Bicycle Types & Zod Schemas
-│   │   └── constants.ts                                  # Club branding & INR formatters
-│   └── types/                                            # Core TypeScript Domain Models
-├── scripts/
-│   ├── run-tests.mjs                                     # Production verification test runner
-│   └── load-test.mjs                                     # Concurrent load simulator (500 synthetic riders)
-└── README.md
+**The Anand Cycling Club** platform is a modern full-stack web application designed for organizing, managing, and scaling endurance cycling events across Gujarat, India.
+
+Built specifically for high-concurrency race registrations (500+ riders simultaneously), the platform delivers:
+- **Instant Digital Passes with QR Codes** for paperless checkpoint check-ins.
+- **Rider Emergency Safety Profiles** (Blood Group, Verified Emergency Contacts, Medical/Residential Details).
+- **Live Event Capacity Management** with real-time seat quota decrementing and auto-sold-out triggers.
+- **Production-Grade Payment Verification** via Razorpay live checkout and timing-safe webhook reconciliation.
+- **Club Operations Radar** allowing administrators to create events, monitor revenues, and export sanitized participant rosters to Excel/CSV.
+
+---
+
+## 🏛 System Architecture
+
+The following diagram illustrates the complete end-to-end architecture across client, application, background services, and data layers:
+
+```mermaid
+graph TD
+    subgraph ClientLayer ["1. Client & Interface Layer"]
+        A1["📱 Rider Mobile View"]
+        A2["💻 Desktop Event Portal"]
+        A3["🛡️ Club Operations Radar"]
+    end
+
+    subgraph AppLayer ["2. Application Layer (Next.js 16 App Router)"]
+        B1["SSR & Server Components"]
+        B2["Zod Schema Validation Engine"]
+        B3["HMAC Session Cookie Signer"]
+        B4["Rate-Limiting & Security Guards"]
+    end
+
+    subgraph ServiceLayer ["3. Third-Party Integrations"]
+        C1["💳 Razorpay Live Gateway"]
+        C2["🔐 Razorpay Webhook Verifier (HMAC-SHA256)"]
+        C3["📧 Resend Transactional Email Engine"]
+    end
+
+    subgraph DataLayer ["4. Persistence Layer (Neon Serverless PostgreSQL)"]
+        D1["(Events & Capacity Quotas)"]
+        D2["(Rider Profiles & Emergency Details)"]
+        D3["(Registrations & Digital Bibs)"]
+        D4["(Audit Logs & Payment Records)"]
+    end
+
+    ClientLayer --> AppLayer
+    AppLayer --> ServiceLayer
+    AppLayer --> DataLayer
+    ServiceLayer -.-> AppLayer
 ```
 
 ---
 
-## 3. Installation & Setup
+## 🔄 End-to-End Registration & Payment Lifecycle
 
-### Prerequisites
-- Node.js 18+ (Node 20+ recommended)
-- npm or pnpm
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Rider as 🚴 Rider
+    participant Web as 🌐 Event Detail Page
+    participant API as ⚡ /api/registrations
+    participant DB as 🐘 Neon PostgreSQL
+    participant RZP as 💳 Razorpay Gateway
+    participant WH as 🔒 /api/webhooks/razorpay
+    participant Mail as 📧 Resend Email API
 
-### Clone & Install
+    Rider->>Web: Selects Event & Clicks "Register Now"
+    Web->>Web: Prefills rider profile + prompts for Emergency details & Blood Group
+    Rider->>API: Submits Registration (Idempotency Key + Validated Schema)
+    API->>DB: Check real-time capacity quota (atomic reservation)
+    alt Capacity Full
+        DB-->>API: 0 spots remaining
+        API-->>Web: Error: "Registration Full / Sold Out"
+    else Capacity Available
+        DB-->>API: Slot Reserved (status: 'pending_payment')
+        API->>RZP: Create Razorpay Order (Paise amount, INR)
+        RZP-->>API: Order ID (order_xxx)
+        API-->>Web: Return Order ID & Launch Razorpay Modal
+        Rider->>RZP: Completes UPI / Card / NetBanking Payment
+        RZP-->>Web: Payment Handler Callback
+        Web->>Web: Redirect to /registrations/{reference}
+        RZP->>WH: Webhook event 'payment.captured' (Raw Body + Signature)
+        WH->>WH: crypto.timingSafeEqual(rawHMAC, headerSignature)
+        WH->>DB: Atomic Update: status -> 'confirmed', payment -> 'succeeded'
+        WH->>Mail: Dispatch Digital Bib Pass + QR Code
+        Mail-->>Rider: Confirmation Email Delivered
+    end
+```
+
+---
+
+## 🗄 Database Entity-Relationship Model (ERD)
+
+```mermaid
+erDiagram
+    CYCLING_EVENTS ||--o{ EVENT_REGISTRATIONS : receives
+    RIDER_PROFILES ||--o{ EVENT_REGISTRATIONS : creates
+    EVENT_REGISTRATIONS ||--o{ PAYMENTS : settles
+    CYCLING_EVENTS ||--o{ EVENT_SPONSORS : featured_in
+    CYCLING_EVENTS ||--o{ EVENT_INCLUSIONS : provides
+
+    CYCLING_EVENTS {
+        uuid id PK
+        string slug UK
+        string title
+        text description
+        string cover_image_url
+        string venue
+        string location_description
+        timestamp starts_at
+        int distance_km
+        int elevation_gain_m
+        string difficulty
+        int registration_fee_paise
+        int max_capacity
+        string status
+        timestamp registration_closes_at
+    }
+
+    RIDER_PROFILES {
+        uuid id PK
+        uuid user_id UK
+        string full_name
+        string email
+        string mobile
+        string blood_group
+        string emergency_contact_name
+        string emergency_contact_phone
+        text residential_address
+        string bicycle_type
+        string bicycle_brand
+        string jersey_size
+    }
+
+    EVENT_REGISTRATIONS {
+        uuid id PK
+        uuid event_id FK
+        uuid rider_id FK
+        string reference_code UK
+        string bib_number
+        string status
+        string blood_group
+        string emergency_contact_name
+        string emergency_contact_phone
+        text residential_address
+        string bicycle_type
+        int amount_paid_paise
+        timestamp registered_at
+    }
+
+    PAYMENTS {
+        uuid id PK
+        uuid registration_id FK
+        string provider
+        string provider_order_id
+        string provider_payment_id
+        int amount_paise
+        string status
+        timestamp created_at
+    }
+```
+
+---
+
+## ⚡ Key Feature Highlights
+
+### 1. Rider Safety & Emergency Details
+Every event registration captures and validates rider personal safety data:
+- **Blood Group**: Standardized dropdown selection (`A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+`, `O-`, `Don't Know`).
+- **Emergency Contact**: Full name and strictly validated 10-digit Indian phone number (`+91` normalization).
+- **Residential Address**: Full address for medical emergency cross-verification.
+- **Decoupled Bicycle Overrides**: Event-specific bicycle selection (e.g. riding an MTB on a gravel trail) preserves the rider's primary profile without silent overwriting.
+
+### 2. Live Registration Quota Management
+- Authoritative database-level quota calculation (`COUNT(*) WHERE status IN ('confirmed', 'pending_payment')`).
+- Visual real-time progress bar (`LiveRegistrationProgress`) displaying spots remaining.
+- Automatic **SOLD OUT** badge and UI lockout when capacity is reached.
+
+### 3. High-Performance Editorial UI
+- **Light Editorial Design**: Inspired by cycling journals (Warm Ivory `#F7F7F2`, Muted Sage `#EAEDE2`, High-Contrast Obsidian `#171914`, and Glossy Lime `#C7F36B`).
+- **Next-Gen WebP Imagery**: All heavy camera assets converted to WebP with responsive breakpoints and lazy loading below the fold.
+- **Balanced Desktop View**: Full-width event cover banner with a balanced two-column layout:
+  - **Left Column**: Event overview, route metrics, inclusions with custom category icons, and rider safety protocols.
+  - **Right Column**: Sticky registration card + clean partner sponsor cards (Kapsul Foods, R. K. & Sons, Varni Holidays).
+
+### 4. Enterprise-Grade Security Architecture
+- **Timing-Safe Cryptography**: Password validation and webhook HMAC checks use `crypto.timingSafeEqual` to prevent side-channel timing attacks.
+- **Fail-Closed Production Mode**: Missing production secrets (`SESSION_SECRET`, `ADMIN_PASSWORD`) fail closed securely with HTTP 503 instead of falling back to default credentials.
+- **Session Cookie HMAC Signing**: Admin and rider sessions are cryptographically signed with SHA-256 HMAC and delivered via `HttpOnly`, `SameSite=Lax`, `Secure` cookies.
+- **Excel Formula Injection Defense**: CSV exports escape potentially dangerous prefixes (`=`, `+`, `-`, `@`) with prepended single quotes.
+
+---
+
+## 🛠 Tech Stack & Dependencies
+
+| Category | Technology |
+|---|---|
+| **Framework** | Next.js 16.4.3 (App Router, Turbopack) |
+| **Language** | TypeScript 5 (Strict Mode) |
+| **Database** | Neon Serverless PostgreSQL (`@neondatabase/serverless`) |
+| **Authentication** | Neon Auth / Supabase Auth (`@supabase/ssr`) + HMAC Session Cookies |
+| **Payments** | Razorpay Live Gateway + HMAC-SHA256 Webhooks |
+| **Transactional Email** | Resend API (`resend`) |
+| **Image Processing** | Sharp (WebP conversion & Favicon generation) |
+| **Styling** | Tailwind CSS with custom glassmorphism & Plus Jakarta Sans typography |
+| **Icons** | Lucide React |
+| **Validation** | Zod (Authoritative dual-layer client + server schema validation) |
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- **Node.js**: `v20.x` or higher
+- **Package Manager**: `npm` or `pnpm`
+
+### 2. Clone and Install
 ```bash
 git clone https://github.com/tirth-patel29/cycle-club.git
 cd cycle-club
 npm install
 ```
 
-### Environment Configuration
-Create `.env.local` using safe placeholders:
+### 3. Environment Configuration
+Create a `.env.local` file in the project root:
 
 ```env
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+# ==========================================
+# DATABASE (Neon Serverless PostgreSQL)
+# ==========================================
+DATABASE_URL=postgresql://user:password@ep-example.neon.tech/neondb?sslmode=require
 
-# Application Settings
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+# ==========================================
+# ADMIN AUTHENTICATION & SESSIONS
+# ==========================================
+ADMIN_PASSWORD=your_secure_master_password
+ADMIN_EMAILS=admin@anandcyclingclub.in,tirthhpatel29@gmail.com
+SESSION_SECRET=369fa5dd657ff4f89561a8f13af6e4d7395f4834d04a7354eddaeb2e02b8a204
 
-# Payment Provider Configuration
-# Set to 'demo' for simulated checkout. Razorpay remains disabled in production until credentials are provided.
-PAYMENT_PROVIDER=demo
-RAZORPAY_KEY_ID=
-RAZORPAY_KEY_SECRET=
+# ==========================================
+# PAYMENTS (Razorpay)
+# ==========================================
+RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxx
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
+
+# ==========================================
+# EMAIL (Resend)
+# ==========================================
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 ---
 
-## 4. Supabase Database & Migrations
+## 🧪 Verification & Automated Testing
 
-The project maintains reviewed, incremental, versioned SQL migrations in `supabase/migrations/`:
+The repository includes a comprehensive 28-scenario test suite verifying end-to-end functionality:
 
-| Migration File | Description |
-|---|---|
-| `20261024000001_initial_schema.sql` | Creates `events`, `registrations`, `payments`, `audit_logs` tables and enables RLS. |
-| `20261024000002_fix_rls_security_definer.sql` | Adds security definer helper functions for safe registration lookups. |
-| `20261024000003_admin_roles_and_indexes.sql` | Adds `admin_roles` RBAC table and performance indexes for lookups. |
-| `20261024000004_rider_profiles_and_bicycle_types.sql` | Creates `rider_profiles` table linked to `auth.users(id)` and enforces the canonical 5 bicycle types check constraint. |
-
-### Applying Migrations via Supabase CLI
 ```bash
-# Link your Supabase project
-npx supabase link --project-ref <your-project-id>
-
-# Apply all migrations to remote database
-npx supabase db push
-
-# Apply seed data
-npx supabase db execute --file supabase/seed.sql
-```
-
----
-
-## 5. Rider Authentication & Profile Behavior
-
-### Canonical Bicycle Types
-Per product requirements, exactly five canonical bicycle types are supported across the database, server validations, profile editor, and registration prefill:
-1. `Road`
-2. `Hybrid`
-3. `MTB`
-4. `City Bike`
-5. `Gravel Cycle`
-
-Enforced by database constraint:
-```sql
-CHECK (bicycle_type IN ('Road', 'Hybrid', 'MTB', 'City Bike', 'Gravel Cycle'))
-```
-
-### Profile & Event Prefill Lifecycle
-- **Account Creation (`/auth/signup`)**: Rider enters name, email, password, mobile, and selects their initial bicycle type from interactive cards.
-- **Permanent Profile (`/profile`)**: Riders can view and update their full name, mobile, age, gender, bicycle type, bicycle brand, model, and T-shirt size. Also lists all digital passes allocated to the rider.
-- **Prefilled Event Registration (`/events/[slug]/register`)**: When an authenticated rider opens any event registration, their profile information automatically prefills.
-- **Decoupled Event Overrides**: If a rider uses an MTB for a gravel ride instead of their default Road bike, the event registration records MTB as an immutable historical snapshot. The rider's permanent profile remains untouched unless they explicitly opt to save the change.
-
----
-
-## 6. Registration & Payment Workflows
-
-### Free Events (`amount_due_paise === 0`)
-1. User completes prefilled form and accepts safety terms.
-2. Server validates fee authoritative amount (0 paise).
-3. Registration is created with `status: 'confirmed'`.
-4. Stable public reference is generated (e.g. `ACC-2026-X7Y9`).
-5. **No payment screen is opened and no fake payment transaction is created.**
-6. The rider is redirected directly to their digital bib pass (`/registrations/[reference]`).
-
-### Paid Events (Demo Mode)
-1. Rider completes prefilled form and accepts safety terms.
-2. Registration is created in `status: 'pending_payment'`.
-3. Rider is directed to `/registrations/[reference]/pay`.
-4. Demo payment simulates UPI or Card checkout with Success or Decline actions.
-5. On **Success**: Registration updates atomically to `confirmed`, demo payment updates to `succeeded`, and rider is directed to pass with confetti.
-6. On **Decline**: Registration remains `pending_payment` with option to retry. Duplicate payments are strictly prevented.
-
-> **CRITICAL**: Razorpay remains completely disabled. No real money or bank transactions are processed.
-
----
-
-## 7. Admin Console & Race Control
-
-### Access
-- Entry portal: `/admin/login`
-- Protected Dashboard: `/admin`
-- Initial Admin Account: `admin@anandcyclingclub.in`
-
-### Features
-- **Radar Dashboard**: Live counts for total registrations, confirmed riders, pending checkouts, and collected revenue.
-- **Stage Management (`/admin/events`)**: Create new events, set distances, elevation gain, start venue, configure registration fees, mark events as free, and toggle draft/published/cancelled states.
-- **Rider Roster (`/admin/registrations`)**: Search participants by name or public reference code, filter by event or status, inspect bicycle type, brand, model, and jersey size.
-- **Participant CSV Export (`/api/admin/export-csv`)**: Authorized CSV export with formula injection protection (cells beginning with `=`, `+`, `-`, or `@` are safely sanitized).
-
----
-
-## 8. Testing & Verification
-
-### Running Unit & Integration Tests
-```bash
+# Run complete test suite (Unit, Integration, Security, and Auth)
 npm test
-```
-The test suite validates:
-- Indian mobile number normalization (`+91`, spaces, dashes)
-- Strict validation of all 5 canonical bicycle types (`Road`, `Hybrid`, `MTB`, `City Bike`, `Gravel Cycle`)
-- Rejection of invalid bicycle types at schema boundaries
-- Rider profile creation and persistence
-- Decoupled event bicycle overrides without modifying permanent profile
-- Historical registration snapshot immutability
-- Free event registration flow (instant confirmation, 0 paise, no fake payment)
-- Paid event demo flow (pending -> confirmed state transition)
-- Duplicate request prevention via UUID idempotency keys
-- CSV formula injection protection (`=`, `+`, `-`, `@`)
-- Live admin operations metrics
 
-### Running Production Build Check
-```bash
+# Run Next.js production build check with Turbopack
 npm run build
+
+# Run TypeScript static analysis
+npx tsc --noEmit
 ```
 
-### Reproducible Load Testing (500 Concurrent Riders)
-Simulate high-volume concurrent traffic against the registration endpoint:
-```bash
-# Syntax: node scripts/load-test.mjs [concurrency] [totalRequests] [baseUrl]
-node scripts/load-test.mjs 50 500 http://localhost:3000
-```
-Outputs total requests, throughput (req/sec), success rate, and p50/p95/p99 latency metrics.
+### Test Suite Coverage
+- **Suite 1**: Indian Mobile Normalization (`+91`, leading zeros, dashes).
+- **Suite 2**: Canonical 5 Bicycle Types Enforcement (`Road`, `Hybrid`, `MTB`, `City Bike`, `Gravel Cycle`).
+- **Suite 3**: Rider Profile Lifecycle & Decoupled Event Overrides.
+- **Suite 4**: Free Event Instant Confirmation (₹0 / 0 paise).
+- **Suite 5**: Paid Event Idempotency & State Transitions.
+- **Suite 6**: CSV Export Security & Formula Injection Defense (`=`, `+`, `-`, `@`).
+- **Suite 7**: Live Admin Operations Metrics Calculation.
+- **Suite 8**: Rider Safety & Blood Group Schema Validation.
+- **Suite 9**: Real-Time Event Capacity Quota Boundaries.
+- **Suite 10**: Pre-Launch Security Remediations (Fail-Closed secrets & Webhook signatures).
+- **Suite 11**: Admin Authentication Lifecycle (Plaintext + SHA-256 matching, rate limiting).
 
 ---
 
-## 9. Deployment Instructions (Vercel + Supabase)
+## 🚢 Production Deployment (Vercel)
 
-1. Push your repository to GitHub:
+1. Push your changes to GitHub:
    ```bash
    git push origin main
    ```
-2. In Vercel Dashboard, import the repository.
-3. Configure the following environment variables in Vercel:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `NEXT_PUBLIC_APP_URL`
-   - `PAYMENT_PROVIDER=demo`
+2. Import the repository in **Vercel**.
+3. Add the required Environment Variables in **Project Settings &rarr; Environment Variables**.
 4. Deploy the application.
+5. After updating any environment variable in Vercel, trigger a **Redeploy** to ensure serverless functions receive the updated values.
 
 ---
 
-## 10. Future Razorpay Integration Steps
+## 🚴 Community & Contact
 
-When the club is ready to accept live payments:
-1. Obtain Razorpay Key ID and Key Secret from the Razorpay Dashboard.
-2. In Vercel Environment Variables, set `PAYMENT_PROVIDER=razorpay`.
-3. Provide `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`.
-4. In `src/app/api/payments/razorpay/create-order/route.ts`, initialize the official Razorpay SDK instance.
-5. Configure Razorpay Webhook endpoint (`/api/payments/razorpay/webhook`) with signature verification (`X-Razorpay-Signature`).
+- **Club**: The Anand Cycling Club (ACC)
+- **Location**: Anand, Gujarat, India (Meeting point: R. K. & Sons Cycle Shop)
+- **Helpline**: `+91 70430 66800`
+- **Facebook**: [facebook.com/anandcycling](https://www.facebook.com/anandcycling/)
+- **Instagram**: [@anandcyclingclub](https://www.instagram.com/anandcyclingclub/)
 
 ---
 
-## 11. Known Limitations
-
-- Participant photos and event flyer uploads currently utilize CDN URLs; Supabase Storage bucket `event-covers` can be provisioned for local asset hosting.
-- SMS notifications via Gupshup / Twilio are designed as async webhooks and require SMS API credentials to dispatch live text messages to Indian mobile numbers.
+<div align="center">
+  <sub>Built with pride for the cycling community of Anand & Gujarat. Ride Beyond the Ordinary.</sub>
+</div>

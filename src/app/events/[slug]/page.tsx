@@ -128,10 +128,35 @@ export default async function EventDetailPage({ params }: Props) {
       {/* Two-Column Details & Registration Dock */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column (7-8 cols): Proud Sponsors -> Route specs -> Inclusions */}
+          {/* Left Column (7-8 cols): Overview -> Route specs -> Inclusions -> Rider Rules */}
           <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-            {/* 1. OUR PROUD SPONSORS SECTION */}
-            <SponsorSection sponsors={event.sponsors} />
+            {/* 1. ABOUT THIS RIDE */}
+            <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-4">
+              <h2 className="text-xs font-bold uppercase text-[#3F6212] tracking-wider font-mono">
+                ABOUT THIS RIDE
+              </h2>
+              <p className="text-sm sm:text-base text-[#171914] leading-relaxed font-medium">
+                {event.description}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
+                <div className="p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-center">
+                  <span className="text-[10px] uppercase text-[#62645C] font-semibold block">Distance</span>
+                  <span className="text-sm font-extrabold text-[#171914]">{event.distance_km} KM</span>
+                </div>
+                <div className="p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-center">
+                  <span className="text-[10px] uppercase text-[#62645C] font-semibold block">Difficulty</span>
+                  <span className="text-sm font-extrabold text-[#171914]">{event.difficulty}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-center">
+                  <span className="text-[10px] uppercase text-[#62645C] font-semibold block">Pace</span>
+                  <span className="text-sm font-extrabold text-[#171914]">{event.pace_guide || '20-28 km/h'}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-center">
+                  <span className="text-[10px] uppercase text-[#62645C] font-semibold block">Elevation</span>
+                  <span className="text-sm font-extrabold text-[#171914]">+{event.elevation_gain_m}m</span>
+                </div>
+              </div>
+            </div>
 
             {/* 2. RIDE SCHEDULE & ROUTE SPECIFICATIONS */}
             <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6">
@@ -217,9 +242,35 @@ export default async function EventDetailPage({ params }: Props) {
                 </div>
               </div>
             )}
+
+            {/* 4. RIDER ESSENTIALS & SAFETY GUIDELINES */}
+            <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-4">
+              <h3 className="text-xs font-bold uppercase text-[#3F6212] tracking-wider font-mono flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#3F6212]" />
+                <span>RIDER ESSENTIALS & SAFETY PROTOCOL</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#62645C]">
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE]">
+                  <CheckCircle2 className="w-4 h-4 text-[#3F6212] shrink-0 mt-0.5" />
+                  <span><strong>Helmet is mandatory</strong> — riders without approved helmets are not permitted to roll.</span>
+                </div>
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE]">
+                  <CheckCircle2 className="w-4 h-4 text-[#3F6212] shrink-0 mt-0.5" />
+                  <span><strong>Front & rear lights</strong> recommended for early dawn flag-off safety.</span>
+                </div>
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE]">
+                  <CheckCircle2 className="w-4 h-4 text-[#3F6212] shrink-0 mt-0.5" />
+                  <span><strong>Ride single-file</strong> on open highways and strictly obey ride marshal instructions.</span>
+                </div>
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE]">
+                  <CheckCircle2 className="w-4 h-4 text-[#3F6212] shrink-0 mt-0.5" />
+                  <span><strong>Digital Pass & QR</strong> stored on your phone will be scanned at the reporting desk.</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column (4-5 cols): Sticky Registration & Payment Card */}
+          {/* Right Column (4-5 cols): Sticky Registration & Proud Sponsors */}
           <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-28 space-y-6">
             <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
               <div>
@@ -285,6 +336,9 @@ export default async function EventDetailPage({ params }: Props) {
                 </a>
               </p>
             </div>
+
+            {/* OUR PROUD SPONSORS SECTION */}
+            <SponsorSection sponsors={event.sponsors} />
           </div>
         </div>
       </section>

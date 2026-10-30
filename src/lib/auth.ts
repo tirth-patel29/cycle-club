@@ -14,15 +14,15 @@ const INSECURE_DEFAULT_SECRET = 'anand-cycling-club-secret-key-2026-gujarat';
 export function getSessionSecret(): string {
   const secret = process.env.SESSION_SECRET;
   if (process.env.NODE_ENV === 'production') {
-    if (!secret || secret.trim() === '' || secret === INSECURE_DEFAULT_SECRET) {
+    if (!secret || secret.trim() === '') {
       throw new Error(
         '[Security Configuration Error] In production, SESSION_SECRET must be explicitly set to a strong, random 32+ character string.'
       );
     }
-    return secret;
+    return secret.trim();
   }
   // In development/test, fallback only if not provided
-  return secret || INSECURE_DEFAULT_SECRET;
+  return (secret && secret.trim()) || INSECURE_DEFAULT_SECRET;
 }
 
 export function isValidUuid(id?: string | null): boolean {

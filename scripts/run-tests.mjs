@@ -1,6 +1,7 @@
 import assert from 'assert';
 import crypto from 'crypto';
-import { getSessionSecret } from '../src/lib/auth';
+import { getSessionSecret, createSessionToken, verifySessionToken } from '../src/lib/auth';
+import { getAdminPassword, getAdminEmails, POST as adminLoginPost } from '../src/app/api/admin/login/route';
 import {
   normalizeIndianMobile,
   INDIAN_MOBILE_REGEX,
@@ -444,6 +445,135 @@ async function runAll() {
     const activeProvider = 'razorpay';
     const shouldBlock = isProduction || activeProvider !== 'demo';
     assert.strictEqual(shouldBlock, true, 'Demo payment MUST be blocked when in production or when razorpay is active');
+  });
+
+  // 11. Admin Authentication & Session Authorization Lifecycle Suite
+  console.log(`\n[Suite 11: Admin Authentication & Session Authorization Lifecycle]`);
+
+  await testAsync('Scenario 1: Correct admin email and password -> successful login with admin role', async () => {
+    const originalPass = process.env.ADMIN_PASSWORD;
+    process.env.ADMIN_PASSWORD = 'TestAdminSecret#2026';
+    try {
+      const req = {
+        headers: { get: () => '127.0.0.1' },
+        json: async () => ({ email: 'admin@anandcyclingclub.in', password: 'TestAdminSecret#2026' })
+      };
+      const res = await adminLoginPost(req);
+      const json = await res.json();
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(json.success, true);
+      assert.strictEqual(json.user.role, 'admin');
+    } finally {
+      if (originalPass !== undefined) process.env.ADMIN_PASSWORD = originalPass;
+      else delete process.env.ADMIN_PASSWORD;
+    }
+  });
+
+  await testAsync('Scenario 2: Incorrect password -> rejected with 401 INVALID_PASSWORD', async () => {
+    const originalPass = process.env.ADMIN_PASSWORD;
+    process.env.ADMIN_PASSWORD = 'TestAdminSecret#2026';
+    try {
+      const req = {
+        headers: { get: () => '127.0.0.1' },
+        json: async () => ({ email: 'admin@anandcyclingclub.in', password: 'WrongPassword123!' })
+      };
+      const res = await adminLoginPost(req);
+      const json = await res.json();
+      assert.strictEqual(res.status, 401);
+      assert.strictEqual(json.code, 'INVALID_PASSWORD');
+    } finally {
+      if (originalPass !== undefined) process.env.ADMIN_PASSWORD = originalPass;
+      else delete process.env.ADMIN_PASSWORD;
+    }
+  });
+
+  await testAsync('Scenario 3: Incorrect email -> rejected with 401 UNAUTHORIZED_EMAIL', async () => {
+    const originalPass = process.env.ADMIN_PASSWORD;
+    process.env.ADMIN_PASSWORD = 'TestAdminSecret#2026';
+    try {
+      const req = {
+        headers: { get: () => '127.0.0.1' },
+        json: async () => ({ email: 'stranger@example.com', password: 'TestAdminSecret#2026' })
+      };
+      const res = await adminLoginPost(req);
+      const json = await res.json();
+      assert.strictEqual(res.status, 401);
+      assert.strictEqual(json.code, 'UNAUTHORIZED_EMAIL');
+    } finally {
+      if (originalPass !== undefined) process.env.ADMIN_PASSWORD = originalPass;
+      else delete process.env.ADMIN_PASSWORD;
+    }
+  });
+
+  await testAsync('Scenario 4: Missing ADMIN_PASSWORD in production -> secure 503 failure', async () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalPass = process.env.ADMIN_PASSWORD;
+    process.env.NODE_ENV = 'production';
+    delete process.env.ADMIN_PASSWORD;
+    delete process.env.admin_password;
+    try {
+      const req = {
+        headers: { get: () => '127.0.0.1' },
+        json: async () => ({ email: 'admin@anandcyclingclub.in', password: 'AnyPassword' })
+      };
+      const res = await adminLoginPost(req);
+      const json = await res.json();
+      assert.strictEqual(res.status, 503);
+      assert.strictEqual(json.code, 'MISSING_ADMIN_PASSWORD');
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      if (originalPass !== undefined) process.env.ADMIN_PASSWORD = originalPass;
+    }
+  });
+
+  test('Scenario 5: Missing SESSION_SECRET in production -> fail-closed error', () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalSecret = process.env.SESSION_SECRET;
+    try {
+      process.env.NODE_ENV = 'production';
+      delete process.env.SESSION_SECRET;
+      assert.throws(() => getSessionSecret(), /SESSION_SECRET must be explicitly set/i);
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      if (originalSecret !== undefined) process.env.SESSION_SECRET = originalSecret;
+    }
+  });
+
+  await testAsync('Scenario 6: Valid admin session token -> signed and verified with admin role', async () => {
+    const adminSession = {
+      userId: 'admin-00000000-0000-4000-a000-000000000001',
+      email: 'admin@anandcyclingclub.in',
+      fullName: 'Club Operations Admin',
+      role: 'admin'
+    };
+    const token = await createSessionToken(adminSession);
+    assert.strictEqual(typeof token, 'string');
+    assert.strictEqual(token.includes('.'), true);
+
+    const verified = await verifySessionToken(token);
+    assert.ok(verified, 'Session token must verify successfully');
+    assert.strictEqual(verified.email, 'admin@anandcyclingclub.in');
+    assert.strictEqual(verified.role, 'admin');
+  });
+
+  await testAsync('Scenario 7: Expired or tampered session token -> rejected (null)', async () => {
+    const fakeToken = 'eyJhbGciOiJIUzI1NiJ9.tampered_payload_data.invalid_signature_hex';
+    const verified = await verifySessionToken(fakeToken);
+    assert.strictEqual(verified, null, 'Tampered token must be rejected as null');
+  });
+
+  await testAsync('Scenario 8: Rider account session -> role is "rider", cannot claim admin', async () => {
+    const riderSession = {
+      userId: 'rider-00000000-0000-4000-a000-000000000002',
+      email: 'rider@example.in',
+      fullName: 'Rahul Sharma',
+      role: 'rider'
+    };
+    const token = await createSessionToken(riderSession);
+    const verified = await verifySessionToken(token);
+    assert.ok(verified);
+    assert.strictEqual(verified.role, 'rider');
+    assert.notStrictEqual(verified.role, 'admin', 'Rider role must never match admin');
   });
 
   console.log(`\n================ Test Summary ================`);
