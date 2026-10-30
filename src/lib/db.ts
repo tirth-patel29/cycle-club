@@ -994,6 +994,9 @@ class DatabaseService {
         if (res.rows.length > 0) {
           const reg = mapRegistrationRow(res.rows[0]);
           this.registrations.unshift(reg);
+          // Do NOT pre-create a payment row here.
+          // For Razorpay: recordRazorpayOrder() creates it when the order is placed.
+          // For Demo: processDemoPayment() creates it when simulated.
           return reg;
         }
       } catch (err) {
@@ -1044,6 +1047,8 @@ class DatabaseService {
         event_id: newReg.event_id
       });
     }
+    // Do NOT pre-create payment for paid events here.
+    // Payment row is created by recordRazorpayOrder() or processDemoPayment().
 
     return newReg;
   }
