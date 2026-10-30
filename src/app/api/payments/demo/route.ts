@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
 import { sendConfirmationEmailSafely } from '@/lib/email/service';
+import { getPaymentProviderName } from '@/lib/payments/config';
 
 const demoPaymentSchema = z.object({
   registration_reference: z.string().min(1, 'Registration reference is required'),
@@ -11,6 +12,23 @@ const demoPaymentSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // SECURITY GUARD: Unconditionally block demo payments in production
+    // or whenever Razorpay is active as the payment provider
+    const isProduction = process.env.NODE_ENV === 'production';
+    const activeProvider = getPaymentProviderName();
+
+    if (isProduction || activeProvider !== 'demo') {
+      console.warn(
+        `[Security Guard] Blocked unauthorized demo payment simulation attempt (env: ${process.env.NODE_ENV}, provider: ${activeProvider})`
+      );
+      return NextResponse.json(
+        {
+          error: 'Demo payment simulation is disabled. Real payment through official gateway is required.'
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const parseResult = demoPaymentSchema.safeParse(body);
 

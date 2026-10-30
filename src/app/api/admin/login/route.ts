@@ -47,7 +47,22 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'tirthhpatel29@gmail.com,admin
   .split(',')
   .map(e => e.trim());
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'tirth#2957';
+const INSECURE_DEFAULT_ADMIN_PASSWORD = 'tirth#2957';
+
+function getAdminPassword(): string | null {
+  const envPass = process.env.ADMIN_PASSWORD;
+  if (process.env.NODE_ENV === 'production') {
+    // In production, must be explicitly configured and must not match the default placeholder
+    if (!envPass || envPass.trim() === '' || envPass === INSECURE_DEFAULT_ADMIN_PASSWORD) {
+      console.error(
+        '[Security Configuration Error] In production, ADMIN_PASSWORD environment variable must be explicitly configured with a strong secret.'
+      );
+      return null;
+    }
+    return envPass;
+  }
+  return envPass || INSECURE_DEFAULT_ADMIN_PASSWORD;
+}
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'anonymous';
@@ -81,7 +96,19 @@ export async function POST(request: NextRequest) {
 
   // Check email in authorized admin list
   const isAuthorizedEmail = ADMIN_EMAILS.includes(email);
-  const isPasswordValid = safeCompare(password, ADMIN_PASSWORD);
+  const configuredPassword = getAdminPassword();
+
+  if (!configuredPassword) {
+    return NextResponse.json(
+      { error: 'Admin authentication service is not properly configured. Access disabled.' },
+      {
+        status: 503,
+        headers: { 'Cache-Control': 'no-store, max-age=0' }
+      }
+    );
+  }
+
+  const isPasswordValid = safeCompare(password, configuredPassword);
 
   if (!isAuthorizedEmail || !isPasswordValid) {
     recordFailedAttempt(ip);

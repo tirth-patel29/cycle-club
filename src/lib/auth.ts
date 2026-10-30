@@ -8,7 +8,22 @@ export interface UserSession {
 }
 
 const SESSION_COOKIE_NAME = 'acc_session_token';
-const SESSION_SECRET = process.env.SESSION_SECRET || 'anand-cycling-club-secret-key-2026-gujarat';
+
+const INSECURE_DEFAULT_SECRET = 'anand-cycling-club-secret-key-2026-gujarat';
+
+export function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (process.env.NODE_ENV === 'production') {
+    if (!secret || secret.trim() === '' || secret === INSECURE_DEFAULT_SECRET) {
+      throw new Error(
+        '[Security Configuration Error] In production, SESSION_SECRET must be explicitly set to a strong, random 32+ character string.'
+      );
+    }
+    return secret;
+  }
+  // In development/test, fallback only if not provided
+  return secret || INSECURE_DEFAULT_SECRET;
+}
 
 export function isValidUuid(id?: string | null): boolean {
   if (!id) return false;
@@ -68,21 +83,23 @@ async function verify(data: string, signature: string, secret: string): Promise<
 }
 
 export async function createSessionToken(session: UserSession): Promise<string> {
+  const secret = getSessionSecret();
   const payload = JSON.stringify({
     ...session,
     exp: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
   });
   const data = Buffer.from(payload).toString('base64url');
-  const signature = await sign(data, SESSION_SECRET);
+  const signature = await sign(data, secret);
   return `${data}.${signature}`;
 }
 
 export async function verifySessionToken(token: string): Promise<UserSession | null> {
   try {
+    const secret = getSessionSecret();
     const [data, signature] = token.split('.');
     if (!data || !signature) return null;
 
-    const isValid = await verify(data, signature, SESSION_SECRET);
+    const isValid = await verify(data, signature, secret);
     if (!isValid) return null;
 
     const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));

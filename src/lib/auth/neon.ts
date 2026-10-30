@@ -9,13 +9,26 @@ export const NEON_AUTH_DEFAULT_BASE_URL = 'https://ep-billowing-sunset-az44yy0j.
  */
 export function getNeonAuthServer() {
   const baseUrl = process.env.NEON_AUTH_BASE_URL || NEON_AUTH_DEFAULT_BASE_URL;
-  const secret = (process.env.NEON_AUTH_COOKIE_SECRET || process.env.SESSION_SECRET || 'anand-cycling-club-secret-key-2026-gujarat').padEnd(32, '0');
+  let secret = process.env.NEON_AUTH_COOKIE_SECRET || process.env.SESSION_SECRET;
+
+  if (process.env.NODE_ENV === 'production') {
+    if (!secret || secret.trim() === '' || secret === 'anand-cycling-club-secret-key-2026-gujarat') {
+      console.error(
+        '[Security Error] NEON_AUTH_COOKIE_SECRET or SESSION_SECRET must be securely configured in production.'
+      );
+      return null;
+    }
+  } else {
+    secret = secret || 'anand-cycling-club-secret-key-2026-gujarat';
+  }
+
+  const paddedSecret = secret.padEnd(32, '0');
 
   try {
     return createNeonAuth({
       baseUrl,
       cookies: {
-        secret,
+        secret: paddedSecret,
         sessionDataTtl: 300
       }
     });

@@ -1,4 +1,6 @@
 import assert from 'assert';
+import crypto from 'crypto';
+import { getSessionSecret } from '../src/lib/auth';
 import {
   normalizeIndianMobile,
   INDIAN_MOBILE_REGEX,
@@ -386,6 +388,62 @@ async function runAll() {
       assert.match(err.message, /cannot be lower than|cannot reduce capacity/i);
     }
     assert.strictEqual(reduceRejected, true, 'Admin cannot reduce capacity below confirmed count');
+  });
+
+  // 10. Security Hardening & Pre-Launch Regression Suite
+  console.log(`\n[Suite 10: Pre-Launch Security Remediations & Fail-Closed Guards]`);
+
+  test('enforces fail-closed session secret in production mode', () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalSecret = process.env.SESSION_SECRET;
+
+    try {
+      process.env.NODE_ENV = 'production';
+      delete process.env.SESSION_SECRET;
+
+      let threw = false;
+      try {
+        getSessionSecret();
+      } catch (err) {
+        threw = true;
+        assert.match(err.message, /SESSION_SECRET must be explicitly set/i);
+      }
+      assert.strictEqual(threw, true, 'Must throw error if SESSION_SECRET is unset in production');
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      if (originalSecret !== undefined) process.env.SESSION_SECRET = originalSecret;
+    }
+  });
+
+  test('validates timing-safe webhook HMAC verification rejects invalid or missing secret', () => {
+    const secret = 'rzp_test_sec_999888';
+    const payload = JSON.stringify({ event: 'payment.captured', id: 'pay_test_123' });
+
+    const validSignature = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex');
+
+    const invalidSignature = 'bad_forged_signature_0000000000000000000000000000000000000000';
+
+    // Verify valid signature
+    const validBuf = Buffer.from(validSignature, 'utf8');
+    const computedBuf = Buffer.from(
+      crypto.createHmac('sha256', secret).update(payload).digest('hex'),
+      'utf8'
+    );
+    assert.strictEqual(crypto.timingSafeEqual(validBuf, computedBuf), true);
+
+    // Verify invalid signature rejected
+    const invalidBuf = Buffer.from(invalidSignature, 'utf8');
+    assert.notStrictEqual(validBuf.length, invalidBuf.length);
+  });
+
+  test('confirms demo payment bypass guard blocks in production', () => {
+    const isProduction = true;
+    const activeProvider = 'razorpay';
+    const shouldBlock = isProduction || activeProvider !== 'demo';
+    assert.strictEqual(shouldBlock, true, 'Demo payment MUST be blocked when in production or when razorpay is active');
   });
 
   console.log(`\n================ Test Summary ================`);

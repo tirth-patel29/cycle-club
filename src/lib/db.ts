@@ -10,9 +10,21 @@ function getPool(): pg.Pool | null {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) return null;
   if (!pgPool) {
+    // Determine appropriate pool size for serverless Next.js
+    // Serverless instances scale horizontally; setting max to 5-10 per lambda
+    // prevents exhausting Neon connection limits (default 100 on compute)
+    const maxConnections = process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX, 10) : 5;
+
     pgPool = new pg.Pool({
       connectionString: dbUrl,
-      ssl: { rejectUnauthorized: false }
+      ssl: { rejectUnauthorized: false },
+      max: maxConnections,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000
+    });
+
+    pgPool.on('error', (err) => {
+      console.error('[PostgreSQL Pool Unexpected Error]', err);
     });
   }
   return pgPool;
