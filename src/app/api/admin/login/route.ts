@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { setSessionCookie, ensureUuid } from '@/lib/auth';
 
 // Rate limiting for admin login: max 5 failed attempts per IP per 15 minutes
 const failedAttemptsMap = new Map<string, { count: number; resetAt: number }>();
 
 function isRateLimited(ip: string): boolean {
+  // In development, do not lock out developer while configuring credentials
+  if (process.env.NODE_ENV !== 'production') return false;
+
   const now = Date.now();
   const entry = failedAttemptsMap.get(ip);
   if (!entry) return false;
@@ -41,27 +46,86 @@ function safeCompare(a: string, b: string): boolean {
   }
 }
 
-// Configurable admin authorized emails
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'tirthhpatel29@gmail.com,admin@anandcyclingclub.in')
-  .toLowerCase()
-  .split(',')
-  .map(e => e.trim());
+function cleanEnvVal(val: string | undefined | null): string | null {
+  if (!val) return null;
+  let v = val.trim();
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    v = v.slice(1, -1).trim();
+  }
+  return v || null;
+}
+
+function readEnvVarFromDisk(targetKey: string): string | null {
+  try {
+    const cwd = process.cwd();
+    const candidateFiles = ['.env.local', '.env'];
+    for (const f of candidateFiles) {
+      const fullPath = path.resolve(cwd, f);
+      if (fs.existsSync(fullPath)) {
+        const content = fs.readFileSync(fullPath, 'utf8');
+        const lines = content.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const idx = trimmed.indexOf('=');
+          if (idx !== -1) {
+            const k = trimmed.slice(0, idx).trim().toLowerCase();
+            if (k === targetKey.toLowerCase()) {
+              return cleanEnvVal(trimmed.slice(idx + 1));
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // Ignore file read error in serverless environments
+  }
+  return null;
+}
 
 const INSECURE_DEFAULT_ADMIN_PASSWORD = 'tirth#2957';
 
 function getAdminPassword(): string | null {
-  const envPass = process.env.ADMIN_PASSWORD;
+  // Check process.env with case insensitivity (ADMIN_PASSWORD, admin_password, ADMIN_PASS, admin_pass)
+  const fromEnv =
+    cleanEnvVal(process.env.ADMIN_PASSWORD) ||
+    cleanEnvVal(process.env.admin_password) ||
+    cleanEnvVal(process.env.ADMIN_PASS) ||
+    cleanEnvVal(process.env.admin_pass);
+
+  // If not found in process.env, read directly from .env.local or .env on disk (catches updates without dev server restart)
+  const resolved =
+    fromEnv ||
+    readEnvVarFromDisk('ADMIN_PASSWORD') ||
+    readEnvVarFromDisk('admin_password');
+
   if (process.env.NODE_ENV === 'production') {
     // In production, must be explicitly configured and must not match the default placeholder
-    if (!envPass || envPass.trim() === '' || envPass === INSECURE_DEFAULT_ADMIN_PASSWORD) {
+    if (!resolved || resolved === INSECURE_DEFAULT_ADMIN_PASSWORD) {
       console.error(
         '[Security Configuration Error] In production, ADMIN_PASSWORD environment variable must be explicitly configured with a strong secret.'
       );
       return null;
     }
-    return envPass;
+    return resolved;
   }
-  return envPass || INSECURE_DEFAULT_ADMIN_PASSWORD;
+
+  return resolved || INSECURE_DEFAULT_ADMIN_PASSWORD;
+}
+
+function getAdminEmails(): string[] {
+  const fromEnv =
+    cleanEnvVal(process.env.ADMIN_EMAILS) ||
+    cleanEnvVal(process.env.admin_emails) ||
+    readEnvVarFromDisk('ADMIN_EMAILS') ||
+    readEnvVarFromDisk('admin_emails') ||
+    'tirthhpatel29@gmail.com,admin@anandcyclingclub.in';
+
+  return fromEnv
+    .toLowerCase()
+    .split(',')
+    .map(e => e.trim())
+    .filter(Boolean);
 }
 
 export async function POST(request: NextRequest) {
@@ -95,7 +159,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Check email in authorized admin list
-  const isAuthorizedEmail = ADMIN_EMAILS.includes(email);
+  const adminEmails = getAdminEmails();
+  const isAuthorizedEmail = adminEmails.includes(email);
   const configuredPassword = getAdminPassword();
 
   if (!configuredPassword) {
@@ -112,6 +177,9 @@ export async function POST(request: NextRequest) {
 
   if (!isAuthorizedEmail || !isPasswordValid) {
     recordFailedAttempt(ip);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`[Admin Login Failed] Email: "${email}" (Authorized: ${isAuthorizedEmail}) | Password matched: ${isPasswordValid}`);
+    }
     return NextResponse.json(
       { error: 'Invalid admin credentials. Access denied.' },
       {
