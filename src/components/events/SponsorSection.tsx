@@ -16,7 +16,7 @@ export function SponsorSection({ sponsors, className = '' }: Props) {
     <div className={`surface-card rounded-2xl p-5 sm:p-6 border border-[#E5E6DE] space-y-4 shadow-xs ${className}`}>
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-wider text-[#3F6212] font-mono">
-          OUR EVENT PARTNERS
+          OUR PROUD SPONSORS
         </h3>
         <span className="text-[10px] font-mono text-[#62645C] uppercase font-semibold">
           Official Support
