@@ -17,9 +17,24 @@ export function normalizeIndianMobile(phone: string): string {
 
 export const BICYCLE_TYPES = ['Road', 'Hybrid', 'MTB', 'City Bike', 'Gravel Cycle'] as const;
 export const TSHIRT_SIZES = ['S', 'M', 'L', 'XL', '2XL', 'None'] as const;
+export const BLOOD_GROUPS = [
+  'A+',
+  'A-',
+  'B+',
+  'B-',
+  'AB+',
+  'AB-',
+  'O+',
+  'O-',
+  "Don't Know"
+] as const;
 
 export const bicycleTypeSchema = z.enum(BICYCLE_TYPES, {
   message: 'Please select a valid bicycle type (Road, Hybrid, MTB, City Bike, Gravel Cycle)'
+});
+
+export const bloodGroupSchema = z.enum(BLOOD_GROUPS, {
+  message: "Please select a valid blood group (A+, A-, B+, B-, AB+, AB-, O+, O-, or Don't Know)"
 });
 
 export const registrationSchema = z.object({
@@ -55,30 +70,33 @@ export const registrationSchema = z.object({
   emergency_contact_name: z
     .string()
     .trim()
-    .max(70)
-    .optional()
-    .or(z.literal('')),
+    .min(2, "Please enter emergency contact person's full name")
+    .max(70, 'Emergency contact name must be within 70 characters'),
   emergency_contact_phone: z
     .string()
     .trim()
-    .transform((val) => (val ? normalizeIndianMobile(val) : ''))
-    .refine((val) => !val || INDIAN_MOBILE_REGEX.test(val), {
-      message: 'Emergency phone must be a valid 10-digit Indian mobile'
-    })
-    .optional()
-    .or(z.literal('')),
+    .transform(normalizeIndianMobile)
+    .refine((val) => INDIAN_MOBILE_REGEX.test(val), {
+      message: 'Please enter a valid 10-digit Indian mobile number for emergency contact'
+    }),
+  blood_group: bloodGroupSchema,
+  residential_address: z
+    .string()
+    .trim()
+    .min(5, 'Please enter your complete residential address')
+    .max(500, 'Residential address must be within 500 characters'),
   jersey_size: z
     .enum(TSHIRT_SIZES)
     .default('None'),
   bicycle_type: bicycleTypeSchema.default('Hybrid'),
   bicycle_brand: z.string().trim().max(50).optional().or(z.literal('')),
   bicycle_model: z.string().trim().max(50).optional().or(z.literal('')),
-    terms_accepted: z
+  terms_accepted: z
     .boolean()
     .refine((val) => val === true, {
       message: 'You must accept the safety guidelines and ride terms to register'
     }),
-  idempotency_key: z.string().min(1, 'Invalid idempotency key')
+  idempotency_key: z.string().optional().default(() => `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`)
 });
 
 export const riderProfileSchema = z.object({
@@ -105,7 +123,19 @@ export const riderProfileSchema = z.object({
   gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']).optional(),
   bicycle_brand: z.string().trim().max(50).optional().or(z.literal('')),
   bicycle_model: z.string().trim().max(50).optional().or(z.literal('')),
-  tshirt_size: z.enum(TSHIRT_SIZES).optional().default('None')
+  tshirt_size: z.enum(TSHIRT_SIZES).optional().default('None'),
+  emergency_contact_name: z.string().trim().max(70).optional().or(z.literal('')),
+  emergency_contact_phone: z
+    .string()
+    .trim()
+    .transform((val) => (val ? normalizeIndianMobile(val) : ''))
+    .refine((val) => !val || INDIAN_MOBILE_REGEX.test(val), {
+      message: 'Emergency phone must be a valid 10-digit Indian mobile'
+    })
+    .optional()
+    .or(z.literal('')),
+  blood_group: bloodGroupSchema.optional(),
+  residential_address: z.string().trim().max(500).optional().or(z.literal(''))
 });
 
 export type RegistrationFormData = z.infer<typeof registrationSchema>;

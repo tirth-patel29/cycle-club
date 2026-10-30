@@ -2,6 +2,14 @@ export type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
 export type RideDifficulty = 'Easy / Leisure' | 'Moderate' | 'Challenging' | 'Endurance / Brevet';
 export type DifficultyLevel = RideDifficulty;
 
+export interface EventSponsor {
+  id: string;
+  name: string;
+  logo_url: string;
+  website_url?: string;
+  tier?: string;
+}
+
 export interface CyclingEvent {
   id: string;
   slug: string;
@@ -18,6 +26,8 @@ export interface CyclingEvent {
   registration_fee_paise: number; // Stored in paise (e.g. 29900 = ₹299)
   currency: string; // Default 'INR'
   status: EventStatus;
+  max_capacity?: number | null; // Nullable = unlimited, positive whole number
+  sponsors?: EventSponsor[];
   registration_opens_at: string;
   registration_closes_at: string;
   published_at?: string;
@@ -34,6 +44,7 @@ export type RegistrationStatus = 'pending_payment' | 'confirmed' | 'cancelled';
 export type GenderOption = 'Male' | 'Female' | 'Other' | 'Prefer not to say';
 export type BicycleType = 'Road' | 'Hybrid' | 'MTB' | 'City Bike' | 'Gravel Cycle';
 export type TshirtSize = 'S' | 'M' | 'L' | 'XL' | '2XL' | 'None';
+export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | "Don't Know";
 
 export interface RiderProfile {
   id: string; // profile UUID
@@ -47,6 +58,10 @@ export interface RiderProfile {
   bicycle_brand?: string;
   bicycle_model?: string;
   tshirt_size?: TshirtSize;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  blood_group?: BloodGroup;
+  residential_address?: string;
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +79,9 @@ export interface Registration {
   gender: GenderOption;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
+  blood_group?: BloodGroup;
+  residential_address?: string;
+  seat_reserved_until?: string; // ISO date string for reservation hold
   jersey_size?: TshirtSize;
   bicycle_type?: BicycleType;
   bicycle_brand?: string;
@@ -75,6 +93,18 @@ export interface Registration {
   idempotency_key: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface EventCapacityInfo {
+  event_id: string;
+  max_capacity: number | null;
+  confirmed_count: number;
+  active_pending_count: number;
+  remaining_capacity: number | null;
+  percentage_filled: number | null;
+  is_full: boolean;
+  is_unlimited: boolean;
+  status: 'open' | 'almost_full' | 'full' | 'unlimited';
 }
 
 export type PaymentStatus = 'initiated' | 'pending' | 'succeeded' | 'failed' | 'refunded';

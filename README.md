@@ -1,6 +1,6 @@
 # Anand Cycling Club (ACC) • Production Platform
 
-Production-ready cycling club and event registration platform built for **Anand Cycling Club (Anand, Gujarat, India)** using the Google Stitch peloton design system as the primary visual reference.
+Production-ready cycling club and event registration platform built for **Anand Cycling Club (Anand, Gujarat, India)** using the Google Stitch THE ANAND CYCLING CLUB design system as the primary visual reference.
 
 Built with Next.js App Router, Supabase PostgreSQL, Supabase Auth, `@supabase/ssr`, Tailwind CSS, Zod, and full server-side validation.
 

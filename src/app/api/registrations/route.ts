@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
       jersey_size,
       emergency_contact_name,
       emergency_contact_phone,
+      blood_group,
+      residential_address,
       idempotency_key
     } = parseResult.data;
 
@@ -62,33 +64,55 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Registration deadline has passed for this ride' }, { status: 400 });
     }
 
+    // Check capacity availability before proceeding
+    const capacityInfo = await db.getEventCapacity(event.id);
+    if (capacityInfo.is_full) {
+      return NextResponse.json(
+        { error: 'Registration is full for this event. No seats are currently available.' },
+        { status: 409 }
+      );
+    }
+
     // 4. Calculate authoritative price from database (Never trust client price!)
     const amountDuePaise = event.registration_fee_paise;
     const currency = event.currency || 'INR';
     const isFree = amountDuePaise === 0;
 
-    // 5. Persist registration safely
-    const newReg = await db.createRegistration({
-      event_id: event.id,
-      rider_id: normalizedRiderId,
-      event_title: event.title,
-      full_name,
-      mobile_number,
-      email: email || undefined,
-      age,
-      gender,
-      bicycle_type,
-      bicycle_brand: bicycle_brand || undefined,
-      bicycle_model: bicycle_model || undefined,
-      jersey_size,
-      emergency_contact_name,
-      emergency_contact_phone,
-      terms_accepted_at: new Date().toISOString(),
-      status: isFree ? 'confirmed' : 'pending_payment',
-      amount_due_paise: amountDuePaise,
-      currency,
-      idempotency_key: normalizedIdempotencyKey
-    });
+    // 5. Persist registration safely with seat reservation hold
+    let newReg;
+    try {
+      newReg = await db.createRegistration({
+        event_id: event.id,
+        rider_id: normalizedRiderId,
+        event_title: event.title,
+        full_name,
+        mobile_number,
+        email: email || undefined,
+        age,
+        gender,
+        bicycle_type,
+        bicycle_brand: bicycle_brand || undefined,
+        bicycle_model: bicycle_model || undefined,
+        jersey_size,
+        emergency_contact_name,
+        emergency_contact_phone,
+        blood_group,
+        residential_address,
+        terms_accepted_at: new Date().toISOString(),
+        status: isFree ? 'confirmed' : 'pending_payment',
+        amount_due_paise: amountDuePaise,
+        currency,
+        idempotency_key: normalizedIdempotencyKey
+      });
+    } catch (createErr: any) {
+      if (createErr.message && createErr.message.includes('capacity has been reached')) {
+        return NextResponse.json(
+          { error: 'Registration capacity has been reached for this ride. No seats remaining.' },
+          { status: 409 }
+        );
+      }
+      throw createErr;
+    }
 
     // 6. Trigger confirmation email for confirmed free events (non-blocking)
     if (isFree && newReg.status === 'confirmed') {

@@ -474,10 +474,10 @@ export default function ProfilePage() {
 
             <div className="p-6 rounded-2xl bg-[#EAEDE2] border border-[#E5E6DE] space-y-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#3F6212] font-mono">
-                Anand Peloton Safety Standards
+                Anand Club Safety Standards
               </h4>
               <p className="text-xs text-[#62645C] leading-relaxed font-medium">
-                Every participant ride is synchronized with RFID timing, mechanical SAG support van, and our strict Zero-Drop peloton policy. Keep your emergency contact up to date before every race.
+                Every participant ride is synchronized with RFID timing, mechanical SAG support van, and our strict Zero-Drop pack policy. Keep your emergency contact up to date before every race.
               </p>
             </div>
           </div>

@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Registration, CyclingEvent } from '@/types';
 import { formatINR } from '@/lib/constants';
-import { Search, Download, Phone, ExternalLink, CheckCircle2, Clock } from 'lucide-react';
+import { Search, Download, Phone, ExternalLink, CheckCircle2, Clock, ShieldAlert, HeartPulse, MapPin, X } from 'lucide-react';
 
 interface Props {
   initialRegistrations: Registration[];
@@ -16,6 +16,7 @@ export function AdminRegistrationsManager({ initialRegistrations, events }: Prop
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEventId, setSelectedEventId] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedSafetyRider, setSelectedSafetyRider] = useState<Registration | null>(null);
 
   const filtered = useMemo(() => {
     return registrations.filter((reg) => {
@@ -108,6 +109,7 @@ export function AdminRegistrationsManager({ initialRegistrations, events }: Prop
                 <th className="py-3 px-4">STAGE</th>
                 <th className="py-3 px-4">FEE</th>
                 <th className="py-3 px-4">STATUS</th>
+                <th className="py-3 px-4">SAFETY</th>
                 <th className="py-3 px-4">PASS</th>
               </tr>
             </thead>
@@ -127,6 +129,16 @@ export function AdminRegistrationsManager({ initialRegistrations, events }: Prop
                     )}
                   </td>
                   <td className="py-3 px-4">
+                    <button
+                      onClick={() => setSelectedSafetyRider(reg)}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#F7F7F2] border border-[#E5E6DE] hover:border-red-400 text-red-700 font-bold text-[10px] cursor-pointer transition-colors"
+                      title="View confidential emergency & medical details"
+                    >
+                      <HeartPulse className="w-3 h-3 text-red-600" />
+                      <span>{reg.blood_group || 'Emergency'}</span>
+                    </button>
+                  </td>
+                  <td className="py-3 px-4">
                     <Link
                       href={`/registrations/${reg.public_reference}`}
                       target="_blank"
@@ -142,6 +154,92 @@ export function AdminRegistrationsManager({ initialRegistrations, events }: Prop
           </table>
         </div>
       </div>
+
+      {/* Confidential Safety & Emergency Modal (Admins / Medical Marshals Only) */}
+      {selectedSafetyRider && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="surface-card rounded-2xl border border-[#E5E6DE] max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex items-start justify-between gap-4 pb-3 border-b border-[#E5E6DE]">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl bg-red-100 text-red-700 flex items-center justify-center font-bold">
+                  <ShieldAlert className="w-5 h-5 text-red-600" />
+                </span>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-red-700 block">
+                    CONFIDENTIAL EMERGENCY RECORD
+                  </span>
+                  <h3 className="text-base font-black uppercase text-[#171914]">
+                    {selectedSafetyRider.full_name}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedSafetyRider(null)}
+                className="p-1.5 rounded-lg hover:bg-[#EAEDE2] text-[#62645C] cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-red-50/70 border border-red-200/80 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-red-900 block">BLOOD GROUP</span>
+                  <span className="text-xl font-black text-red-700">{selectedSafetyRider.blood_group || 'Not specified'}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-mono text-[#62645C] block">BIB REFERENCE</span>
+                  <span className="font-mono font-bold text-[#171914]">{selectedSafetyRider.public_reference}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 bg-[#F7F7F2] border border-[#E5E6DE] rounded-xl space-y-1">
+                  <span className="text-[10px] font-black uppercase text-[#62645C] block">EMERGENCY CONTACT NAME</span>
+                  <p className="font-bold text-[#171914]">{selectedSafetyRider.emergency_contact_name || 'None provided'}</p>
+                </div>
+
+                <div className="p-3 bg-[#F7F7F2] border border-[#E5E6DE] rounded-xl space-y-1">
+                  <span className="text-[10px] font-black uppercase text-[#62645C] block">EMERGENCY CONTACT NUMBER</span>
+                  {selectedSafetyRider.emergency_contact_phone ? (
+                    <a
+                      href={`tel:${selectedSafetyRider.emergency_contact_phone}`}
+                      className="font-bold text-red-700 hover:underline flex items-center gap-1"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>+91 {selectedSafetyRider.emergency_contact_phone}</span>
+                    </a>
+                  ) : (
+                    <p className="font-bold text-[#62645C]">None provided</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 bg-[#F7F7F2] border border-[#E5E6DE] rounded-xl space-y-1">
+                <span className="text-[10px] font-black uppercase text-[#62645C] block">RESIDENTIAL ADDRESS</span>
+                <p className="font-medium text-[#171914] whitespace-pre-line leading-relaxed">
+                  {selectedSafetyRider.residential_address || 'None provided'}
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#F7F7F2] border border-[#E5E6DE] rounded-xl space-y-1">
+                <span className="text-[10px] font-black uppercase text-[#62645C] block">REGISTERED EVENT</span>
+                <p className="font-bold text-[#171914]">{selectedSafetyRider.event_title}</p>
+                <p className="text-[10px] text-[#62645C]">Rider mobile: +91 {selectedSafetyRider.mobile_number}</p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[#E5E6DE] flex justify-end">
+              <button
+                onClick={() => setSelectedSafetyRider(null)}
+                className="btn-glossy-dark px-4 py-2 rounded-xl text-xs uppercase cursor-pointer"
+              >
+                CLOSE RECORD
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

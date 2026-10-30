@@ -7,7 +7,7 @@ interface Props {
 }
 
 export function HeroBannerImage({ alt }: Props) {
-  const [imgSrc, setImgSrc] = useState<string>('/main.jpeg');
+  const [imgSrc, setImgSrc] = useState<string>('/IMG_3955.jpeg');
 
   return (
     <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-[#E5E6DE] shadow-xl bg-[#171914]">
@@ -15,8 +15,8 @@ export function HeroBannerImage({ alt }: Props) {
         <img
           src={imgSrc}
           onError={() => {
-            if (imgSrc !== '/banner.jpg') {
-              setImgSrc('/banner.jpg');
+            if (imgSrc !== '/IMG_0934.JPG.jpeg') {
+              setImgSrc('/IMG_0934.JPG.jpeg');
             }
           }}
           alt={alt}

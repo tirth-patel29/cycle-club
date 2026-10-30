@@ -59,23 +59,11 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Legal & Policy Links */}
+        {/* Rule Book & Compliance */}
         <div className="flex flex-wrap items-center justify-between gap-4 text-[11px] font-mono text-[#62645C] pt-2 border-b border-[#D3D5CA] pb-6">
           <div className="flex flex-wrap items-center gap-5">
-            <Link href="/terms" className="hover:text-[#171914] transition-colors underline-offset-4 hover:underline">
-              Terms & Conditions
-            </Link>
-            <span className="text-[#A2A49B]">•</span>
-            <Link href="/privacy" className="hover:text-[#171914] transition-colors underline-offset-4 hover:underline">
-              Privacy Policy
-            </Link>
-            <span className="text-[#A2A49B]">•</span>
-            <Link href="/refund-policy" className="hover:text-[#171914] transition-colors underline-offset-4 hover:underline">
-              Cancellation & Refund Policy
-            </Link>
-            <span className="text-[#A2A49B]">•</span>
-            <Link href="/contact" className="hover:text-[#171914] transition-colors underline-offset-4 hover:underline">
-              Support & SAG Helpline
+            <Link href="/rules" className="hover:text-[#171914] transition-colors underline-offset-4 hover:underline font-bold">
+              Rule Book — Safety, Refunds &amp; Privacy
             </Link>
           </div>
           <div className="text-[#8B8D83]">

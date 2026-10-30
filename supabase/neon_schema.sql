@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS events (
   registration_opens_at TIMESTAMPTZ NOT NULL,
   registration_closes_at TIMESTAMPTZ NOT NULL,
   published_at TIMESTAMPTZ,
+  max_capacity INTEGER CHECK (max_capacity IS NULL OR max_capacity > 0),
+  sponsors JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
@@ -86,6 +88,9 @@ CREATE TABLE IF NOT EXISTS registrations (
   amount_due_paise BIGINT NOT NULL CHECK (amount_due_paise >= 0),
   currency TEXT NOT NULL DEFAULT 'INR',
   idempotency_key UUID UNIQUE NOT NULL,
+  blood_group TEXT,
+  residential_address TEXT,
+  seat_reserved_until TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
@@ -126,6 +131,10 @@ CREATE TABLE IF NOT EXISTS rider_profiles (
   bicycle_brand TEXT,
   bicycle_model TEXT,
   tshirt_size TEXT CHECK (tshirt_size IN ('S', 'M', 'L', 'XL', '2XL', 'None')),
+  emergency_contact_name TEXT,
+  emergency_contact_phone TEXT,
+  blood_group TEXT,
+  residential_address TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );

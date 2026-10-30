@@ -18,6 +18,14 @@ export default async function AdminDashboardPage() {
   const recentRegistrations = await db.getRegistrations();
   const events = await db.getEvents(true);
 
+  // Fetch live capacity metrics for all events
+  const eventCapacities = await Promise.all(
+    events.map(async (evt) => {
+      const cap = await db.getEventCapacity(evt.id);
+      return { event: evt, capacity: cap };
+    })
+  );
+
   return (
     <div className="space-y-8 font-sans">
       {/* Top Banner & Quick Actions */}
@@ -130,26 +138,75 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Right: Scheduled Stages */}
+        {/* Right: Scheduled Stages & Capacity Radar */}
         <div className="lg:col-span-5 surface-card rounded-2xl border border-[#E5E6DE] p-5 space-y-4 shadow-xs">
           <div className="flex items-center justify-between text-xs pb-3 border-b border-[#E5E6DE]">
-            <span className="font-extrabold text-[#171914] uppercase tracking-wider">SCHEDULED STAGES</span>
+            <div>
+              <span className="font-extrabold text-[#171914] uppercase tracking-wider block">STAGE CAPACITIES</span>
+              <span className="text-[10px] text-[#62645C]">Real-time participant quota radar</span>
+            </div>
             <Link href="/admin/events" className="text-[#171914] hover:underline flex items-center gap-1 font-bold">
               <span>MANAGE</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="space-y-2.5 text-xs">
-            {events.map((evt) => (
-              <div key={evt.id} className="p-3 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE] flex items-center justify-between transition-colors">
-                <div>
-                  <span className="font-bold text-[#171914] uppercase block">{evt.title}</span>
-                  <span className="text-[10px] text-[#62645C]">{evt.distance_km} KM // {formatDateIndian(evt.starts_at)}</span>
+          <div className="space-y-3 text-xs">
+            {eventCapacities.map(({ event: evt, capacity: cap }) => {
+              const statusBadge =
+                cap.status === 'full'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : cap.status === 'almost_full'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : cap.status === 'unlimited'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+
+              return (
+                <div key={evt.id} className="p-3 bg-[#F7F7F2] rounded-xl border border-[#E5E6DE] space-y-2 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-bold text-[#171914] uppercase block truncate">{evt.title}</span>
+                      <span className="text-[10px] text-[#62645C] font-mono">
+                        {evt.distance_km} KM // {formatINR(evt.registration_fee_paise)}
+                      </span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border shrink-0 ${statusBadge}`}>
+                      {cap.status.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  {/* Quota details */}
+                  <div className="grid grid-cols-4 gap-1 text-center bg-white p-2 rounded-lg border border-[#E5E6DE]/60 text-[10px]">
+                    <div>
+                      <span className="text-[#62645C] block text-[9px]">CONFIRMED</span>
+                      <span className="font-black text-emerald-700 text-xs font-mono">{cap.confirmed_count}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#62645C] block text-[9px]">CAPACITY</span>
+                      <span className="font-bold text-[#171914] text-xs font-mono">{cap.max_capacity !== null ? cap.max_capacity : '∞'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#62645C] block text-[9px]">HOLDS</span>
+                      <span className="font-bold text-amber-700 text-xs font-mono">{cap.active_pending_count}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#62645C] block text-[9px]">REMAINING</span>
+                      <span className="font-black text-[#171914] text-xs font-mono">{cap.remaining_capacity !== null ? cap.remaining_capacity : '∞'}</span>
+                    </div>
+                  </div>
+
+                  {cap.max_capacity !== null && cap.percentage_filled !== null && (
+                    <div className="w-full bg-[#EAEDE2] h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-[#171914] h-full rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(100, cap.percentage_filled)}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
-                <span className="text-[#171914] font-black">{formatINR(evt.registration_fee_paise)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

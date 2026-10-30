@@ -85,6 +85,10 @@ export async function PUT(request: NextRequest) {
     bicycle_brand: parsed.data.bicycle_brand || undefined,
     bicycle_model: parsed.data.bicycle_model || undefined,
     tshirt_size: parsed.data.tshirt_size || 'None',
+    emergency_contact_name: parsed.data.emergency_contact_name || undefined,
+    emergency_contact_phone: parsed.data.emergency_contact_phone || undefined,
+    blood_group: parsed.data.blood_group || undefined,
+    residential_address: parsed.data.residential_address || undefined,
     email: user.email,
     auth_user_id: user.id
   };

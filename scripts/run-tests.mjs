@@ -248,6 +248,146 @@ async function runAll() {
     assert.ok(typeof metrics.totalRevenuePaise === 'number');
   });
 
+  // 8. Emergency Details Validation
+  console.log(`\n[Suite 8: Rider Emergency & Safety Details Validation]`);
+  test('validates emergency details and blood group options', () => {
+    const validRegistration = {
+      event_id: 'evt-test-123',
+      full_name: 'Bhavesh Parmar',
+      mobile_number: '9825112233',
+      age: 32,
+      gender: 'Male',
+      bicycle_type: 'Hybrid',
+      terms_accepted: true,
+      emergency_contact_name: 'Meena Parmar',
+      emergency_contact_phone: '9825445566',
+      blood_group: 'B+',
+      residential_address: '14, Anand Society, Near Station, Anand 388001'
+    };
+
+    const res = registrationSchema.safeParse(validRegistration);
+    assert.strictEqual(res.success, true);
+  });
+
+  test('rejects missing or invalid emergency contact phone and blood group', () => {
+    const invalidReg = {
+      event_id: 'evt-test-123',
+      full_name: 'Bhavesh Parmar',
+      mobile_number: '9825112233',
+      age: 32,
+      gender: 'Male',
+      bicycle_type: 'Hybrid',
+      terms_accepted: true,
+      emergency_contact_name: '',
+      emergency_contact_phone: '12345',
+      blood_group: 'Z+', // invalid blood group
+      residential_address: ''
+    };
+
+    const res = registrationSchema.safeParse(invalidReg);
+    assert.strictEqual(res.success, false);
+    if (!res.success) {
+      const errFields = res.error.issues.map(e => e.path[0]);
+      assert.ok(errFields.includes('emergency_contact_name'));
+      assert.ok(errFields.includes('emergency_contact_phone'));
+      assert.ok(errFields.includes('blood_group'));
+      assert.ok(errFields.includes('residential_address'));
+    }
+  });
+
+  // 9. Event Capacity Management & Concurrency Enforcement
+  console.log(`\n[Suite 9: Event Capacity Quota & Concurrency Enforcement]`);
+  await testAsync('creates event with capacity limit and enforces boundary', async () => {
+    const capEvent = await db.createEvent({
+      title: 'Monsoon Crit 2026',
+      slug: `monsoon-crit-${Date.now()}`,
+      description: 'High-octane city circuit.',
+      cover_image_url: 'https://images.unsplash.com/photo-1541625602330-2277a4c46182',
+      venue: 'Town Hall Anand',
+      location_description: 'Anand Circuit',
+      starts_at: new Date(Date.now() + 86400000).toISOString(),
+      ends_at: new Date(Date.now() + 90000000).toISOString(),
+      distance_km: 40,
+      elevation_gain_m: 50,
+      difficulty: 'Challenging',
+      is_free: false,
+      registration_fee_paise: 19900,
+      currency: 'INR',
+      status: 'published',
+      registration_opens_at: new Date().toISOString(),
+      registration_closes_at: new Date(Date.now() + 80000000).toISOString(),
+      max_capacity: 1 // strictly 1 rider capacity for boundary test
+    });
+
+    assert.strictEqual(capEvent.max_capacity, 1);
+
+    // Initial capacity check
+    const initialCap = await db.getEventCapacity(capEvent.id);
+    assert.strictEqual(initialCap.confirmed_count, 0);
+    assert.strictEqual(initialCap.remaining_capacity, 1);
+    assert.strictEqual(initialCap.status, 'open');
+
+    // First rider registers
+    const rider1 = await db.createRegistration({
+      event_id: capEvent.id,
+      event_title: capEvent.title,
+      full_name: 'First Finisher',
+      mobile_number: '9825100001',
+      age: 26,
+      gender: 'Female',
+      bicycle_type: 'Road',
+      terms_accepted_at: new Date().toISOString(),
+      status: 'confirmed',
+      amount_due_paise: 0,
+      currency: 'INR',
+      blood_group: 'O+',
+      emergency_contact_name: 'Parent',
+      emergency_contact_phone: '9825100002',
+      residential_address: 'ACC Club House, Anand'
+    });
+    assert.ok(rider1.id);
+
+    // Now capacity must be full
+    const fullCap = await db.getEventCapacity(capEvent.id);
+    assert.strictEqual(fullCap.confirmed_count, 1);
+    assert.strictEqual(fullCap.remaining_capacity, 0);
+    assert.strictEqual(fullCap.status, 'full');
+
+    // Attempting a second registration MUST fail with capacity exceeded error
+    let rejected = false;
+    try {
+      await db.createRegistration({
+        event_id: capEvent.id,
+        event_title: capEvent.title,
+        full_name: 'Overbooked Rider',
+        mobile_number: '9825100003',
+        age: 28,
+        gender: 'Male',
+        bicycle_type: 'MTB',
+        terms_accepted_at: new Date().toISOString(),
+        status: 'confirmed',
+        amount_due_paise: 0,
+        currency: 'INR'
+      });
+    } catch (err) {
+      rejected = true;
+      assert.match(err.message, /capacity has been reached/i);
+    }
+    assert.strictEqual(rejected, true, 'Registration beyond capacity must be rejected');
+
+    // Admin lowering capacity below confirmed riders MUST be rejected
+    let reduceRejected = false;
+    try {
+      await db.updateEvent(capEvent.id, {
+        max_capacity: 0 // Cannot reduce below 1 confirmed rider
+      });
+    } catch (err) {
+      reduceRejected = true;
+      assert.match(err.message, /cannot be lower than|cannot reduce capacity/i);
+    }
+    assert.strictEqual(reduceRejected, true, 'Admin cannot reduce capacity below confirmed count');
+  });
+
   console.log(`\n================ Test Summary ================`);
   console.log(`Total Passed: ${passed}`);
   console.log(`Total Failed: ${failed}`);

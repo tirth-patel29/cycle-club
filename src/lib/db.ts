@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { CyclingEvent, Registration, Payment, AuditLog, RiderProfile, BicycleType, EventStatus } from '@/types';
+import { CyclingEvent, Registration, Payment, AuditLog, RiderProfile, BicycleType, EventStatus, BloodGroup, EventCapacityInfo } from '@/types';
 import { INITIAL_EVENTS } from './constants';
 import { ensureUuid, isValidUuid } from './auth';
 
@@ -35,6 +35,8 @@ function mapEventRow(row: any): CyclingEvent {
     registration_fee_paise: Number(row.registration_fee_paise),
     currency: row.currency || 'INR',
     status: row.status as EventStatus,
+    max_capacity: row.max_capacity !== null && row.max_capacity !== undefined ? Number(row.max_capacity) : null,
+    sponsors: row.sponsors ? (typeof row.sponsors === 'string' ? JSON.parse(row.sponsors) : row.sponsors) : undefined,
     registration_opens_at: new Date(row.registration_opens_at).toISOString(),
     registration_closes_at: new Date(row.registration_closes_at).toISOString(),
     published_at: row.published_at ? new Date(row.published_at).toISOString() : undefined,
@@ -60,6 +62,9 @@ function mapRegistrationRow(row: any): Registration {
     gender: row.gender,
     emergency_contact_name: row.emergency_contact_name || undefined,
     emergency_contact_phone: row.emergency_contact_phone || undefined,
+    blood_group: row.blood_group as BloodGroup || undefined,
+    residential_address: row.residential_address || undefined,
+    seat_reserved_until: row.seat_reserved_until ? new Date(row.seat_reserved_until).toISOString() : undefined,
     jersey_size: row.jersey_size || 'None',
     bicycle_type: row.bicycle_type || 'Road',
     bicycle_brand: row.bicycle_brand || undefined,
@@ -87,6 +92,10 @@ function mapRiderProfileRow(row: any): RiderProfile {
     bicycle_brand: row.bicycle_brand || undefined,
     bicycle_model: row.bicycle_model || undefined,
     tshirt_size: row.tshirt_size || 'None',
+    emergency_contact_name: row.emergency_contact_name || undefined,
+    emergency_contact_phone: row.emergency_contact_phone || undefined,
+    blood_group: row.blood_group as BloodGroup || undefined,
+    residential_address: row.residential_address || undefined,
     created_at: new Date(row.created_at).toISOString(),
     updated_at: new Date(row.updated_at).toISOString()
   };
@@ -296,7 +305,7 @@ class DatabaseService {
       try {
         // Check if a profile already exists by id, auth_user_id, or email
         const existing = await pool.query(
-          'SELECT id, auth_user_id, email, full_name, mobile_number, bicycle_type, age, gender, bicycle_brand, bicycle_model, tshirt_size FROM rider_profiles WHERE auth_user_id = $1 OR id = $2 OR (email = $3 AND $3 IS NOT NULL) LIMIT 1',
+          'SELECT id, auth_user_id, email, full_name, mobile_number, bicycle_type, age, gender, bicycle_brand, bicycle_model, tshirt_size, emergency_contact_name, emergency_contact_phone, blood_group, residential_address FROM rider_profiles WHERE auth_user_id = $1 OR id = $2 OR (email = $3 AND $3 IS NOT NULL) LIMIT 1',
           [authUserId, profileId, data.email || null]
         );
 
@@ -314,9 +323,13 @@ class DatabaseService {
               bicycle_brand = COALESCE($7, bicycle_brand),
               bicycle_model = COALESCE($8, bicycle_model),
               tshirt_size = COALESCE($9, tshirt_size),
-              auth_user_id = COALESCE($10, auth_user_id),
-              updated_at = $11
-            WHERE id = $12
+              emergency_contact_name = COALESCE($10, emergency_contact_name),
+              emergency_contact_phone = COALESCE($11, emergency_contact_phone),
+              blood_group = COALESCE($12, blood_group),
+              residential_address = COALESCE($13, residential_address),
+              auth_user_id = COALESCE($14, auth_user_id),
+              updated_at = $15
+            WHERE id = $16
             RETURNING *;
           `, [
             data.full_name || null,
@@ -328,6 +341,10 @@ class DatabaseService {
             data.bicycle_brand || null,
             data.bicycle_model || null,
             data.tshirt_size || null,
+            data.emergency_contact_name || null,
+            data.emergency_contact_phone || null,
+            data.blood_group || null,
+            data.residential_address || null,
             authUserId,
             now,
             targetId
@@ -339,9 +356,11 @@ class DatabaseService {
           const insertRes = await pool.query(`
             INSERT INTO rider_profiles (
               id, auth_user_id, email, full_name, mobile_number, bicycle_type,
-              age, gender, bicycle_brand, bicycle_model, tshirt_size, created_at, updated_at
+              age, gender, bicycle_brand, bicycle_model, tshirt_size,
+              emergency_contact_name, emergency_contact_phone, blood_group, residential_address,
+              created_at, updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
             )
             RETURNING *;
           `, [
@@ -356,6 +375,10 @@ class DatabaseService {
             data.bicycle_brand || null,
             data.bicycle_model || null,
             data.tshirt_size || 'None',
+            data.emergency_contact_name || null,
+            data.emergency_contact_phone || null,
+            data.blood_group || null,
+            data.residential_address || null,
             now,
             now
           ]);
@@ -389,6 +412,10 @@ class DatabaseService {
         bicycle_brand: data.bicycle_brand,
         bicycle_model: data.bicycle_model,
         tshirt_size: data.tshirt_size || 'None',
+        emergency_contact_name: data.emergency_contact_name,
+        emergency_contact_phone: data.emergency_contact_phone,
+        blood_group: data.blood_group,
+        residential_address: data.residential_address,
         created_at: now,
         updated_at: now
       };
@@ -496,16 +523,21 @@ class DatabaseService {
             slug, title, description, cover_image_url, venue, location_description,
             starts_at, ends_at, distance_km, elevation_gain_m, difficulty,
             registration_fee_paise, currency, status,
-            registration_opens_at, registration_closes_at, published_at
+            registration_opens_at, registration_closes_at, published_at,
+            max_capacity, sponsors
           ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10, $11,
             $12, $13, $14,
-            $15, $16, $17
+            $15, $16, $17,
+            $18, $19
           )
           RETURNING *;
         `;
         const publishedAt = eventData.status === 'published' ? (eventData.published_at || new Date().toISOString()) : null;
+        const maxCapacity = eventData.max_capacity !== undefined && eventData.max_capacity !== null ? Number(eventData.max_capacity) : null;
+        const sponsorsJson = eventData.sponsors ? JSON.stringify(eventData.sponsors) : JSON.stringify([]);
+
         const values = [
           eventData.slug,
           eventData.title,
@@ -523,7 +555,9 @@ class DatabaseService {
           eventData.status || 'draft',
           new Date(eventData.registration_opens_at).toISOString(),
           new Date(eventData.registration_closes_at).toISOString(),
-          publishedAt ? new Date(publishedAt).toISOString() : null
+          publishedAt ? new Date(publishedAt).toISOString() : null,
+          maxCapacity,
+          sponsorsJson
         ];
         const res = await pool.query(query, values);
         const created = mapEventRow(res.rows[0]);
@@ -542,6 +576,7 @@ class DatabaseService {
     const newEvent: CyclingEvent = {
       ...eventData,
       id: `evt-${Date.now()}`,
+      max_capacity: eventData.max_capacity !== undefined ? eventData.max_capacity : null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -554,6 +589,18 @@ class DatabaseService {
     const pool = getPool();
     if (pool) {
       try {
+        // Enforce: Never silently reduce capacity below confirmed participants
+        if (updates.max_capacity !== undefined && updates.max_capacity !== null) {
+          const capCheckRes = await pool.query(
+            "SELECT COUNT(*) as count FROM registrations WHERE (event_id::text = $1 OR event_id IN (SELECT id FROM events WHERE slug = $1)) AND status = 'confirmed'",
+            [id]
+          );
+          const confirmedCount = parseInt(capCheckRes.rows[0]?.count || '0', 10);
+          if (Number(updates.max_capacity) < confirmedCount) {
+            throw new Error(`Cannot reduce capacity to ${updates.max_capacity}. There are already ${confirmedCount} confirmed registrations.`);
+          }
+        }
+
         const setClauses: string[] = [];
         const values: any[] = [];
 
@@ -574,7 +621,9 @@ class DatabaseService {
           status: 'status',
           registration_opens_at: 'registration_opens_at',
           registration_closes_at: 'registration_closes_at',
-          published_at: 'published_at'
+          published_at: 'published_at',
+          max_capacity: 'max_capacity',
+          sponsors: 'sponsors'
         };
 
         for (const [key, dbCol] of Object.entries(fieldMap)) {
@@ -582,6 +631,10 @@ class DatabaseService {
             let val = (updates as any)[key];
             if (['starts_at', 'ends_at', 'registration_opens_at', 'registration_closes_at', 'published_at'].includes(key) && val) {
               val = new Date(val).toISOString();
+            } else if (key === 'sponsors' && val) {
+              val = typeof val === 'string' ? val : JSON.stringify(val);
+            } else if (key === 'max_capacity') {
+              val = val === null || val === '' ? null : Number(val);
             }
             values.push(val);
             setClauses.push(`${dbCol} = $${values.length}`);
@@ -617,8 +670,17 @@ class DatabaseService {
       }
     }
 
-    const index = this.events.findIndex((e) => e.id === id);
+    const index = this.events.findIndex((e) => e.id === id || e.slug === id);
     if (index === -1) return null;
+
+    if (updates.max_capacity !== undefined && updates.max_capacity !== null) {
+      const targetId = this.events[index].id;
+      const confirmedCount = this.registrations.filter((r) => (r.event_id === targetId || r.event_id === id) && r.status === 'confirmed').length;
+      if (Number(updates.max_capacity) < confirmedCount) {
+        throw new Error(`Cannot reduce capacity to ${updates.max_capacity}. There are already ${confirmedCount} confirmed registrations.`);
+      }
+    }
+
     this.events[index] = {
       ...this.events[index],
       ...updates,
@@ -718,10 +780,12 @@ class DatabaseService {
   }
 
   async getRegistrationByIdempotencyKey(key: string): Promise<Registration | null> {
+    if (!key) return null;
     const pool = getPool();
     if (pool) {
       try {
-        const res = await pool.query('SELECT * FROM registrations WHERE idempotency_key::text = $1', [key]);
+        const idempotencyUuid = ensureUuid(key);
+        const res = await pool.query('SELECT * FROM registrations WHERE idempotency_key::text = $1', [idempotencyUuid]);
         if (res.rows.length > 0) {
           return mapRegistrationRow(res.rows[0]);
         }
@@ -731,6 +795,98 @@ class DatabaseService {
     }
     const reg = this.registrations.find((r) => r.idempotency_key === key);
     return reg ? { ...reg } : null;
+  }
+
+  async getEventCapacity(eventIdOrSlug: string): Promise<EventCapacityInfo> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        const evRes = await pool.query(
+          'SELECT id, max_capacity, status FROM events WHERE id::text = $1 OR slug = $1 LIMIT 1',
+          [eventIdOrSlug]
+        );
+        if (evRes.rows.length > 0) {
+          const ev = evRes.rows[0];
+          const eventId = ev.id;
+          const maxCapacity = ev.max_capacity !== null && ev.max_capacity !== undefined ? Number(ev.max_capacity) : null;
+
+          const confRes = await pool.query(
+            "SELECT COUNT(*) as count FROM registrations WHERE event_id = $1 AND status = 'confirmed'",
+            [eventId]
+          );
+          const confirmedCount = parseInt(confRes.rows[0]?.count || '0', 10);
+
+          const pendRes = await pool.query(
+            "SELECT COUNT(*) as count FROM registrations WHERE event_id = $1 AND status = 'pending_payment' AND seat_reserved_until > NOW()",
+            [eventId]
+          );
+          const activePendingCount = parseInt(pendRes.rows[0]?.count || '0', 10);
+
+          const isUnlimited = maxCapacity === null;
+          const isFull = !isUnlimited && confirmedCount >= maxCapacity;
+          const remainingCapacity = isUnlimited ? null : Math.max(0, maxCapacity - confirmedCount);
+          const percentageFilled = isUnlimited ? null : (maxCapacity > 0 ? Math.min(100, Math.round((confirmedCount / maxCapacity) * 100)) : 0);
+
+          let status: 'open' | 'almost_full' | 'full' | 'unlimited' = 'open';
+          if (isUnlimited) {
+            status = 'unlimited';
+          } else if (isFull) {
+            status = 'full';
+          } else if (percentageFilled !== null && percentageFilled >= 80) {
+            status = 'almost_full';
+          }
+
+          return {
+            event_id: eventId,
+            max_capacity: maxCapacity,
+            confirmed_count: confirmedCount,
+            active_pending_count: activePendingCount,
+            remaining_capacity: remainingCapacity,
+            percentage_filled: percentageFilled,
+            is_full: isFull,
+            is_unlimited: isUnlimited,
+            status
+          };
+        }
+      } catch (err) {
+        console.error('Error fetching event capacity from DB:', err);
+      }
+    }
+
+    const event = this.events.find(e => e.id === eventIdOrSlug || e.slug === eventIdOrSlug);
+    const eventId = event?.id || eventIdOrSlug;
+    const maxCapacity = event?.max_capacity !== undefined ? event.max_capacity : null;
+    const confirmedCount = this.registrations.filter(r => r.event_id === eventId && r.status === 'confirmed').length;
+    const now = new Date();
+    const activePendingCount = this.registrations.filter(
+      r => r.event_id === eventId && r.status === 'pending_payment' && r.seat_reserved_until && new Date(r.seat_reserved_until) > now
+    ).length;
+
+    const isUnlimited = maxCapacity === null;
+    const isFull = !isUnlimited && confirmedCount >= maxCapacity;
+    const remainingCapacity = isUnlimited ? null : Math.max(0, maxCapacity - confirmedCount);
+    const percentageFilled = isUnlimited ? null : (maxCapacity > 0 ? Math.min(100, Math.round((confirmedCount / maxCapacity) * 100)) : 0);
+
+    let status: 'open' | 'almost_full' | 'full' | 'unlimited' = 'open';
+    if (isUnlimited) {
+      status = 'unlimited';
+    } else if (isFull) {
+      status = 'full';
+    } else if (percentageFilled !== null && percentageFilled >= 80) {
+      status = 'almost_full';
+    }
+
+    return {
+      event_id: eventId,
+      max_capacity: maxCapacity,
+      confirmed_count: confirmedCount,
+      active_pending_count: activePendingCount,
+      remaining_capacity: remainingCapacity,
+      percentage_filled: percentageFilled,
+      is_full: isFull,
+      is_unlimited: isUnlimited,
+      status
+    };
   }
 
   async createRegistration(data: Omit<Registration, 'id' | 'public_reference' | 'created_at' | 'updated_at'>): Promise<Registration> {
@@ -746,34 +902,73 @@ class DatabaseService {
     const isFree = data.amount_due_paise === 0;
     const initialStatus = isFree ? 'confirmed' : 'pending_payment';
 
+    const rawIdempotency = data.idempotency_key || `acc-auto-idemp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
     const riderUuid = data.rider_id ? (isValidUuid(data.rider_id) ? data.rider_id : ensureUuid(data.rider_id)) : null;
-    const idempotencyUuid = ensureUuid(data.idempotency_key);
+    const idempotencyUuid = ensureUuid(rawIdempotency);
 
     const pool = getPool();
     if (pool) {
+      const client = await pool.connect();
       try {
+        await client.query('BEGIN');
+
+        // 1. Concurrency-safe capacity check with row-level lock on event
+        const evRes = await client.query(
+          'SELECT id, max_capacity, status FROM events WHERE id::text = $1 OR slug = $1 FOR UPDATE',
+          [data.event_id]
+        );
+        if (evRes.rows.length === 0) {
+          throw new Error('Event not found');
+        }
+        const eventRow = evRes.rows[0];
+        const actualEventId = eventRow.id;
+        const maxCapacity = eventRow.max_capacity !== null && eventRow.max_capacity !== undefined ? Number(eventRow.max_capacity) : null;
+
+        if (maxCapacity !== null) {
+          const confRes = await client.query(
+            "SELECT COUNT(*) as count FROM registrations WHERE event_id = $1 AND status = 'confirmed'",
+            [actualEventId]
+          );
+          const confirmedCount = parseInt(confRes.rows[0]?.count || '0', 10);
+
+          const holdRes = await client.query(
+            "SELECT COUNT(*) as count FROM registrations WHERE event_id = $1 AND status = 'pending_payment' AND seat_reserved_until > NOW() AND idempotency_key != $2",
+            [actualEventId, idempotencyUuid]
+          );
+          const activeHoldsCount = parseInt(holdRes.rows[0]?.count || '0', 10);
+
+          if (confirmedCount + activeHoldsCount >= maxCapacity) {
+            await client.query('ROLLBACK');
+            throw new Error('Registration capacity has been reached for this ride. No seats remaining.');
+          }
+        }
+
         // Ensure user exists if rider_id provided
         if (riderUuid) {
-          await pool.query(`
+          await client.query(`
             INSERT INTO auth.users (id, email)
             VALUES ($1, $2)
             ON CONFLICT (id) DO NOTHING;
           `, [riderUuid, data.email || `${riderUuid}@acc-user.in`]);
         }
 
-        const res = await pool.query(`
+        const res = await client.query(`
           INSERT INTO registrations (
             public_reference, rider_id, event_id, full_name, mobile_number, email, age, gender,
-            emergency_contact_name, emergency_contact_phone, jersey_size,
-            bicycle_type, bicycle_brand, bicycle_model, terms_accepted_at,
-            status, amount_due_paise, currency, idempotency_key
+            emergency_contact_name, emergency_contact_phone, blood_group, residential_address,
+            seat_reserved_until, jersey_size, bicycle_type, bicycle_brand, bicycle_model,
+            terms_accepted_at, status, amount_due_paise, currency, idempotency_key
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+            $1, $2, $3, $4, $5, $6, $7, $8,
+            $9, $10, $11, $12,
+            ${isFree ? 'NULL' : "NOW() + INTERVAL '15 minutes'"},
+            $13, $14, $15, $16,
+            $17, $18, $19, $20, $21
           ) RETURNING *;
         `, [
           publicRef,
           riderUuid,
-          data.event_id,
+          actualEventId,
           data.full_name,
           data.mobile_number,
           data.email || null,
@@ -781,6 +976,8 @@ class DatabaseService {
           data.gender,
           data.emergency_contact_name || null,
           data.emergency_contact_phone || null,
+          data.blood_group || null,
+          data.residential_address || null,
           data.jersey_size || 'None',
           data.bicycle_type || 'Road',
           data.bicycle_brand || null,
@@ -792,37 +989,49 @@ class DatabaseService {
           idempotencyUuid
         ]);
 
+        await client.query('COMMIT');
+
         if (res.rows.length > 0) {
           const reg = mapRegistrationRow(res.rows[0]);
           this.registrations.unshift(reg);
-          if (!isFree) {
-            await pool.query(`
-              INSERT INTO payments (
-                registration_id, provider, provider_payment_reference, amount_paise,
-                currency, status, idempotency_key
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-            `, [
-              reg.id,
-              'demo',
-              `DEMO_PENDING_${Date.now()}`,
-              reg.amount_due_paise,
-              reg.currency,
-              'initiated',
-              data.idempotency_key
-            ]);
-          }
           return reg;
         }
       } catch (err) {
+        console.error('Postgres error in createRegistration:', err);
+        try {
+          await client.query('ROLLBACK');
+        } catch {}
+        if (err instanceof Error && err.message.includes('capacity has been reached')) {
+          throw err;
+        }
         // Fall back to memory
+      } finally {
+        client.release();
       }
     }
 
+    const targetEvent = this.events.find(e => e.id === data.event_id || e.slug === data.event_id);
+    const eventId = targetEvent?.id || data.event_id;
+    if (targetEvent && targetEvent.max_capacity !== null && targetEvent.max_capacity !== undefined) {
+      const confirmedCount = this.registrations.filter(r => r.event_id === eventId && r.status === 'confirmed').length;
+      const now = new Date();
+      const activeHolds = this.registrations.filter(
+        r => r.event_id === eventId && r.status === 'pending_payment' && r.seat_reserved_until && new Date(r.seat_reserved_until) > now && r.idempotency_key !== data.idempotency_key
+      ).length;
+      if (confirmedCount + activeHolds >= targetEvent.max_capacity) {
+        throw new Error('Registration capacity has been reached for this ride. No seats remaining.');
+      }
+    }
+
+    const holdUntil = isFree ? undefined : new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
     const newReg: Registration = {
       ...data,
+      event_id: eventId,
       id: `reg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       public_reference: publicRef,
       status: initialStatus,
+      seat_reserved_until: holdUntil,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -834,20 +1043,6 @@ class DatabaseService {
         reference: newReg.public_reference,
         event_id: newReg.event_id
       });
-    } else {
-      const payment: Payment = {
-        id: `pay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        registration_id: newReg.id,
-        provider: 'demo',
-        provider_payment_reference: `DEMO_PENDING_${Date.now()}`,
-        amount_paise: newReg.amount_due_paise,
-        currency: newReg.currency,
-        status: 'pending',
-        idempotency_key: data.idempotency_key,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      this.payments.unshift(payment);
     }
 
     return newReg;
@@ -880,21 +1075,48 @@ class DatabaseService {
         const regRes = await pool.query('SELECT * FROM registrations WHERE UPPER(public_reference) = UPPER($1)', [registrationReference]);
         if (regRes.rows.length > 0) {
           const regRow = regRes.rows[0];
-          const providerRef = `DEMO_TXN_${Date.now().toString(36).toUpperCase()}_${Math.floor(1000 + Math.random() * 9000)}`;
 
           if (outcome === 'success') {
-            await pool.query('UPDATE registrations SET status = $1, updated_at = NOW() WHERE id = $2', ['confirmed', regRow.id]);
-            await pool.query(`
-              UPDATE payments 
-              SET status = $1, provider_payment_reference = $2, updated_at = NOW() 
-              WHERE registration_id = $3
-            `, ['succeeded', providerRef, regRow.id]);
+            // Check capacity under lock before confirming
+            const eventRes = await pool.query('SELECT max_capacity FROM events WHERE id = $1', [regRow.event_id]);
+            const maxCapacity = eventRes.rows.length > 0 && eventRes.rows[0].max_capacity !== null ? Number(eventRes.rows[0].max_capacity) : null;
+            if (maxCapacity !== null) {
+              const confRes = await pool.query("SELECT COUNT(*) as count FROM registrations WHERE event_id = $1 AND status = 'confirmed'", [regRow.event_id]);
+              const confirmed = parseInt(confRes.rows[0]?.count || '0', 10);
+              if (confirmed >= maxCapacity) {
+                throw new Error('Event registration capacity has been reached. Cannot confirm payment.');
+              }
+            }
+
+            await pool.query('UPDATE registrations SET status = $1, seat_reserved_until = NULL, updated_at = NOW() WHERE id = $2', ['confirmed', regRow.id]);
+            const providerRef = `DEMO_TXN_${Date.now().toString(36).toUpperCase()}_${Math.floor(1000 + Math.random() * 9000)}`;
+            // Check if a payment row already exists for this registration
+            const existingPay = await pool.query('SELECT id FROM payments WHERE registration_id = $1 LIMIT 1', [regRow.id]);
+            if (existingPay.rows.length > 0) {
+              await pool.query(
+                `UPDATE payments SET status = 'succeeded', provider_payment_reference = $1, provider = 'demo', updated_at = NOW() WHERE id = $2`,
+                [providerRef, existingPay.rows[0].id]
+              );
+            } else {
+              await pool.query(
+                `INSERT INTO payments (registration_id, provider, provider_payment_reference, amount_paise, currency, status, idempotency_key)
+                 VALUES ($1, 'demo', $2, $3, $4, 'succeeded', gen_random_uuid())`,
+                [regRow.id, providerRef, regRow.amount_due_paise, regRow.currency || 'INR']
+              );
+            }
           } else {
-            await pool.query(`
-              UPDATE payments 
-              SET status = $1, updated_at = NOW() 
-              WHERE registration_id = $2
-            `, ['failed', regRow.id]);
+            // Failure: Release seat hold immediately
+            await pool.query('UPDATE registrations SET seat_reserved_until = NOW(), updated_at = NOW() WHERE id = $1', [regRow.id]);
+            const existingPay = await pool.query('SELECT id FROM payments WHERE registration_id = $1 LIMIT 1', [regRow.id]);
+            if (existingPay.rows.length > 0) {
+              await pool.query(`UPDATE payments SET status = 'failed', updated_at = NOW() WHERE id = $1`, [existingPay.rows[0].id]);
+            } else {
+              await pool.query(
+                `INSERT INTO payments (registration_id, provider, provider_payment_reference, amount_paise, currency, status, idempotency_key)
+                 VALUES ($1, 'demo', $2, $3, $4, 'failed', gen_random_uuid())`,
+                [regRow.id, `DEMO_FAIL_${Date.now()}`, regRow.amount_due_paise, regRow.currency || 'INR']
+              );
+            }
           }
 
           const updatedRegRes = await pool.query('SELECT * FROM registrations WHERE id = $1', [regRow.id]);
@@ -917,10 +1139,19 @@ class DatabaseService {
     let payment = await this.getPaymentByRegistrationId(reg.id);
 
     if (outcome === 'success') {
+      const targetEvent = this.events.find(e => e.id === reg.event_id);
+      if (targetEvent && targetEvent.max_capacity !== null && targetEvent.max_capacity !== undefined) {
+        const confirmed = this.registrations.filter(r => r.event_id === reg.event_id && r.status === 'confirmed').length;
+        if (confirmed >= targetEvent.max_capacity) {
+          throw new Error('Event registration capacity has been reached. Cannot confirm payment.');
+        }
+      }
+
       const now = new Date().toISOString();
       const updatedReg: Registration = {
         ...reg,
         status: 'confirmed',
+        seat_reserved_until: undefined,
         updated_at: now
       };
 
@@ -962,6 +1193,7 @@ class DatabaseService {
       return { registration: updatedReg, payment };
     } else {
       const now = new Date().toISOString();
+      reg.seat_reserved_until = now;
       if (payment) {
         payment = {
           ...payment,
@@ -970,13 +1202,27 @@ class DatabaseService {
         };
         const payIdx = this.payments.findIndex((p) => p.id === payment!.id);
         this.payments[payIdx] = payment;
+      } else {
+        payment = {
+          id: `pay-${Date.now()}`,
+          registration_id: reg.id,
+          provider: 'demo',
+          provider_payment_reference: `DEMO_FAIL_${Date.now()}`,
+          amount_paise: reg.amount_due_paise,
+          currency: reg.currency,
+          status: 'failed',
+          idempotency_key: reg.idempotency_key,
+          created_at: now,
+          updated_at: now
+        };
+        this.payments.unshift(payment);
       }
 
-      await this.logAudit('system', 'DEMO_PAYMENT_FAILED', 'payment', payment?.id || 'unknown', {
+      await this.logAudit('system', 'DEMO_PAYMENT_FAILED', 'payment', payment.id, {
         reference: reg.public_reference
       });
 
-      return { registration: reg, payment: payment! };
+      return { registration: reg, payment };
     }
   }
 
@@ -1123,9 +1369,34 @@ class DatabaseService {
           };
         }
 
+        // Concurrency-Safe Capacity Lock Check
+        const evLockRes = await client.query('SELECT max_capacity FROM events WHERE id = $1 FOR UPDATE', [regRow.event_id]);
+        const maxCapacity = evLockRes.rows.length > 0 && evLockRes.rows[0].max_capacity !== null ? Number(evLockRes.rows[0].max_capacity) : null;
+
+        if (maxCapacity !== null) {
+          const confRes = await client.query(
+            "SELECT COUNT(*) as count FROM registrations WHERE event_id = $1 AND status = 'confirmed'",
+            [regRow.event_id]
+          );
+          const confirmedCount = parseInt(confRes.rows[0]?.count || '0', 10);
+          if (confirmedCount >= maxCapacity) {
+            // Race condition: Seat hold expired, event reached capacity before this payment confirmed
+            await client.query(
+              `UPDATE payments
+               SET status = 'succeeded',
+                   failure_reason = 'Payment captured after seat reservation expired and capacity reached. Flagged for admin reconciliation.',
+                   updated_at = NOW()
+               WHERE registration_id = $1`,
+              [regRow.id]
+            );
+            await client.query('COMMIT');
+            throw new Error('Event registration is full. Your payment was captured but the seat reservation had expired and all seats are booked. Please contact the administrator for manual seat allocation or refund.');
+          }
+        }
+
         await client.query(
           `UPDATE registrations
-           SET status = 'confirmed', updated_at = NOW()
+           SET status = 'confirmed', seat_reserved_until = NULL, updated_at = NOW()
            WHERE id = $1`,
           [regRow.id]
         );
@@ -1193,8 +1464,16 @@ class DatabaseService {
       return { registration: reg, payment: existingPay!, alreadyConfirmed: true };
     }
 
+    const targetEvt = this.events.find(e => e.id === reg.event_id);
+    if (targetEvt && targetEvt.max_capacity !== null && targetEvt.max_capacity !== undefined) {
+      const confirmedCount = this.registrations.filter(r => r.event_id === reg.event_id && r.status === 'confirmed').length;
+      if (confirmedCount >= targetEvt.max_capacity) {
+        throw new Error('Event registration is full. Your payment was captured but the seat reservation had expired and all seats are booked.');
+      }
+    }
+
     const now = new Date().toISOString();
-    const updatedReg: Registration = { ...reg, status: 'confirmed', updated_at: now };
+    const updatedReg: Registration = { ...reg, status: 'confirmed', seat_reserved_until: undefined, updated_at: now };
     const regIdx = this.registrations.findIndex((r) => r.id === reg.id);
     this.registrations[regIdx] = updatedReg;
 
@@ -1265,6 +1544,18 @@ class DatabaseService {
              AND status != 'succeeded'`,
           [reason || 'Payment failed', paymentId || null, orderId]
         );
+
+        // Immediately release seat reservation hold on failed payment
+        await pool.query(
+          `UPDATE registrations
+           SET seat_reserved_until = NOW(), updated_at = NOW()
+           WHERE id IN (
+             SELECT registration_id FROM payments 
+             WHERE razorpay_order_id = $1 OR provider_payment_reference = $1
+           ) AND status = 'pending_payment'`,
+          [orderId]
+        );
+
         return;
       } catch (err) {
         console.error('Error recording Razorpay failure in DB:', err);
@@ -1277,6 +1568,11 @@ class DatabaseService {
       pay.failure_reason = reason || 'Payment failed';
       if (paymentId) pay.razorpay_payment_id = paymentId;
       pay.updated_at = new Date().toISOString();
+
+      const reg = this.registrations.find(r => r.id === pay.registration_id);
+      if (reg && reg.status === 'pending_payment') {
+        reg.seat_reserved_until = new Date().toISOString();
+      }
     }
   }
 
@@ -1475,6 +1771,56 @@ class DatabaseService {
 
   getPool(): pg.Pool | null {
     return getPool();
+  }
+
+  async getRegistrationsByEventId(eventId: string): Promise<Registration[]> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        const result = await pool.query(
+          'SELECT * FROM registrations WHERE event_id = $1 ORDER BY created_at DESC',
+          [eventId]
+        );
+        return result.rows.map(mapRegistrationRow);
+      } catch (err) {
+        console.error('DB getRegistrationsByEventId error:', err);
+        return [];
+      }
+    }
+    return this.registrations.filter((r) => r.event_id === eventId);
+  }
+
+  async deleteRegistrationsByEventId(eventId: string): Promise<void> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        // Delete payments first (FK constraint)
+        await pool.query(
+          'DELETE FROM payments WHERE registration_id IN (SELECT id FROM registrations WHERE event_id = $1)',
+          [eventId]
+        );
+        await pool.query('DELETE FROM registrations WHERE event_id = $1', [eventId]);
+      } catch (err) {
+        console.error('DB deleteRegistrationsByEventId error:', err);
+        throw err;
+      }
+      return;
+    }
+    this.registrations = this.registrations.filter((r) => r.event_id !== eventId);
+  }
+
+  async deleteEvent(eventId: string): Promise<void> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        await pool.query('DELETE FROM events WHERE id = $1', [eventId]);
+      } catch (err) {
+        console.error('DB deleteEvent error:', err);
+        throw err;
+      }
+      return;
+    }
+    this.events = this.events.filter((e) => e.id !== eventId);
   }
 }
 

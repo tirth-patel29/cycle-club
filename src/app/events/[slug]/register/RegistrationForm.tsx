@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CyclingEvent, RiderProfile, BicycleType } from '@/types';
+import { CyclingEvent, RiderProfile, BicycleType, BloodGroup } from '@/types';
 import { formatINR } from '@/lib/constants';
 import {
   BICYCLE_TYPES,
   TSHIRT_SIZES,
+  BLOOD_GROUPS,
   normalizeIndianMobile,
   INDIAN_MOBILE_REGEX
 } from '@/lib/validations/registration';
@@ -18,7 +19,9 @@ import {
   ShieldCheck,
   CheckCircle2,
   Bike,
-  Sparkles
+  Sparkles,
+  HeartPulse,
+  User
 } from 'lucide-react';
 
 interface Props {
@@ -39,6 +42,22 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | 'Prefer not to say'>(
     initialProfile?.gender || 'Male'
   );
+  const [residentialAddress, setResidentialAddress] = useState(
+    initialProfile?.residential_address || ''
+  );
+
+  // Emergency & Safety Information
+  const [emergencyContactName, setEmergencyContactName] = useState(
+    initialProfile?.emergency_contact_name || ''
+  );
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState(
+    initialProfile?.emergency_contact_phone || ''
+  );
+  const [bloodGroup, setBloodGroup] = useState<BloodGroup>(
+    (initialProfile?.blood_group as BloodGroup) || "Don't Know"
+  );
+
+  // Equipment & Apparel
   const [bicycleType, setBicycleType] = useState<BicycleType>(
     initialProfile?.bicycle_type || 'Road'
   );
@@ -71,12 +90,28 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
 
     const cleanedMobile = normalizeIndianMobile(mobileNumber);
     if (!INDIAN_MOBILE_REGEX.test(cleanedMobile)) {
-      setErrorMessage('Please enter a valid 10-digit Indian mobile number.');
+      setErrorMessage('Please enter a valid 10-digit Indian mobile number for rider.');
       return;
     }
 
     if (age === '' || Number(age) < 12 || Number(age) > 100) {
       setErrorMessage('Please enter a valid participant age between 12 and 100.');
+      return;
+    }
+
+    if (!residentialAddress.trim() || residentialAddress.trim().length < 5) {
+      setErrorMessage('Please enter your complete residential address (at least 5 characters).');
+      return;
+    }
+
+    if (!emergencyContactName.trim() || emergencyContactName.trim().length < 2) {
+      setErrorMessage("Please enter emergency contact person's full name.");
+      return;
+    }
+
+    const cleanedEmergencyPhone = normalizeIndianMobile(emergencyContactPhone);
+    if (!INDIAN_MOBILE_REGEX.test(cleanedEmergencyPhone)) {
+      setErrorMessage('Please enter a valid 10-digit Indian mobile number for emergency contact.');
       return;
     }
 
@@ -102,7 +137,11 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
               bicycle_model: bicycleModel.trim() || undefined,
               age: Number(age),
               gender,
-              tshirt_size: jerseySize
+              tshirt_size: jerseySize,
+              emergency_contact_name: emergencyContactName.trim(),
+              emergency_contact_phone: cleanedEmergencyPhone,
+              blood_group: bloodGroup,
+              residential_address: residentialAddress.trim()
             })
           });
         } catch {
@@ -125,6 +164,10 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
           email: email.trim() || undefined,
           age: Number(age),
           gender,
+          residential_address: residentialAddress.trim(),
+          emergency_contact_name: emergencyContactName.trim(),
+          emergency_contact_phone: cleanedEmergencyPhone,
+          blood_group: bloodGroup,
           bicycle_type: bicycleType,
           bicycle_brand: bicycleBrand.trim() || undefined,
           bicycle_model: bicycleModel.trim() || undefined,
@@ -140,7 +183,7 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
         throw new Error(data.error || 'Registration failed.');
       }
 
-      // 3. Flow control: Free events directly confirmed -> confirmation page. Paid events -> payment simulation
+      // 3. Flow control: Free events directly confirmed -> confirmation page. Paid events -> payment
       if (data.is_free || data.status === 'confirmed' || isFreeEvent) {
         router.push(`/registrations/${data.public_reference}`);
       } else {
@@ -175,7 +218,8 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
       {/* 1. Rider Information */}
       <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-5">
         <h2 className="text-xs font-bold uppercase tracking-wider text-[#3F6212] font-mono flex items-center gap-2">
-          <span>1. Rider Personal Details</span>
+          <User className="w-4 h-4" />
+          <span>1. Rider Information</span>
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
@@ -241,14 +285,85 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
               <option value="Prefer not to say">Prefer not to say</option>
             </select>
           </div>
+
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-[#171914] uppercase block font-bold">Residential Address *</label>
+            <textarea
+              required
+              rows={3}
+              value={residentialAddress}
+              onChange={(e) => setResidentialAddress(e.target.value)}
+              placeholder="Enter your complete residential address"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none"
+            />
+          </div>
         </div>
       </div>
 
-      {/* 2. Bicycle & Gear for this Event */}
+      {/* 2. Emergency & Safety Information */}
+      <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#3F6212] font-mono flex items-center gap-2">
+            <HeartPulse className="w-4 h-4 text-rose-500" />
+            <span>2. Emergency & Safety Information</span>
+          </h2>
+          <span className="text-[10px] font-mono text-[#62645C] uppercase font-bold">
+            CONFIDENTIAL • MARSHAL USE ONLY
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-[#171914] uppercase block font-bold">Emergency Contact Name *</label>
+            <input
+              type="text"
+              required
+              value={emergencyContactName}
+              onChange={(e) => setEmergencyContactName(e.target.value)}
+              placeholder="Enter emergency contact person's full name"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm focus:border-lime-500 outline-none"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[#171914] uppercase block font-bold">Emergency Contact Number *</label>
+            <input
+              type="tel"
+              required
+              maxLength={14}
+              value={emergencyContactPhone}
+              onChange={(e) => setEmergencyContactPhone(e.target.value)}
+              placeholder="Enter emergency contact mobile number"
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm font-bold focus:border-lime-500 outline-none"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[#171914] uppercase block font-bold">Blood Group *</label>
+            <select
+              value={bloodGroup}
+              onChange={(e) => setBloodGroup(e.target.value as BloodGroup)}
+              className="w-full px-4 py-3 rounded-xl bg-[#FFFFFF] text-[#171914] border border-[#E5E6DE] text-sm font-bold focus:border-lime-500 outline-none"
+            >
+              {BLOOD_GROUPS.map((bg) => (
+                <option key={bg} value={bg}>
+                  {bg}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-[#62645C] font-medium leading-relaxed bg-[#EAEDE2]/60 p-3 rounded-xl border border-[#E5E6DE]">
+          Safety Notice: Emergency details are collected strictly for rider safety and on-course medical care. They are never published or shared with other riders.
+        </p>
+      </div>
+
+      {/* 3. Bicycle & Gear for this Event */}
       <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-5">
         <h2 className="text-xs font-bold uppercase tracking-wider text-[#3F6212] font-mono flex items-center gap-2">
           <Bike className="w-4 h-4" />
-          <span>2. Bicycle & Equipment for this Event</span>
+          <span>3. Bicycle & Equipment for this Event</span>
         </h2>
 
         <div className="space-y-4 text-xs font-semibold">
@@ -328,16 +443,16 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
                 onChange={(e) => setSaveToProfile(e.target.checked)}
                 className="w-4 h-4 rounded border-[#E5E6DE] text-lime-600 focus:ring-lime-500"
               />
-              <span>Also save these bicycle and apparel size choices to my permanent rider profile</span>
+              <span>Also save these bicycle, apparel, and safety details to my permanent rider profile</span>
             </label>
           </div>
         </div>
       </div>
 
-      {/* 3. Safety Terms & Fee Summary */}
+      {/* 4. Safety Terms & Fee Summary */}
       <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6">
         <h2 className="text-xs font-bold uppercase tracking-wider text-[#3F6212] font-mono">
-          3. Safety Undertaking & Confirmation
+          4. Safety Undertaking & Confirmation
         </h2>
 
         <div className="p-4 rounded-xl bg-[#EAEDE2] border border-[#E5E6DE] space-y-2">

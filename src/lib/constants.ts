@@ -1,10 +1,28 @@
-import { CyclingEvent } from '@/types';
+import { CyclingEvent, EventSponsor } from '@/types';
 
 export const CLUB_NAME = 'THE ANAND CYCLING CLUB';
 export const CLUB_TAGLINE = 'Ride with Passion • Explore with Pride';
 export const CLUB_LOCATION = 'Vallabh Vidyanagar, Anand, Gujarat, India';
 export const CLUB_CONTACT_PHONE = '7043066800';
 export const CLUB_CONTACT_EMAIL = 'theanandcyclingclub@gmail.com';
+
+export const DEFAULT_EVENT_SPONSORS: EventSponsor[] = [
+  {
+    id: 'sponsor-1',
+    name: 'Event Partner 1',
+    logo_url: '/sponsor1.png'
+  },
+  {
+    id: 'sponsor-2',
+    name: 'Event Partner 2',
+    logo_url: '/sponsor2.png'
+  },
+  {
+    id: 'sponsor-3',
+    name: 'Event Partner 3',
+    logo_url: '/sponsor3.png'
+  }
+];
 
 export const INITIAL_EVENTS: CyclingEvent[] = [
   {
@@ -66,7 +84,7 @@ export const INITIAL_EVENTS: CyclingEvent[] = [
     published_at: '2026-10-16T00:00:00+05:30',
     created_at: '2026-10-16T00:00:00+05:30',
     updated_at: '2026-10-16T00:00:00+05:30',
-    pace_guide: '22 - 30 km/h (Endurance Peloton)',
+    pace_guide: '22 - 30 km/h (Endurance Pace)',
     reporting_time: '05:00 AM IST',
     flag_off_time: '05:30 AM IST',
     amenities: [

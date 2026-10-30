@@ -6,6 +6,8 @@ import { formatINR, formatDateIndian, formatTimeIndian, CLUB_CONTACT_PHONE } fro
 import {
   Calendar, Clock, MapPin, CheckCircle2, ArrowRight, ChevronLeft, ShieldCheck, Mountain, Gauge
 } from 'lucide-react';
+import { LiveRegistrationProgress } from '@/components/events/LiveRegistrationProgress';
+import { SponsorSection } from '@/components/events/SponsorSection';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -19,7 +21,10 @@ export default async function EventDetailPage({ params }: Props) {
     notFound();
   }
 
+  const capacityInfo = await db.getEventCapacity(event.id);
+  const isSoldOut = capacityInfo.is_full;
   const isRegistrationOpen = new Date() <= new Date(event.registration_closes_at) && event.status === 'published';
+  const canRegister = isRegistrationOpen && !isSoldOut;
   const isFree = event.registration_fee_paise === 0;
 
   return (
@@ -54,10 +59,21 @@ export default async function EventDetailPage({ params }: Props) {
               <span className="photo-overlay-pill px-3 py-1 rounded-md">
                 {event.difficulty}
               </span>
-              <span className="bg-[#C7F36B]/20 text-[#C7F36B] border border-[#C7F36B]/40 px-3 py-1 rounded-md flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#C7F36B]" />
-                <span>REGISTRATIONS OPEN</span>
-              </span>
+              {isSoldOut ? (
+                <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 px-3 py-1 rounded-md flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                  <span>REGISTRATION FULL</span>
+                </span>
+              ) : isRegistrationOpen ? (
+                <span className="bg-[#C7F36B]/20 text-[#C7F36B] border border-[#C7F36B]/40 px-3 py-1 rounded-md flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#C7F36B]" />
+                  <span>REGISTRATIONS OPEN</span>
+                </span>
+              ) : (
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-md">
+                  REGISTRATION CLOSED
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase text-white tracking-tight leading-tight font-sans">
@@ -121,7 +137,7 @@ export default async function EventDetailPage({ params }: Props) {
                     <span>{event.pace_guide || '20 - 28 KM/H'}</span>
                   </p>
                   <p className="text-xs text-[#62645C] font-medium">
-                    Ride marshals guiding front and rear peloton
+                    Ride marshals guiding front and rear of the pack
                   </p>
                 </div>
               </div>
@@ -146,9 +162,9 @@ export default async function EventDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* Right Column (4 cols): Sticky Registration Dock */}
-          <div className="lg:col-span-4">
-            <div className="sticky top-24 sm:top-28 surface-card rounded-2xl p-6 sm:p-8 space-y-6">
+          {/* Right Column (4 cols): Sticky Registration Dock & Sponsors */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#62645C] block font-mono">
                   ENTRY FEE
@@ -163,7 +179,13 @@ export default async function EventDetailPage({ params }: Props) {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#E5E6DE] space-y-3 text-xs font-semibold">
+              {/* LIVE REGISTRATION CAPACITY PROGRESS */}
+              <LiveRegistrationProgress
+                eventId={event.id}
+                initialCapacity={capacityInfo}
+              />
+
+              <div className="pt-2 border-t border-[#E5E6DE] space-y-3 text-xs font-semibold">
                 <div className="flex justify-between text-[#62645C]">
                   <span>Registration Closes:</span>
                   <span className="text-[#171914] font-bold">{formatDateIndian(event.registration_closes_at)}</span>
@@ -179,7 +201,7 @@ export default async function EventDetailPage({ params }: Props) {
               </div>
 
               {/* Action Button */}
-              {isRegistrationOpen ? (
+              {canRegister ? (
                 <div className="pt-2">
                   <Link
                     href={`/events/${event.slug}/register`}
@@ -188,6 +210,10 @@ export default async function EventDetailPage({ params }: Props) {
                     <span>REGISTER NOW</span>
                     <ArrowRight className="w-4 h-4 stroke-[3]" />
                   </Link>
+                </div>
+              ) : isSoldOut ? (
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-center text-xs font-black uppercase tracking-wider text-rose-700">
+                  REGISTRATION FULL // SOLD OUT
                 </div>
               ) : (
                 <div className="p-4 rounded-xl bg-[#EAEDE2] text-center text-xs font-bold text-[#62645C]">
@@ -202,6 +228,9 @@ export default async function EventDetailPage({ params }: Props) {
                 </a>
               </p>
             </div>
+
+            {/* EVENT SPONSORS */}
+            <SponsorSection sponsors={event.sponsors} />
           </div>
         </div>
       </section>

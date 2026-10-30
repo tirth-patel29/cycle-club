@@ -104,7 +104,7 @@ export function generateConfirmationEmailHtml({
                       ${escapeHtml(CLUB_NAME)}
                     </div>
                     <div style="font-size: 11px; color: #62645C; font-weight: 500; margin-top: 2px;">
-                      Gujarat • Premier Peloton Collective
+                      Gujarat • Premier Cycling Club Collective
                     </div>
                   </td>
                   <td align="right" style="vertical-align: middle;">
@@ -268,7 +268,7 @@ export function generateConfirmationEmailHtml({
                       <ul style="margin: 8px 0 0 0; padding-left: 18px; font-size: 12px; color: #171914; line-height: 20px;">
                         <li><strong>Helmet is strictly mandatory</strong> for all participants at start line.</li>
                         <li>Report 30 minutes prior to flag-off to collect your physical bike bib plate.</li>
-                        <li>Hydration support and backup SAG escort van accompany the entire peloton.</li>
+                        <li>Hydration support and backup SAG escort van accompany the entire ride.</li>
                         <li>Hot masala chai & Gujarati breakfast awaits at the finish arch.</li>
                       </ul>
                     </div>

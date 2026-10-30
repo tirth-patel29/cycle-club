@@ -31,10 +31,10 @@ export default function HomePage() {
             </h1>
 
             <p className="text-sm sm:text-base lg:text-lg text-[#62645C] max-w-2xl font-medium leading-relaxed animate-fade-up animate-delay-2">
-              Gujarat’s premier community cycling collective. Weekend dawn pelotons, Charotar canal pacelines, and endurance brevets across Anand and beyond.
+              Gujarat's premier community cycling collective. Weekend dawn pacelines, Charotar canal routes, and endurance brevets across Anand and beyond.
             </p>
 
-            {/* Preserved Glossy CTA Buttons */}
+            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2 animate-fade-up animate-delay-3">
               <Link
                 href="/auth/signup?returnUrl=/events"
@@ -54,8 +54,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Hero Cycling Photography Showcase with /banner.jpg */}
-          <HeroBannerImage alt={`${CLUB_NAME} peloton riding at dawn across Charotar`} />
+          {/* Hero Cycling Photography Showcase */}
+          <HeroBannerImage alt={`${CLUB_NAME} riders riding at dawn across Charotar`} />
         </div>
       </section>
 
@@ -76,38 +76,24 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Metric Tiles */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
-              <p className="text-3xl sm:text-4xl font-black text-[#171914] font-mono">350+</p>
-              <p className="text-xs text-[#62645C] uppercase tracking-wider font-bold mt-1">Active Riders</p>
-            </div>
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
-              <p className="text-3xl sm:text-4xl font-black text-[#3F6212] font-mono">48+</p>
-              <p className="text-xs text-[#62645C] uppercase tracking-wider font-bold mt-1">Organized Rides</p>
-            </div>
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E5E6DE] shadow-xs">
-              <p className="text-3xl sm:text-4xl font-black text-[#171914] font-mono">100%</p>
-              <p className="text-xs text-[#62645C] uppercase tracking-wider font-bold mt-1">Zero-Drop Guarantee</p>
-            </div>
-          </div>
+
         </div>
       </section>
 
       {/* ========================================================
-          SECTION 4: REAL GALLERY SECTION (Phase 8)
+          SECTION 3: REAL GALLERY SECTION
           ======================================================== */}
       <GallerySection />
 
       {/* ========================================================
-          SECTION 5: INVITATION TO RIDE BANNER (Muted Sage & Lime)
+          SECTION 4: INVITATION TO RIDE BANNER
           ======================================================== */}
       <section className="w-full bg-[#FFFFFF] border-t border-[#E5E6DE] py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="p-8 sm:p-12 rounded-3xl bg-[#EAEDE2] border border-[#E5E6DE] flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
             <div className="space-y-2 text-center sm:text-left">
               <h3 className="text-2xl sm:text-3xl font-black uppercase text-[#171914] tracking-tight">
-                READY TO RIDE WITH THE PELOTON?
+                READY TO RIDE WITH THE ANAND CYCLING CLUB?
               </h3>
               <p className="text-xs sm:text-sm text-[#62645C] font-medium max-w-xl">
                 Community dawn loops, canal centuries, and endurance challenges across Gujarat. Secure your bib for the next stage.
