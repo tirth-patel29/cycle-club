@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { LiveRegistrationProgress } from '@/components/events/LiveRegistrationProgress';
 import { SponsorSection } from '@/components/events/SponsorSection';
+import { StravaRouteCard } from '@/components/events/StravaRouteCard';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -128,35 +129,10 @@ export default async function EventDetailPage({ params }: Props) {
       {/* Two-Column Details & Registration Dock */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column (7-8 cols): Overview -> Route specs -> Inclusions -> Rider Rules */}
+          {/* Left Column (7-8 cols): Proud Sponsors -> Route specs -> Strava Route -> Inclusions -> Rider Rules */}
           <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-            {/* 1. ABOUT THIS RIDE */}
-            <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-4">
-              <h2 className="text-xs font-bold uppercase text-[#3F6212] tracking-wider font-mono">
-                ABOUT THIS RIDE
-              </h2>
-              <p className="text-sm sm:text-base text-[#171914] leading-relaxed font-medium">
-                {event.description}
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
-                <div className="p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-center">
-                  <span className="text-[10px] uppercase text-[#62645C] font-semibold block">Distance</span>
-                  <span className="text-sm font-extrabold text-[#171914]">{event.distance_km} KM</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-center">
-                  <span className="text-[10px] uppercase text-[#62645C] font-semibold block">Difficulty</span>
-                  <span className="text-sm font-extrabold text-[#171914]">{event.difficulty}</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-center">
-                  <span className="text-[10px] uppercase text-[#62645C] font-semibold block">Pace</span>
-                  <span className="text-sm font-extrabold text-[#171914]">{event.pace_guide || '20-28 km/h'}</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#F7F7F2] border border-[#E5E6DE] text-center">
-                  <span className="text-[10px] uppercase text-[#62645C] font-semibold block">Elevation</span>
-                  <span className="text-sm font-extrabold text-[#171914]">+{event.elevation_gain_m}m</span>
-                </div>
-              </div>
-            </div>
+            {/* 1. OUR PROUD SPONSORS (Replacing About This Ride) */}
+            <SponsorSection sponsors={event.sponsors} />
 
             {/* 2. RIDE SCHEDULE & ROUTE SPECIFICATIONS */}
             <div className="surface-card rounded-2xl p-6 sm:p-8 space-y-6">
@@ -208,6 +184,16 @@ export default async function EventDetailPage({ params }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* 3. STRAVA ROUTE INTEGRATION (RIDE THE ROUTE) */}
+            {event.strava_route_url && (
+              <StravaRouteCard
+                stravaRouteUrl={event.strava_route_url}
+                distanceKm={event.distance_km}
+                elevationGainM={event.elevation_gain_m}
+                venue={event.venue}
+              />
+            )}
 
             {/* 3. DYNAMIC INCLUSIONS SECTION */}
             {((event.inclusions && event.inclusions.length > 0) || (event.amenities && event.amenities.length > 0)) && (
@@ -336,9 +322,6 @@ export default async function EventDetailPage({ params }: Props) {
                 </a>
               </p>
             </div>
-
-            {/* OUR PROUD SPONSORS SECTION */}
-            <SponsorSection sponsors={event.sponsors} />
           </div>
         </div>
       </section>

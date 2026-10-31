@@ -576,6 +576,61 @@ async function runAll() {
     assert.notStrictEqual(verified.role, 'admin', 'Rider role must never match admin');
   });
 
+  // ==========================================
+  // Suite 12: Strava Route Integration
+  // ==========================================
+  console.log(`\n[Suite 12: Strava Route URL Integration & Validation]`);
+
+  await testAsync('validates Strava route URLs requiring strava.com/routes/', async () => {
+    function isValidStravaRoute(url) {
+      if (!url || typeof url !== 'string') return false;
+      const clean = url.trim();
+      return clean.includes('strava.com/routes/');
+    }
+
+    assert.strictEqual(isValidStravaRoute('https://www.strava.com/routes/3551401322583868290'), true);
+    assert.strictEqual(isValidStravaRoute('https://strava.com/routes/12345'), true);
+    assert.strictEqual(isValidStravaRoute('strava.com/routes/999'), true);
+    assert.strictEqual(isValidStravaRoute('https://google.com'), false);
+    assert.strictEqual(isValidStravaRoute('https://www.strava.com/athletes/12345'), false);
+    assert.strictEqual(isValidStravaRoute(''), false);
+  });
+
+  await testAsync('persists and retrieves strava_route_url on event lifecycle', async () => {
+    const testRouteUrl = 'https://www.strava.com/routes/3551401322583868290';
+    const stravaEvent = await db.createEvent({
+      slug: `strava-test-${Date.now()}`,
+      title: 'Strava Integration Test Ride',
+      description: 'Route test event',
+      venue: 'ACC Club',
+      starts_at: new Date(Date.now() + 86400000).toISOString(),
+      ends_at: new Date(Date.now() + 90000000).toISOString(),
+      distance_km: 75,
+      elevation_gain_m: 210,
+      difficulty: 'Challenging',
+      registration_fee_paise: 29900,
+      currency: 'INR',
+      status: 'published',
+      registration_opens_at: new Date().toISOString(),
+      registration_closes_at: new Date(Date.now() + 80000000).toISOString(),
+      strava_route_url: testRouteUrl
+    });
+
+    assert.ok(stravaEvent.id);
+    assert.strictEqual(stravaEvent.strava_route_url, testRouteUrl);
+
+    // Retrieve by slug
+    const fetched = await db.getEventBySlug(stravaEvent.slug);
+    assert.ok(fetched);
+    assert.strictEqual(fetched.strava_route_url, testRouteUrl);
+
+    // Update with new route URL
+    const updated = await db.updateEvent(stravaEvent.id, {
+      strava_route_url: 'https://www.strava.com/routes/987654321'
+    });
+    assert.strictEqual(updated.strava_route_url, 'https://www.strava.com/routes/987654321');
+  });
+
   console.log(`\n================ Test Summary ================`);
   console.log(`Total Passed: ${passed}`);
   console.log(`Total Failed: ${failed}`);

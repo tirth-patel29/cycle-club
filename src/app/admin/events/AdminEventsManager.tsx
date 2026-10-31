@@ -223,6 +223,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
   const [status, setStatus] = useState<EventStatus>('published');
   const [registrationClosesAt, setRegistrationClosesAt] = useState('2026-12-19T18:00');
   const [maxCapacity, setMaxCapacity] = useState<string>('');
+  const [stravaRouteUrl, setStravaRouteUrl] = useState('');
   const [inclusions, setInclusions] = useState<EventInclusion[]>([]);
 
   const handleTitleChange = (val: string) => {
@@ -271,6 +272,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
         registration_opens_at: new Date().toISOString(),
         registration_closes_at: localIstToIso(registrationClosesAt),
         max_capacity: maxCapacity.trim() ? parseInt(maxCapacity.trim(), 10) : null,
+        strava_route_url: stravaRouteUrl.trim() || undefined,
         inclusions: inclusions.filter(i => i.title.trim().length > 0)
       };
 
@@ -358,6 +360,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
         status: editingEvent.status,
         registration_closes_at: localIstToIso(editingEvent.registration_closes_at),
         max_capacity: editingEvent.max_capacity ?? null,
+        strava_route_url: editingEvent.strava_route_url?.trim() || undefined,
         inclusions: (editingEvent.inclusions || []).filter(i => i.title.trim().length > 0)
       };
       const res = await fetch('/api/admin/events', {
@@ -710,6 +713,18 @@ export function AdminEventsManager({ initialEvents }: Props) {
                     <span className="text-[10px] text-[#62645C] block mt-0.5">Leave blank for auto (30 mins prior)</span>
                   </div>
                 </div>
+
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">STRAVA ROUTE URL (OPTIONAL)</label>
+                  <input
+                    type="url"
+                    value={stravaRouteUrl}
+                    onChange={(e) => setStravaRouteUrl(e.target.value)}
+                    placeholder="https://www.strava.com/routes/3551401322583868290"
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs placeholder:text-[#62645C]/50"
+                  />
+                  <span className="text-[10px] text-[#62645C] block mt-0.5">Link to an official route on strava.com/routes/</span>
+                </div>
               </div>
 
               {/* GROUP 4: Distance and Difficulty */}
@@ -963,6 +978,18 @@ export function AdminEventsManager({ initialEvents }: Props) {
                     className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
                   <span className="text-[10px] text-[#62645C] block mt-0.5">Leave blank for auto (30 mins prior)</span>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-[#171914] block mb-1 font-bold">STRAVA ROUTE URL (OPTIONAL)</label>
+                <input
+                  type="url"
+                  value={editingEvent.strava_route_url || ''}
+                  onChange={(e) => setEditingEvent({ ...editingEvent, strava_route_url: e.target.value })}
+                  placeholder="https://www.strava.com/routes/3551401322583868290"
+                  className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs focus:border-[#171914] outline-hidden placeholder:text-[#62645C]/50"
+                />
+                <span className="text-[10px] text-[#62645C] block mt-0.5">Leave blank to remove. Link to strava.com/routes/</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

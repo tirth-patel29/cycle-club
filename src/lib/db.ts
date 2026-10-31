@@ -57,7 +57,8 @@ function mapEventRow(row: any): CyclingEvent {
     updated_at: new Date(row.updated_at).toISOString(),
     pace_guide: row.pace_guide || '18 - 25 km/h (Conversational & Rolling)',
     reporting_time: row.reporting_time || getReportingTime(row.starts_at),
-    flag_off_time: row.flag_off_time || new Date(row.starts_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()
+    flag_off_time: row.flag_off_time || new Date(row.starts_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase(),
+    strava_route_url: row.strava_route_url || undefined
   };
 }
 
@@ -537,13 +538,13 @@ class DatabaseService {
             starts_at, ends_at, distance_km, elevation_gain_m, difficulty,
             registration_fee_paise, currency, status,
             registration_opens_at, registration_closes_at, published_at,
-            max_capacity, sponsors, inclusions, reporting_time
+            max_capacity, sponsors, inclusions, reporting_time, strava_route_url
           ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10, $11,
             $12, $13, $14,
             $15, $16, $17,
-            $18, $19, $20, $21
+            $18, $19, $20, $21, $22
           )
           RETURNING *;
         `;
@@ -573,7 +574,8 @@ class DatabaseService {
           maxCapacity,
           sponsorsJson,
           inclusionsJson,
-          eventData.reporting_time || null
+          eventData.reporting_time || null,
+          eventData.strava_route_url || null
         ];
         const res = await pool.query(query, values);
         const created = mapEventRow(res.rows[0]);
@@ -641,7 +643,8 @@ class DatabaseService {
           max_capacity: 'max_capacity',
           sponsors: 'sponsors',
           inclusions: 'inclusions',
-          reporting_time: 'reporting_time'
+          reporting_time: 'reporting_time',
+          strava_route_url: 'strava_route_url'
         };
 
         for (const [key, dbCol] of Object.entries(fieldMap)) {

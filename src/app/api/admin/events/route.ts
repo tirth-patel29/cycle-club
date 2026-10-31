@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
       sponsors,
       inclusions,
       reporting_time,
+      strava_route_url,
       registration_opens_at,
       registration_closes_at
     } = body;
@@ -116,6 +117,17 @@ export async function POST(req: NextRequest) {
     const regOpens = registration_opens_at ? new Date(registration_opens_at) : new Date();
     const regCloses = registration_closes_at ? new Date(registration_closes_at) : new Date(startDate.getTime() - 24 * 3600000);
 
+    let finalStravaUrl: string | undefined = undefined;
+    if (strava_route_url && typeof strava_route_url === 'string') {
+      const cleanUrl = strava_route_url.trim();
+      if (cleanUrl.length > 0) {
+        if (!cleanUrl.includes('strava.com/routes/')) {
+          return NextResponse.json({ error: 'Strava Route URL must be a valid Strava route link (e.g., https://www.strava.com/routes/<route_id>).' }, { status: 400 });
+        }
+        finalStravaUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+      }
+    }
+
     const eventPayload: Omit<CyclingEvent, 'id' | 'created_at' | 'updated_at'> = {
       title: title.trim(),
       slug: sanitizedSlug,
@@ -135,6 +147,7 @@ export async function POST(req: NextRequest) {
       sponsors: sponsors || undefined,
       inclusions: inclusions || undefined,
       reporting_time: reporting_time ? String(reporting_time).trim() : undefined,
+      strava_route_url: finalStravaUrl,
       registration_opens_at: regOpens.toISOString(),
       registration_closes_at: regCloses.toISOString(),
       published_at: status === 'published' ? new Date().toISOString() : undefined
@@ -200,6 +213,18 @@ export async function PATCH(req: NextRequest) {
           return NextResponse.json({ error: 'Maximum participants capacity must be a positive whole number greater than 0.' }, { status: 400 });
         }
         updates.max_capacity = capNum;
+      }
+    }
+
+    if (updates.strava_route_url !== undefined) {
+      if (!updates.strava_route_url || updates.strava_route_url.trim() === '') {
+        updates.strava_route_url = null;
+      } else {
+        const cleanUrl = updates.strava_route_url.trim();
+        if (!cleanUrl.includes('strava.com/routes/')) {
+          return NextResponse.json({ error: 'Strava Route URL must be a valid Strava route link (e.g., https://www.strava.com/routes/<route_id>).' }, { status: 400 });
+        }
+        updates.strava_route_url = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
       }
     }
 

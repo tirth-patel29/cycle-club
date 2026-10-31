@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS events (
   sponsors JSONB DEFAULT '[]'::jsonb,
   inclusions JSONB DEFAULT '[]'::jsonb,
   reporting_time TEXT,
+  strava_route_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
