@@ -204,8 +204,27 @@ export function formatTimeIndian(dateStr: string): string {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
-    });
+    }).toUpperCase();
   } catch {
     return dateStr;
   }
+}
+
+export function getReportingTime(startsAt: string, explicitReportingTime?: string | null): string {
+  if (explicitReportingTime && explicitReportingTime.trim() && !explicitReportingTime.includes('05:30 AM IST')) {
+    return explicitReportingTime.trim();
+  }
+  try {
+    const d = new Date(startsAt);
+    if (!isNaN(d.getTime())) {
+      const rep = new Date(d.getTime() - 30 * 60 * 1000);
+      return rep.toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      }).toUpperCase();
+    }
+  } catch { }
+  return '05:30 AM';
 }

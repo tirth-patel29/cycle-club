@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
-import { formatINR, formatDateIndian, formatTimeIndian, CLUB_CONTACT_PHONE } from '@/lib/constants';
+import { formatINR, formatDateIndian, formatTimeIndian, getReportingTime, CLUB_CONTACT_PHONE } from '@/lib/constants';
 import {
   Calendar, Clock, MapPin, CheckCircle2, ArrowRight, ChevronLeft, ShieldCheck, Mountain, Gauge,
   Bed, UtensilsCrossed, Bus, Coffee, Shirt, Award, Timer
@@ -171,7 +171,7 @@ export default async function EventDetailPage({ params }: Props) {
                     {formatDateIndian(event.starts_at)}
                   </p>
                   <p className="text-xs text-[#3F6212] font-bold">
-                    Flag-Off: {formatTimeIndian(event.starts_at)} • Reporting: {event.reporting_time || '05:30 AM'}
+                    Flag-Off: {formatTimeIndian(event.starts_at)} • Reporting: {getReportingTime(event.starts_at, event.reporting_time)}
                   </p>
                 </div>
 

@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
       max_capacity,
       sponsors,
       inclusions,
+      reporting_time,
       registration_opens_at,
       registration_closes_at
     } = body;
@@ -133,6 +134,7 @@ export async function POST(req: NextRequest) {
       max_capacity: finalMaxCapacity,
       sponsors: sponsors || undefined,
       inclusions: inclusions || undefined,
+      reporting_time: reporting_time ? String(reporting_time).trim() : undefined,
       registration_opens_at: regOpens.toISOString(),
       registration_closes_at: regCloses.toISOString(),
       published_at: status === 'published' ? new Date().toISOString() : undefined
@@ -234,28 +236,30 @@ export async function DELETE(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id } = body;
+    const { id, force } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Event ID is required.' }, { status: 400 });
     }
 
-    // Safety: check if event has paid/confirmed registrations before deleting
+    // Check if event exists
     const event = await db.getEventById(id);
     if (!event) {
       return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
     }
 
-    // Get registrations count for this event
+    // Check for confirmed registrations
     const registrations = await db.getRegistrationsByEventId(id);
     const confirmedCount = registrations.filter((r: any) => r.status === 'confirmed').length;
-    if (confirmedCount > 0) {
+    if (confirmedCount > 0 && !force) {
       return NextResponse.json({
-        error: `Cannot delete: ${confirmedCount} confirmed registration(s) exist for this event. Cancel the event instead.`
+        error: `Cannot delete: ${confirmedCount} confirmed registration(s) exist for this event. Confirm force deletion to proceed.`,
+        hasConfirmed: true,
+        confirmedCount
       }, { status: 409 });
     }
 
-    // Delete pending registrations first, then the event
+    // Delete registrations (and their payments via FK cascade) first, then the event
     await db.deleteRegistrationsByEventId(id);
     await db.deleteEvent(id);
 

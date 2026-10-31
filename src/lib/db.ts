@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { CyclingEvent, Registration, Payment, AuditLog, RiderProfile, BicycleType, EventStatus, BloodGroup, EventCapacityInfo } from '@/types';
-import { INITIAL_EVENTS } from './constants';
+import { INITIAL_EVENTS, getReportingTime } from './constants';
 import { ensureUuid, isValidUuid } from './auth';
 
 let pgPool: pg.Pool | null = null;
@@ -55,9 +55,9 @@ function mapEventRow(row: any): CyclingEvent {
     published_at: row.published_at ? new Date(row.published_at).toISOString() : undefined,
     created_at: new Date(row.created_at).toISOString(),
     updated_at: new Date(row.updated_at).toISOString(),
-    pace_guide: '18 - 25 km/h (Conversational & Rolling)',
-    reporting_time: '05:30 AM IST',
-    flag_off_time: '06:00 AM IST'
+    pace_guide: row.pace_guide || '18 - 25 km/h (Conversational & Rolling)',
+    reporting_time: row.reporting_time || getReportingTime(row.starts_at),
+    flag_off_time: row.flag_off_time || new Date(row.starts_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()
   };
 }
 
@@ -537,13 +537,13 @@ class DatabaseService {
             starts_at, ends_at, distance_km, elevation_gain_m, difficulty,
             registration_fee_paise, currency, status,
             registration_opens_at, registration_closes_at, published_at,
-            max_capacity, sponsors, inclusions
+            max_capacity, sponsors, inclusions, reporting_time
           ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10, $11,
             $12, $13, $14,
             $15, $16, $17,
-            $18, $19, $20
+            $18, $19, $20, $21
           )
           RETURNING *;
         `;
@@ -572,7 +572,8 @@ class DatabaseService {
           publishedAt ? new Date(publishedAt).toISOString() : null,
           maxCapacity,
           sponsorsJson,
-          inclusionsJson
+          inclusionsJson,
+          eventData.reporting_time || null
         ];
         const res = await pool.query(query, values);
         const created = mapEventRow(res.rows[0]);
@@ -639,7 +640,8 @@ class DatabaseService {
           published_at: 'published_at',
           max_capacity: 'max_capacity',
           sponsors: 'sponsors',
-          inclusions: 'inclusions'
+          inclusions: 'inclusions',
+          reporting_time: 'reporting_time'
         };
 
         for (const [key, dbCol] of Object.entries(fieldMap)) {
@@ -1016,7 +1018,7 @@ class DatabaseService {
         console.error('Postgres error in createRegistration:', err);
         try {
           await client.query('ROLLBACK');
-        } catch {}
+        } catch { }
         if (err instanceof Error && err.message.includes('capacity has been reached')) {
           throw err;
         }

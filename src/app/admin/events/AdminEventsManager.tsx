@@ -214,6 +214,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
   const [locationDescription, setLocationDescription] = useState('Starting and ending at Anand Town Hall');
   const [startsAt, setStartsAt] = useState('2026-12-20T06:00');
   const [endsAt, setEndsAt] = useState('2026-12-20T10:00');
+  const [reportingTime, setReportingTime] = useState('');
   const [distanceKm, setDistanceKm] = useState(50);
   const [elevationGainM, setElevationGainM] = useState(120);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('Moderate');
@@ -259,6 +260,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
         location_description: locationDescription.trim() || `Starting from ${venue.trim()}`,
         starts_at: localIstToIso(startsAt),
         ends_at: localIstToIso(endsAt),
+        reporting_time: reportingTime.trim() || undefined,
         distance_km: Number(distanceKm),
         elevation_gain_m: Number(elevationGainM) || 0,
         difficulty,
@@ -348,6 +350,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
         location_description: editingEvent.location_description,
         starts_at: localIstToIso(editingEvent.starts_at),
         ends_at: localIstToIso(editingEvent.ends_at),
+        reporting_time: editingEvent.reporting_time?.trim() || undefined,
         distance_km: Number(editingEvent.distance_km),
         elevation_gain_m: Number(editingEvent.elevation_gain_m) || 0,
         difficulty: editingEvent.difficulty,
@@ -375,21 +378,35 @@ export function AdminEventsManager({ initialEvents }: Props) {
     }
   };
 
-  const handleDelete = async (evt: CyclingEvent) => {
-    const confirmed = window.confirm(
-      `DELETE "${evt.title}"?\n\nThis will remove the event and all its pending registrations permanently. Confirmed (paid) registrations will block deletion.\n\nType OK to confirm.`
-    );
-    if (!confirmed) return;
+  const handleDelete = async (evt: CyclingEvent, force = false) => {
+    if (!force) {
+      const confirmed = window.confirm(
+        `Are you sure you want to delete "${evt.title}"?\n\nThis will remove the event from the directory.`
+      );
+      if (!confirmed) return;
+    }
+
     setIsDeleting(evt.id);
     setErrorMessage(null);
     try {
       const res = await fetch('/api/admin/events', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: evt.id })
+        body: JSON.stringify({ id: evt.id, force })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to delete event.');
+      if (!res.ok) {
+        if (res.status === 409 && data.hasConfirmed) {
+          const forceConfirm = window.confirm(
+            `⚠️ CAUTION: This event has ${data.confirmedCount} confirmed participant registration(s).\n\nDo you want to FORCE DELETE "${evt.title}" and permanently remove all associated registrations?`
+          );
+          if (forceConfirm) {
+            return await handleDelete(evt, true);
+          }
+          return;
+        }
+        throw new Error(data.error || 'Failed to delete event.');
+      }
       setEvents(events.filter((e) => e.id !== evt.id));
       setSuccessMessage(data.message || `"${evt.title}" deleted.`);
     } catch (err: any) {
@@ -658,7 +675,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-[#171914] block mb-1 font-bold">FLAG OFF TIME (STARTS AT) *</label>
                     <input
@@ -679,6 +696,18 @@ export function AdminEventsManager({ initialEvents }: Props) {
                       onChange={(e) => setEndsAt(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]"
                     />
+                  </div>
+
+                  <div>
+                    <label className="text-[#171914] block mb-1 font-bold">REPORTING TIME</label>
+                    <input
+                      type="text"
+                      value={reportingTime}
+                      onChange={(e) => setReportingTime(e.target.value)}
+                      placeholder="e.g. 03:30 AM (Auto: 30m prior)"
+                      className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]"
+                    />
+                    <span className="text-[10px] text-[#62645C] block mt-0.5">Leave blank for auto (30 mins prior)</span>
                   </div>
                 </div>
               </div>
@@ -910,7 +939,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
                   className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs focus:border-[#171914] outline-hidden" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-[#171914] block mb-1 font-bold">FLAG OFF (STARTS AT) *</label>
                   <input type="datetime-local" required
@@ -924,6 +953,15 @@ export function AdminEventsManager({ initialEvents }: Props) {
                     value={editingEvent.ends_at}
                     onChange={(e) => setEditingEvent({ ...editingEvent, ends_at: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
+                </div>
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">REPORTING TIME</label>
+                  <input type="text"
+                    value={editingEvent.reporting_time || ''}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, reporting_time: e.target.value })}
+                    placeholder="e.g. 03:30 AM (Auto: 30m prior)"
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
+                  <span className="text-[10px] text-[#62645C] block mt-0.5">Leave blank for auto (30 mins prior)</span>
                 </div>
               </div>
 
