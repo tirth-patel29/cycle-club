@@ -165,6 +165,36 @@ function InclusionsEditor({
   );
 }
 
+// Convert any ISO timestamp / Date into YYYY-MM-DDTHH:mm formatted in Indian Standard Time (Asia/Kolkata)
+// This is strictly required for <input type="datetime-local" /> to display the actual event time in India without UTC shifting
+function toLocalDatetimeString(dateInput?: string | Date | null): string {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(d);
+  const map: Record<string, string> = {};
+  for (const p of parts) map[p.type] = p.value;
+  return `${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}`;
+}
+
+// Convert a YYYY-MM-DDTHH:mm string from <input type="datetime-local" /> into an ISO UTC string in Indian Standard Time (+05:30)
+function localIstToIso(val: string): string {
+  if (!val) return '';
+  const trimmed = val.trim();
+  if (trimmed.includes('Z') || trimmed.includes('+') || (trimmed.lastIndexOf('-') > 7)) {
+    return new Date(trimmed).toISOString();
+  }
+  return new Date(`${trimmed}:00+05:30`).toISOString();
+}
+
 export function AdminEventsManager({ initialEvents }: Props) {
   const [events, setEvents] = useState<CyclingEvent[]>(initialEvents);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -227,8 +257,8 @@ export function AdminEventsManager({ initialEvents }: Props) {
         cover_image_url: coverImageUrl.trim(),
         venue: venue.trim(),
         location_description: locationDescription.trim() || `Starting from ${venue.trim()}`,
-        starts_at: new Date(startsAt).toISOString(),
-        ends_at: new Date(endsAt).toISOString(),
+        starts_at: localIstToIso(startsAt),
+        ends_at: localIstToIso(endsAt),
         distance_km: Number(distanceKm),
         elevation_gain_m: Number(elevationGainM) || 0,
         difficulty,
@@ -237,7 +267,7 @@ export function AdminEventsManager({ initialEvents }: Props) {
         currency: 'INR',
         status,
         registration_opens_at: new Date().toISOString(),
-        registration_closes_at: new Date(registrationClosesAt).toISOString(),
+        registration_closes_at: localIstToIso(registrationClosesAt),
         max_capacity: maxCapacity.trim() ? parseInt(maxCapacity.trim(), 10) : null,
         inclusions: inclusions.filter(i => i.title.trim().length > 0)
       };
@@ -294,6 +324,9 @@ export function AdminEventsManager({ initialEvents }: Props) {
   const openEditModal = (evt: CyclingEvent) => {
     setEditingEvent({
       ...evt,
+      starts_at: toLocalDatetimeString(evt.starts_at),
+      ends_at: toLocalDatetimeString(evt.ends_at),
+      registration_closes_at: toLocalDatetimeString(evt.registration_closes_at),
       inclusions: evt.inclusions ? [...evt.inclusions] : []
     });
     setErrorMessage(null);
@@ -308,19 +341,19 @@ export function AdminEventsManager({ initialEvents }: Props) {
     try {
       const payload = {
         id: editingEvent.id,
-        title: editingEvent.title,
-        description: editingEvent.description,
-        cover_image_url: editingEvent.cover_image_url,
-        venue: editingEvent.venue,
+        title: editingEvent.title.trim(),
+        description: editingEvent.description.trim(),
+        cover_image_url: editingEvent.cover_image_url.trim(),
+        venue: editingEvent.venue.trim(),
         location_description: editingEvent.location_description,
-        starts_at: editingEvent.starts_at,
-        ends_at: editingEvent.ends_at,
-        distance_km: editingEvent.distance_km,
-        elevation_gain_m: editingEvent.elevation_gain_m,
+        starts_at: localIstToIso(editingEvent.starts_at),
+        ends_at: localIstToIso(editingEvent.ends_at),
+        distance_km: Number(editingEvent.distance_km),
+        elevation_gain_m: Number(editingEvent.elevation_gain_m) || 0,
         difficulty: editingEvent.difficulty,
-        registration_fee_paise: editingEvent.registration_fee_paise,
+        registration_fee_paise: Number(editingEvent.registration_fee_paise),
         status: editingEvent.status,
-        registration_closes_at: editingEvent.registration_closes_at,
+        registration_closes_at: localIstToIso(editingEvent.registration_closes_at),
         max_capacity: editingEvent.max_capacity ?? null,
         inclusions: (editingEvent.inclusions || []).filter(i => i.title.trim().length > 0)
       };
@@ -881,15 +914,15 @@ export function AdminEventsManager({ initialEvents }: Props) {
                 <div>
                   <label className="text-[#171914] block mb-1 font-bold">FLAG OFF (STARTS AT) *</label>
                   <input type="datetime-local" required
-                    value={editingEvent.starts_at.slice(0, 16)}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, starts_at: new Date(e.target.value).toISOString() })}
+                    value={editingEvent.starts_at}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, starts_at: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
                 </div>
                 <div>
                   <label className="text-[#171914] block mb-1 font-bold">ENDS AT *</label>
                   <input type="datetime-local" required
-                    value={editingEvent.ends_at.slice(0, 16)}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, ends_at: new Date(e.target.value).toISOString() })}
+                    value={editingEvent.ends_at}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, ends_at: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
                 </div>
               </div>
@@ -927,8 +960,8 @@ export function AdminEventsManager({ initialEvents }: Props) {
                 <div>
                   <label className="text-[#171914] block mb-1 font-bold">REGISTRATION CLOSES AT *</label>
                   <input type="datetime-local" required
-                    value={editingEvent.registration_closes_at.slice(0, 16)}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, registration_closes_at: new Date(e.target.value).toISOString() })}
+                    value={editingEvent.registration_closes_at}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, registration_closes_at: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914]" />
                 </div>
               </div>

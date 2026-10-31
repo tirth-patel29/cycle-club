@@ -185,6 +185,7 @@ export function formatDateIndian(dateStr: string): string {
   try {
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-IN', {
+      timeZone: 'Asia/Kolkata',
       weekday: 'short',
       day: 'numeric',
       month: 'short',
@@ -199,6 +200,7 @@ export function formatTimeIndian(dateStr: string): string {
   try {
     const d = new Date(dateStr);
     return d.toLocaleTimeString('en-IN', {
+      timeZone: 'Asia/Kolkata',
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
