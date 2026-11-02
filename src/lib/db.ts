@@ -58,7 +58,10 @@ function mapEventRow(row: any): CyclingEvent {
     pace_guide: row.pace_guide || '18 - 25 km/h (Conversational & Rolling)',
     reporting_time: row.reporting_time || getReportingTime(row.starts_at),
     flag_off_time: row.flag_off_time || new Date(row.starts_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase(),
-    strava_route_url: row.strava_route_url || undefined
+    strava_route_url: row.strava_route_url || undefined,
+    poster_url: row.poster_url || undefined,
+    is_popup_active: Boolean(row.is_popup_active),
+    poster_redirect_url: row.poster_redirect_url || undefined
   };
 }
 
@@ -528,23 +531,39 @@ class DatabaseService {
     return event ? { ...event } : null;
   }
 
-  async createEvent(eventData: Omit<CyclingEvent, 'id' | 'created_at' | 'updated_at'>): Promise<CyclingEvent> {
+  async createEvent(eventData: Omit<CyclingEvent, 'id' | 'created_at' | 'updated_at'> & { replace_existing_popup?: boolean }): Promise<CyclingEvent> {
     const pool = getPool();
     if (pool) {
       try {
+        if (eventData.is_popup_active) {
+          const activeCheck = await pool.query("SELECT id, title FROM events WHERE is_popup_active = true LIMIT 1");
+          if (activeCheck.rows.length > 0) {
+            if (eventData.replace_existing_popup) {
+              await pool.query("UPDATE events SET is_popup_active = false WHERE is_popup_active = true");
+            } else {
+              const err: any = new Error(`Event "${activeCheck.rows[0].title}" already has an active announcement popup.`);
+              err.code = 'ACTIVE_POPUP_CONFLICT';
+              err.activeEvent = { id: activeCheck.rows[0].id, title: activeCheck.rows[0].title };
+              throw err;
+            }
+          }
+        }
+
         const query = `
           INSERT INTO events (
             slug, title, description, cover_image_url, venue, location_description,
             starts_at, ends_at, distance_km, elevation_gain_m, difficulty,
             registration_fee_paise, currency, status,
             registration_opens_at, registration_closes_at, published_at,
-            max_capacity, sponsors, inclusions, reporting_time, strava_route_url
+            max_capacity, sponsors, inclusions, reporting_time, strava_route_url,
+            poster_url, is_popup_active, poster_redirect_url
           ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10, $11,
             $12, $13, $14,
             $15, $16, $17,
-            $18, $19, $20, $21, $22
+            $18, $19, $20, $21, $22,
+            $23, $24, $25
           )
           RETURNING *;
         `;
@@ -575,7 +594,10 @@ class DatabaseService {
           sponsorsJson,
           inclusionsJson,
           eventData.reporting_time || null,
-          eventData.strava_route_url || null
+          eventData.strava_route_url || null,
+          eventData.poster_url || null,
+          Boolean(eventData.is_popup_active),
+          eventData.poster_redirect_url || null
         ];
         const res = await pool.query(query, values);
         const created = mapEventRow(res.rows[0]);
@@ -583,11 +605,33 @@ class DatabaseService {
         await this.logAudit('admin', 'EVENT_CREATED', 'event', created.id, { title: created.title, slug: created.slug });
         return created;
       } catch (err: any) {
+        if (err.code === '23505' && err.constraint === 'idx_events_single_active_popup') {
+          const conflictErr: any = new Error('Another event already has an active announcement popup.');
+          conflictErr.code = 'ACTIVE_POPUP_CONFLICT';
+          throw conflictErr;
+        }
         if (err.code === '23505') {
           throw new Error(`An event with slug "${eventData.slug}" already exists. Please choose a different slug.`);
         }
+        if (err.code === 'ACTIVE_POPUP_CONFLICT') {
+          throw err;
+        }
         console.error('Error creating event in Postgres:', err);
         throw err;
+      }
+    }
+
+    if (eventData.is_popup_active) {
+      const activeIdx = this.events.findIndex(e => e.is_popup_active);
+      if (activeIdx !== -1) {
+        if (eventData.replace_existing_popup) {
+          this.events[activeIdx].is_popup_active = false;
+        } else {
+          const err: any = new Error(`Event "${this.events[activeIdx].title}" already has an active announcement popup.`);
+          err.code = 'ACTIVE_POPUP_CONFLICT';
+          err.activeEvent = { id: this.events[activeIdx].id, title: this.events[activeIdx].title };
+          throw err;
+        }
       }
     }
 
@@ -595,6 +639,9 @@ class DatabaseService {
       ...eventData,
       id: `evt-${Date.now()}`,
       max_capacity: eventData.max_capacity !== undefined ? eventData.max_capacity : null,
+      poster_url: eventData.poster_url,
+      is_popup_active: Boolean(eventData.is_popup_active),
+      poster_redirect_url: eventData.poster_redirect_url,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -644,8 +691,31 @@ class DatabaseService {
           sponsors: 'sponsors',
           inclusions: 'inclusions',
           reporting_time: 'reporting_time',
-          strava_route_url: 'strava_route_url'
+          strava_route_url: 'strava_route_url',
+          poster_url: 'poster_url',
+          is_popup_active: 'is_popup_active',
+          poster_redirect_url: 'poster_redirect_url'
         };
+
+        if (updates.is_popup_active === true) {
+          const activeCheck = await pool.query(
+            "SELECT id, title FROM events WHERE is_popup_active = true AND id::text != $1 AND slug != $1 LIMIT 1",
+            [id]
+          );
+          if (activeCheck.rows.length > 0) {
+            if ((updates as any).replace_existing_popup) {
+              await pool.query(
+                "UPDATE events SET is_popup_active = false WHERE is_popup_active = true AND id::text != $1 AND slug != $1",
+                [id]
+              );
+            } else {
+              const err: any = new Error(`Event "${activeCheck.rows[0].title}" already has an active announcement popup.`);
+              err.code = 'ACTIVE_POPUP_CONFLICT';
+              err.activeEvent = { id: activeCheck.rows[0].id, title: activeCheck.rows[0].title };
+              throw err;
+            }
+          }
+        }
 
         for (const [key, dbCol] of Object.entries(fieldMap)) {
           if ((updates as any)[key] !== undefined) {
@@ -656,6 +726,8 @@ class DatabaseService {
               val = typeof val === 'string' ? val : JSON.stringify(val);
             } else if (key === 'max_capacity') {
               val = val === null || val === '' ? null : Number(val);
+            } else if (key === 'is_popup_active') {
+              val = Boolean(val);
             }
             values.push(val);
             setClauses.push(`${dbCol} = $${values.length}`);
@@ -702,6 +774,20 @@ class DatabaseService {
       }
     }
 
+    if (updates.is_popup_active) {
+      const activeIdx = this.events.findIndex((e) => e.is_popup_active && e.id !== id && e.slug !== id);
+      if (activeIdx !== -1) {
+        if ((updates as any).replace_existing_popup) {
+          this.events[activeIdx].is_popup_active = false;
+        } else {
+          const err: any = new Error(`Event "${this.events[activeIdx].title}" already has an active announcement popup.`);
+          err.code = 'ACTIVE_POPUP_CONFLICT';
+          err.activeEvent = { id: this.events[activeIdx].id, title: this.events[activeIdx].title };
+          throw err;
+        }
+      }
+    }
+
     this.events[index] = {
       ...this.events[index],
       ...updates,
@@ -709,6 +795,59 @@ class DatabaseService {
     };
     await this.logAudit('admin', 'EVENT_UPDATED', 'event', id, { updates });
     return { ...this.events[index] };
+  }
+
+  async getActiveAnnouncementPopup(): Promise<CyclingEvent | null> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        const res = await pool.query(
+          "SELECT * FROM events WHERE is_popup_active = true AND status = 'published' LIMIT 1"
+        );
+        if (res.rows.length > 0) {
+          return mapEventRow(res.rows[0]);
+        }
+        return null;
+      } catch (err) {
+        console.error('Error fetching active announcement popup:', err);
+      }
+    }
+    const found = this.events.find((e) => e.is_popup_active && e.status === 'published');
+    return found ? { ...found } : null;
+  }
+
+  async getNearestUpcomingEvent(): Promise<CyclingEvent | null> {
+    const pool = getPool();
+    if (pool) {
+      try {
+        // Find nearest published event whose end time is in the future
+        const res = await pool.query(
+          "SELECT * FROM events WHERE status = 'published' AND ends_at >= timezone('utc'::text, now()) ORDER BY starts_at ASC LIMIT 1"
+        );
+        if (res.rows.length > 0) {
+          return mapEventRow(res.rows[0]);
+        }
+        // Fallback: Latest published event
+        const fallbackRes = await pool.query(
+          "SELECT * FROM events WHERE status = 'published' ORDER BY starts_at DESC LIMIT 1"
+        );
+        if (fallbackRes.rows.length > 0) {
+          return mapEventRow(fallbackRes.rows[0]);
+        }
+        return null;
+      } catch (err) {
+        console.error('Error fetching nearest upcoming event:', err);
+      }
+    }
+    const published = this.events.filter((e) => e.status === 'published');
+    if (published.length === 0) return null;
+    const future = published.filter((e) => new Date(e.ends_at).getTime() >= Date.now());
+    if (future.length > 0) {
+      future.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+      return { ...future[0] };
+    }
+    published.sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+    return { ...published[0] };
   }
 
   // REGISTRATIONS

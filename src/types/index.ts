@@ -47,6 +47,9 @@ export interface CyclingEvent {
   reporting_time?: string;
   flag_off_time?: string;
   strava_route_url?: string;
+  poster_url?: string;
+  is_popup_active?: boolean;
+  poster_redirect_url?: string;
 }
 
 export type RegistrationStatus = 'pending_payment' | 'confirmed' | 'cancelled';

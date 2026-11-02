@@ -631,6 +631,110 @@ async function runAll() {
     assert.strictEqual(updated.strava_route_url, 'https://www.strava.com/routes/987654321');
   });
 
+  // 13. Announcement Poster Popup & Nearest Upcoming Event
+  console.log(`\n[Suite 13: Announcement Poster Popup & Nearest Upcoming Event]`);
+  await testAsync('enforces single active popup invariant and supports replacement', async () => {
+    // 1. Create Event A with active popup
+    const eventA = await db.createEvent({
+      slug: `popup-event-a-${Date.now()}`,
+      title: 'Monsoon Kickoff Ride',
+      description: 'Popup test event A',
+      venue: 'ACC Clubhouse',
+      starts_at: new Date(Date.now() + 86400000 * 2).toISOString(),
+      ends_at: new Date(Date.now() + 86400000 * 2 + 18000000).toISOString(),
+      distance_km: 50,
+      difficulty: 'Easy',
+      registration_fee_paise: 0,
+      currency: 'INR',
+      status: 'published',
+      registration_opens_at: new Date().toISOString(),
+      registration_closes_at: new Date(Date.now() + 86400000 * 2).toISOString(),
+      poster_url: 'https://images.example.com/poster-a.jpg',
+      is_popup_active: true,
+      poster_redirect_url: '/events/popup-event-a'
+    });
+
+    assert.strictEqual(eventA.is_popup_active, true);
+    assert.strictEqual(eventA.poster_url, 'https://images.example.com/poster-a.jpg');
+
+    // Active popup query should return Event A
+    const activePopup1 = await db.getActiveAnnouncementPopup();
+    assert.ok(activePopup1);
+    assert.strictEqual(activePopup1.id, eventA.id);
+
+    // 2. Creating Event B with active popup without replacement must throw conflict
+    let conflictCaught = false;
+    try {
+      await db.createEvent({
+        slug: `popup-event-b-${Date.now()}`,
+        title: 'Dawn Century Brevet',
+        description: 'Popup test event B',
+        venue: 'ACC Clubhouse',
+        starts_at: new Date(Date.now() + 86400000 * 5).toISOString(),
+        ends_at: new Date(Date.now() + 86400000 * 5 + 36000000).toISOString(),
+        distance_km: 100,
+        difficulty: 'Challenging',
+        registration_fee_paise: 49900,
+        currency: 'INR',
+        status: 'published',
+        registration_opens_at: new Date().toISOString(),
+        registration_closes_at: new Date(Date.now() + 86400000 * 5).toISOString(),
+        poster_url: 'https://images.example.com/poster-b.jpg',
+        is_popup_active: true
+      });
+    } catch (err) {
+      if (err.code === 'ACTIVE_POPUP_CONFLICT' || err.message.includes('active announcement popup')) {
+        conflictCaught = true;
+      }
+    }
+    assert.strictEqual(conflictCaught, true, 'Creating a second active popup without replacement must be rejected.');
+
+    // 3. Creating Event B with replace_existing_popup: true must deactivate Event A
+    const eventB = await db.createEvent({
+      slug: `popup-event-b-replaced-${Date.now()}`,
+      title: 'Dawn Century Brevet Replacement',
+      description: 'Popup test event B replacement',
+      venue: 'ACC Clubhouse',
+      starts_at: new Date(Date.now() + 86400000 * 3).toISOString(),
+      ends_at: new Date(Date.now() + 86400000 * 3 + 36000000).toISOString(),
+      distance_km: 100,
+      difficulty: 'Challenging',
+      registration_fee_paise: 49900,
+      currency: 'INR',
+      status: 'published',
+      registration_opens_at: new Date().toISOString(),
+      registration_closes_at: new Date(Date.now() + 86400000 * 3).toISOString(),
+      poster_url: 'https://images.example.com/poster-b.jpg',
+      is_popup_active: true,
+      replace_existing_popup: true
+    });
+
+    assert.strictEqual(eventB.is_popup_active, true);
+
+    // Active popup should now be Event B
+    const activePopup2 = await db.getActiveAnnouncementPopup();
+    assert.ok(activePopup2);
+    assert.strictEqual(activePopup2.id, eventB.id);
+
+    // Event A should no longer have active popup
+    const reloadedA = await db.getEventById(eventA.id);
+    assert.strictEqual(reloadedA.is_popup_active, false);
+
+    // Clean up test events
+    await db.updateEvent(eventB.id, { is_popup_active: false });
+    await db.deleteEvent(eventA.id);
+    await db.deleteEvent(eventB.id);
+  });
+
+  await testAsync('correctly retrieves nearest upcoming event for ticker', async () => {
+    const nearest = await db.getNearestUpcomingEvent();
+    if (nearest) {
+      assert.strictEqual(nearest.status, 'published');
+      assert.ok(nearest.title);
+      assert.ok(nearest.slug);
+    }
+  });
+
   console.log(`\n================ Test Summary ================`);
   console.log(`Total Passed: ${passed}`);
   console.log(`Total Failed: ${failed}`);

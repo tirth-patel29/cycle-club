@@ -3,18 +3,38 @@ import Link from 'next/link';
 import { CLUB_NAME } from '@/lib/constants';
 import { HeroBannerImage } from '@/components/home/HeroBannerImage';
 import { GallerySection } from '@/components/home/GallerySection';
+import { ScrollingAnnouncementTicker } from '@/components/home/ScrollingAnnouncementTicker';
+import { AnnouncementPosterModal } from '@/components/events/AnnouncementPosterModal';
+import { db } from '@/lib/db';
 import {
   Compass,
   ArrowRight
 } from 'lucide-react';
 
-export default function HomePage() {
+export const revalidate = 0;
+
+export default async function HomePage() {
+  const [activePopupEvent, nearestUpcomingEvent] = await Promise.all([
+    db.getActiveAnnouncementPopup(),
+    db.getNearestUpcomingEvent()
+  ]);
+
   return (
     <div className="w-full pt-20 sm:pt-24 pb-0 flex flex-col">
       {/* ========================================================
+          SLIM SCROLLING ANNOUNCEMENT TICKER (Full-width marquee)
+          ======================================================== */}
+      <ScrollingAnnouncementTicker event={nearestUpcomingEvent} />
+
+      {/* ========================================================
+          ANNOUNCEMENT POSTER POPUP (Centered modal on website entry)
+          ======================================================== */}
+      <AnnouncementPosterModal event={activePopupEvent} />
+
+      {/* ========================================================
           SECTION 1: HERO & BRAND INTRODUCTION (Warm Ivory #F7F7F2)
           ======================================================== */}
-      <section className="w-full bg-[#F7F7F2] py-10 sm:py-16 lg:py-20">
+      <section className="w-full bg-[#F7F7F2] py-8 sm:py-14 lg:py-18">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
           <div className="max-w-4xl space-y-4 sm:space-y-6">
             {/* Editorial Club Badge */}
@@ -66,8 +86,6 @@ export default function HomePage() {
               {CLUB_NAME} was born out of the milk capital of India with a single principle: road safety, athletic progression, and zero barriers to entry. Whether you ride a carbon aero racer, a gravel grinder, or a trusty city hybrid, our pacelines roll together.
             </p>
           </div>
-
-
         </div>
       </section>
 
@@ -79,26 +97,26 @@ export default function HomePage() {
       {/* ========================================================
           SECTION 4: INVITATION TO RIDE BANNER
           ======================================================== */}
-      <section className="w-full bg-[#FFFFFF] border-t border-[#E5E6DE] py-16 sm:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="p-8 sm:p-12 rounded-3xl bg-[#EAEDE2] border border-[#E5E6DE] flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
-            <div className="space-y-2 text-center sm:text-left">
-              <h3 className="text-2xl sm:text-3xl font-black uppercase text-[#171914] tracking-tight">
-                READY TO RIDE WITH THE ANAND CYCLING CLUB?
-              </h3>
-              <p className="text-xs sm:text-sm text-[#62645C] font-medium max-w-xl">
-                Community dawn loops, canal centuries, and endurance challenges across Gujarat. Secure your bib for the next stage.
-              </p>
-            </div>
-
-            <Link
-              href="/events"
-              className="btn-glossy-lime py-4 px-8 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 shadow-md"
-            >
-              <span>EXPLORE CLUB CALENDAR</span>
-              <ArrowRight className="w-4 h-4 stroke-[3]" />
-            </Link>
+      <section className="w-full bg-[#171914] text-white py-16 sm:py-20 border-t border-[#2A2D24]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="space-y-3 max-w-xl">
+            <span className="text-xs font-black uppercase tracking-widest text-[#C7F36B]">
+              JOIN THE REVOLUTION
+            </span>
+            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold uppercase tracking-tight text-white leading-tight">
+              YOUR NEXT MILESTONE STARTS HERE.
+            </h3>
+            <p className="text-xs sm:text-sm text-[#8B8D83] leading-relaxed">
+              No elite prerequisites. Just a helmet, a working bike, and a desire to discover Gujarat on two wheels.
+            </p>
           </div>
+          <Link
+            href="/events"
+            className="btn-glossy-lime shrink-0 py-4 px-8 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg"
+          >
+            <span>JOIN OUR NEXT RIDE</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
     </div>

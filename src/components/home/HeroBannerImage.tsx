@@ -11,7 +11,7 @@ export function HeroBannerImage({ alt }: Props) {
 
   return (
     <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-[#E5E6DE] shadow-xl bg-[#171914]">
-      <div className="relative w-full h-[320px] sm:h-[460px] lg:h-[540px]">
+      <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] lg:aspect-[16/11] xl:aspect-[16/11] max-h-[720px] 2xl:max-h-[820px]">
         <img
           src={imgSrc}
           onError={() => {
@@ -22,12 +22,12 @@ export function HeroBannerImage({ alt }: Props) {
             }
           }}
           alt={alt}
-          className="w-full h-full object-cover object-[center_30%] transition-opacity duration-300"
+          className="w-full h-full object-cover object-[center_20%] sm:object-[center_18%] transition-opacity duration-300"
           loading="eager"
           fetchPriority="high"
         />
-        {/* Editorial Contrast Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#171914]/90 via-[#171914]/25 to-transparent pointer-events-none" />
+        {/* Soft Contrast Overlay: keeps bottom members and top statue visible without harsh darkening */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#171914]/40 via-transparent to-transparent pointer-events-none" />
       </div>
     </div>
   );

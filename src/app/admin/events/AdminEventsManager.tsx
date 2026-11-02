@@ -224,6 +224,9 @@ export function AdminEventsManager({ initialEvents }: Props) {
   const [registrationClosesAt, setRegistrationClosesAt] = useState('2026-12-19T18:00');
   const [maxCapacity, setMaxCapacity] = useState<string>('');
   const [stravaRouteUrl, setStravaRouteUrl] = useState('');
+  const [posterUrl, setPosterUrl] = useState('');
+  const [isPopupActive, setIsPopupActive] = useState(false);
+  const [posterRedirectUrl, setPosterRedirectUrl] = useState('');
   const [inclusions, setInclusions] = useState<EventInclusion[]>([]);
 
   const handleTitleChange = (val: string) => {
@@ -273,16 +276,36 @@ export function AdminEventsManager({ initialEvents }: Props) {
         registration_closes_at: localIstToIso(registrationClosesAt),
         max_capacity: maxCapacity.trim() ? parseInt(maxCapacity.trim(), 10) : null,
         strava_route_url: stravaRouteUrl.trim() || undefined,
+        poster_url: posterUrl.trim() || undefined,
+        is_popup_active: isPopupActive,
+        poster_redirect_url: posterRedirectUrl.trim() || undefined,
         inclusions: inclusions.filter(i => i.title.trim().length > 0)
       };
 
-      const res = await fetch('/api/admin/events', {
+      let res = await fetch('/api/admin/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      let data = await res.json();
+
+      if (res.status === 409 && data.conflictType === 'ACTIVE_POPUP_EXISTS') {
+        const confirmReplace = window.confirm(
+          `Announcement Popup Conflict:\n\nEvent "${data.activeEvent?.title || 'Another event'}" currently has an active announcement popup.\n\nOnly ONE event can have an active popup at a time.\n\nDo you want to deactivate the existing popup and make this new event the active popup?`
+        );
+        if (confirmReplace) {
+          res = await fetch('/api/admin/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...payload, replace_existing_popup: true })
+          });
+          data = await res.json();
+        } else {
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
       if (!res.ok) {
         throw new Error(data.error || 'Failed to create event.');
@@ -296,6 +319,9 @@ export function AdminEventsManager({ initialEvents }: Props) {
       setTitle('');
       setSlug('');
       setDescription('');
+      setPosterUrl('');
+      setIsPopupActive(false);
+      setPosterRedirectUrl('');
       setInclusions([]);
     } catch (err: any) {
       setErrorMessage(err.message || 'An unexpected error occurred while saving the event.');
@@ -331,7 +357,10 @@ export function AdminEventsManager({ initialEvents }: Props) {
       starts_at: toLocalDatetimeString(evt.starts_at),
       ends_at: toLocalDatetimeString(evt.ends_at),
       registration_closes_at: toLocalDatetimeString(evt.registration_closes_at),
-      inclusions: evt.inclusions ? [...evt.inclusions] : []
+      inclusions: evt.inclusions ? [...evt.inclusions] : [],
+      poster_url: evt.poster_url || '',
+      is_popup_active: Boolean(evt.is_popup_active),
+      poster_redirect_url: evt.poster_redirect_url || ''
     });
     setErrorMessage(null);
     setShowEditModal(true);
@@ -361,14 +390,35 @@ export function AdminEventsManager({ initialEvents }: Props) {
         registration_closes_at: localIstToIso(editingEvent.registration_closes_at),
         max_capacity: editingEvent.max_capacity ?? null,
         strava_route_url: editingEvent.strava_route_url?.trim() || undefined,
+        poster_url: editingEvent.poster_url?.trim() || null,
+        is_popup_active: Boolean(editingEvent.is_popup_active),
+        poster_redirect_url: editingEvent.poster_redirect_url?.trim() || null,
         inclusions: (editingEvent.inclusions || []).filter(i => i.title.trim().length > 0)
       };
-      const res = await fetch('/api/admin/events', {
+      let res = await fetch('/api/admin/events', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
+      let data = await res.json();
+
+      if (res.status === 409 && data.conflictType === 'ACTIVE_POPUP_EXISTS') {
+        const confirmReplace = window.confirm(
+          `Announcement Popup Conflict:\n\nEvent "${data.activeEvent?.title || 'Another event'}" currently has an active announcement popup.\n\nOnly ONE event can have an active popup at a time.\n\nDo you want to deactivate the existing popup and make "${editingEvent.title}" the active popup?`
+        );
+        if (confirmReplace) {
+          res = await fetch('/api/admin/events', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...payload, replace_existing_popup: true })
+          });
+          data = await res.json();
+        } else {
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       if (!res.ok) throw new Error(data.error || 'Failed to update event.');
       setEvents(events.map((ev) => (ev.id === editingEvent.id ? data.event : ev)));
       setSuccessMessage(`"${data.event.title}" updated successfully!`);
@@ -643,6 +693,67 @@ export function AdminEventsManager({ initialEvents }: Props) {
                     className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs focus:border-[#171914] outline-hidden"
                   />
                   <p className="text-[10px] text-[#62645C] mt-1">Provide a high-resolution cycling photography URL (Unsplash or CDN).</p>
+                </div>
+
+                <div className="pt-2 border-t border-[#E5E6DE]/60 space-y-3">
+                  <div>
+                    <label className="text-[#171914] block mb-1 font-bold">ANNOUNCEMENT POSTER URL</label>
+                    <input
+                      type="url"
+                      value={posterUrl}
+                      onChange={(e) => setPosterUrl(e.target.value)}
+                      placeholder="https://.../poster.jpg or /posters/tour-de-sardar.jpg"
+                      className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs focus:border-[#171914] outline-hidden"
+                    />
+                    <p className="text-[10px] text-[#62645C] mt-1">Full-resolution event poster image displayed in the website entrance popup modal.</p>
+                  </div>
+
+                  {posterUrl.trim() && (
+                    <div className="p-3 bg-white border border-[#E5E6DE] rounded-xl">
+                      <span className="text-[10px] font-bold text-[#62645C] uppercase tracking-wider block mb-2">Poster Preview</span>
+                      <div className="relative max-h-52 flex justify-center bg-[#171914]/5 rounded-lg overflow-hidden p-2">
+                        <img
+                          src={posterUrl}
+                          alt="Announcement Poster Preview"
+                          className="max-h-48 object-contain rounded"
+                          onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between p-3 bg-white border border-[#E5E6DE] rounded-xl">
+                    <div>
+                      <label htmlFor="create-popup-toggle" className="text-[#171914] font-bold text-xs cursor-pointer block">
+                        Enable Announcement Popup
+                      </label>
+                      <p className="text-[10px] text-[#62645C]">Show this poster upon visiting the website (only 1 event can be active globally).</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="create-popup-toggle"
+                        type="checkbox"
+                        checked={isPopupActive}
+                        onChange={(e) => setIsPopupActive(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-[#E5E6DE] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#171914]"></div>
+                    </label>
+                  </div>
+
+                  {isPopupActive && (
+                    <div>
+                      <label className="text-[#171914] block mb-1 font-bold">POSTER REDIRECT URL (OPTIONAL)</label>
+                      <input
+                        type="text"
+                        value={posterRedirectUrl}
+                        onChange={(e) => setPosterRedirectUrl(e.target.value)}
+                        placeholder="Defaults to this event's details page (/events/[slug])"
+                        className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs focus:border-[#171914] outline-hidden placeholder:text-[#62645C]/50"
+                      />
+                      <p className="text-[10px] text-[#62645C] mt-1">Leave blank to redirect to this event details page when the user clicks the poster.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -952,6 +1063,72 @@ export function AdminEventsManager({ initialEvents }: Props) {
                 <input type="url" value={editingEvent.cover_image_url}
                   onChange={(e) => setEditingEvent({ ...editingEvent, cover_image_url: e.target.value })}
                   className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs focus:border-[#171914] outline-hidden" />
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#F7F7F2] border border-[#E5E6DE] space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#171914] text-[#C7F36B] text-[10px] font-black flex items-center justify-center">★</span>
+                  <h4 className="font-bold uppercase tracking-wider text-[#171914]">Announcement Poster Popup</h4>
+                </div>
+
+                <div>
+                  <label className="text-[#171914] block mb-1 font-bold">ANNOUNCEMENT POSTER URL</label>
+                  <input
+                    type="url"
+                    value={editingEvent.poster_url || ''}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, poster_url: e.target.value })}
+                    placeholder="https://.../poster.jpg or /posters/tour-de-sardar.jpg"
+                    className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs focus:border-[#171914] outline-hidden"
+                  />
+                  <p className="text-[10px] text-[#62645C] mt-1">Full-resolution event poster image displayed in the website entrance popup modal.</p>
+                </div>
+
+                {editingEvent.poster_url && editingEvent.poster_url.trim() && (
+                  <div className="p-3 bg-white border border-[#E5E6DE] rounded-xl">
+                    <span className="text-[10px] font-bold text-[#62645C] uppercase tracking-wider block mb-2">Poster Preview</span>
+                    <div className="relative max-h-52 flex justify-center bg-[#171914]/5 rounded-lg overflow-hidden p-2">
+                      <img
+                        src={editingEvent.poster_url}
+                        alt="Announcement Poster Preview"
+                        className="max-h-48 object-contain rounded"
+                        onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between p-3 bg-white border border-[#E5E6DE] rounded-xl">
+                  <div>
+                    <label htmlFor="edit-popup-toggle" className="text-[#171914] font-bold text-xs cursor-pointer block">
+                      Enable Announcement Popup
+                    </label>
+                    <p className="text-[10px] text-[#62645C]">Show this poster upon visiting the website (only 1 event can be active globally).</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      id="edit-popup-toggle"
+                      type="checkbox"
+                      checked={Boolean(editingEvent.is_popup_active)}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, is_popup_active: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#E5E6DE] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#171914]"></div>
+                  </label>
+                </div>
+
+                {editingEvent.is_popup_active && (
+                  <div>
+                    <label className="text-[#171914] block mb-1 font-bold">POSTER REDIRECT URL (OPTIONAL)</label>
+                    <input
+                      type="text"
+                      value={editingEvent.poster_redirect_url || ''}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, poster_redirect_url: e.target.value })}
+                      placeholder="Defaults to this event's details page (/events/[slug])"
+                      className="w-full px-3 py-2 bg-white border border-[#E5E6DE] rounded-xl text-[#171914] font-mono text-xs focus:border-[#171914] outline-hidden placeholder:text-[#62645C]/50"
+                    />
+                    <p className="text-[10px] text-[#62645C] mt-1">Leave blank to redirect to this event details page when the user clicks the poster.</p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

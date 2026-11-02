@@ -65,6 +65,9 @@ CREATE TABLE IF NOT EXISTS events (
   inclusions JSONB DEFAULT '[]'::jsonb,
   reporting_time TEXT,
   strava_route_url TEXT,
+  poster_url TEXT,
+  is_popup_active BOOLEAN NOT NULL DEFAULT FALSE,
+  poster_redirect_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
@@ -158,6 +161,7 @@ CREATE TABLE IF NOT EXISTS email_deliveries (
 -- 10. PERFORMANCE INDEXES
 CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug);
 CREATE INDEX IF NOT EXISTS idx_events_status_starts_at ON events(status, starts_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_events_single_active_popup ON events(is_popup_active) WHERE is_popup_active = true;
 CREATE INDEX IF NOT EXISTS idx_registrations_event_id ON registrations(event_id);
 CREATE INDEX IF NOT EXISTS idx_registrations_public_reference ON registrations(public_reference);
 CREATE INDEX IF NOT EXISTS idx_registrations_idempotency_key ON registrations(idempotency_key);

@@ -51,6 +51,10 @@ export async function POST(req: NextRequest) {
       inclusions,
       reporting_time,
       strava_route_url,
+      poster_url,
+      is_popup_active,
+      poster_redirect_url,
+      replace_existing_popup,
       registration_opens_at,
       registration_closes_at
     } = body;
@@ -128,7 +132,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const eventPayload: Omit<CyclingEvent, 'id' | 'created_at' | 'updated_at'> = {
+    const eventPayload: Omit<CyclingEvent, 'id' | 'created_at' | 'updated_at'> & { replace_existing_popup?: boolean } = {
       title: title.trim(),
       slug: sanitizedSlug,
       description: (description || '').trim() || 'Exciting community ride organized by Anand Cycling Club.',
@@ -148,6 +152,10 @@ export async function POST(req: NextRequest) {
       inclusions: inclusions || undefined,
       reporting_time: reporting_time ? String(reporting_time).trim() : undefined,
       strava_route_url: finalStravaUrl,
+      poster_url: poster_url ? String(poster_url).trim() : undefined,
+      is_popup_active: Boolean(is_popup_active),
+      poster_redirect_url: poster_redirect_url ? String(poster_redirect_url).trim() : undefined,
+      replace_existing_popup: Boolean(replace_existing_popup),
       registration_opens_at: regOpens.toISOString(),
       registration_closes_at: regCloses.toISOString(),
       published_at: status === 'published' ? new Date().toISOString() : undefined
@@ -167,6 +175,14 @@ export async function POST(req: NextRequest) {
     }, { status: 201 });
 
   } catch (err: any) {
+    if (err.code === 'ACTIVE_POPUP_CONFLICT') {
+      return NextResponse.json({
+        conflict: true,
+        conflictType: 'ACTIVE_POPUP_EXISTS',
+        message: err.message,
+        activeEvent: err.activeEvent
+      }, { status: 409 });
+    }
     console.error('Error in POST /api/admin/events:', err);
     return NextResponse.json({
       error: err.message || 'Failed to create event in database.'
@@ -228,6 +244,20 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    if (updates.is_popup_active !== undefined) {
+      updates.is_popup_active = Boolean(updates.is_popup_active);
+    }
+    if (updates.poster_url !== undefined) {
+      updates.poster_url = updates.poster_url && typeof updates.poster_url === 'string' && updates.poster_url.trim() !== ''
+        ? updates.poster_url.trim()
+        : null;
+    }
+    if (updates.poster_redirect_url !== undefined) {
+      updates.poster_redirect_url = updates.poster_redirect_url && typeof updates.poster_redirect_url === 'string' && updates.poster_redirect_url.trim() !== ''
+        ? updates.poster_redirect_url.trim()
+        : null;
+    }
+
     const updatedEvent = await db.updateEvent(id, updates);
     if (!updatedEvent) {
       return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
@@ -246,6 +276,14 @@ export async function PATCH(req: NextRequest) {
     });
 
   } catch (err: any) {
+    if (err.code === 'ACTIVE_POPUP_CONFLICT') {
+      return NextResponse.json({
+        conflict: true,
+        conflictType: 'ACTIVE_POPUP_EXISTS',
+        message: err.message,
+        activeEvent: err.activeEvent
+      }, { status: 409 });
+    }
     console.error('Error in PATCH /api/admin/events:', err);
     return NextResponse.json({
       error: err.message || 'Failed to update event in database.'
