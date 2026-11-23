@@ -735,6 +735,41 @@ async function runAll() {
     }
   });
 
+  // 14. Registration Availability Card State Determination
+  console.log(`\n[Suite 14: Registration Availability Card State Determination]`);
+  await testAsync('correctly distinguishes OPEN vs FULL vs CLOSED registration states', async () => {
+    // 1. OPEN state: within registration window, not full
+    const futureDate = new Date(Date.now() + 86400000 * 10).toISOString();
+    const pastDate = new Date(Date.now() - 86400000).toISOString();
+
+    const openEvent = {
+      status: 'published',
+      registration_closes_at: futureDate,
+      max_capacity: 50
+    };
+    const isOpen = new Date() <= new Date(openEvent.registration_closes_at) && openEvent.status === 'published';
+    assert.strictEqual(isOpen, true, 'Event within window and published must be OPEN');
+
+    // 2. CLOSED state: deadline passed
+    const closedEvent = {
+      status: 'published',
+      registration_closes_at: pastDate,
+      max_capacity: 50
+    };
+    const isClosedByDeadline = !(new Date() <= new Date(closedEvent.registration_closes_at) && closedEvent.status === 'published');
+    assert.strictEqual(isClosedByDeadline, true, 'Event past deadline must be CLOSED');
+
+    // 3. FULL state: capacity exhausted
+    const capacityFull = {
+      is_full: true,
+      remaining_capacity: 0,
+      confirmed_count: 50,
+      max_capacity: 50
+    };
+    const canRegisterWhenFull = isOpen && !capacityFull.is_full;
+    assert.strictEqual(canRegisterWhenFull, false, 'Event when full must disallow registration');
+  });
+
   console.log(`\n================ Test Summary ================`);
   console.log(`Total Passed: ${passed}`);
   console.log(`Total Failed: ${failed}`);

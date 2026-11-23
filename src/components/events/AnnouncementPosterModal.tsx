@@ -113,4 +113,3 @@ export function AnnouncementPosterModal({ event }: Props) {
     </div>
   );
 }
-

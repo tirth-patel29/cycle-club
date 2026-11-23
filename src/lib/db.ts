@@ -20,7 +20,7 @@ function getPool(): pg.Pool | null {
       ssl: { rejectUnauthorized: false },
       max: maxConnections,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000
+      connectionTimeoutMillis: 15000
     });
 
     pgPool.on('error', (err) => {
@@ -472,18 +472,16 @@ class DatabaseService {
         }
         query += ' ORDER BY starts_at ASC';
         const res = await pool.query(query, params);
-        if (res.rows.length > 0) {
-          let list = res.rows.map(mapEventRow);
-          const now = Date.now();
-          if (timeframe === 'upcoming') {
-            list = list.filter((e) => new Date(e.starts_at).getTime() >= now);
-          } else if (timeframe === 'past') {
-            list = list.filter((e) => new Date(e.starts_at).getTime() < now);
-          }
-          return list;
+        let list = res.rows.map(mapEventRow);
+        const now = Date.now();
+        if (timeframe === 'upcoming') {
+          list = list.filter((e) => new Date(e.starts_at).getTime() >= now);
+        } else if (timeframe === 'past') {
+          list = list.filter((e) => new Date(e.starts_at).getTime() < now);
         }
+        return list;
       } catch (err) {
-        // Fall back
+        console.error('Error fetching events from Postgres:', err);
       }
     }
 
@@ -507,8 +505,9 @@ class DatabaseService {
         if (res.rows.length > 0) {
           return mapEventRow(res.rows[0]);
         }
+        return null;
       } catch (err) {
-        // Fall back
+        console.error('Error fetching event by slug from Postgres:', err);
       }
     }
     const event = this.events.find((e) => e.slug === slug);
@@ -523,8 +522,9 @@ class DatabaseService {
         if (res.rows.length > 0) {
           return mapEventRow(res.rows[0]);
         }
+        return null;
       } catch (err) {
-        // Fall back
+        console.error('Error fetching event by id from Postgres:', err);
       }
     }
     const event = this.events.find((e) => e.id === id);
@@ -540,6 +540,9 @@ class DatabaseService {
           if (activeCheck.rows.length > 0) {
             if (eventData.replace_existing_popup) {
               await pool.query("UPDATE events SET is_popup_active = false WHERE is_popup_active = true");
+              this.events.forEach(e => {
+                if (e.is_popup_active) e.is_popup_active = false;
+              });
             } else {
               const err: any = new Error(`Event "${activeCheck.rows[0].title}" already has an active announcement popup.`);
               err.code = 'ACTIVE_POPUP_CONFLICT';
@@ -622,11 +625,13 @@ class DatabaseService {
     }
 
     if (eventData.is_popup_active) {
-      const activeIdx = this.events.findIndex(e => e.is_popup_active);
-      if (activeIdx !== -1) {
-        if (eventData.replace_existing_popup) {
-          this.events[activeIdx].is_popup_active = false;
-        } else {
+      if (eventData.replace_existing_popup) {
+        this.events.forEach(e => {
+          if (e.is_popup_active) e.is_popup_active = false;
+        });
+      } else {
+        const activeIdx = this.events.findIndex(e => e.is_popup_active);
+        if (activeIdx !== -1) {
           const err: any = new Error(`Event "${this.events[activeIdx].title}" already has an active announcement popup.`);
           err.code = 'ACTIVE_POPUP_CONFLICT';
           err.activeEvent = { id: this.events[activeIdx].id, title: this.events[activeIdx].title };
@@ -637,7 +642,7 @@ class DatabaseService {
 
     const newEvent: CyclingEvent = {
       ...eventData,
-      id: `evt-${Date.now()}`,
+      id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       max_capacity: eventData.max_capacity !== undefined ? eventData.max_capacity : null,
       poster_url: eventData.poster_url,
       is_popup_active: Boolean(eventData.is_popup_active),
@@ -708,6 +713,9 @@ class DatabaseService {
                 "UPDATE events SET is_popup_active = false WHERE is_popup_active = true AND id::text != $1 AND slug != $1",
                 [id]
               );
+              this.events.forEach(e => {
+                if (e.id !== id && e.slug !== id && e.is_popup_active) e.is_popup_active = false;
+              });
             } else {
               const err: any = new Error(`Event "${activeCheck.rows[0].title}" already has an active announcement popup.`);
               err.code = 'ACTIVE_POPUP_CONFLICT';
@@ -775,11 +783,13 @@ class DatabaseService {
     }
 
     if (updates.is_popup_active) {
-      const activeIdx = this.events.findIndex((e) => e.is_popup_active && e.id !== id && e.slug !== id);
-      if (activeIdx !== -1) {
-        if ((updates as any).replace_existing_popup) {
-          this.events[activeIdx].is_popup_active = false;
-        } else {
+      if ((updates as any).replace_existing_popup) {
+        this.events.forEach(e => {
+          if (e.id !== id && e.slug !== id && e.is_popup_active) e.is_popup_active = false;
+        });
+      } else {
+        const activeIdx = this.events.findIndex((e) => e.is_popup_active && e.id !== id && e.slug !== id);
+        if (activeIdx !== -1) {
           const err: any = new Error(`Event "${this.events[activeIdx].title}" already has an active announcement popup.`);
           err.code = 'ACTIVE_POPUP_CONFLICT';
           err.activeEvent = { id: this.events[activeIdx].id, title: this.events[activeIdx].title };

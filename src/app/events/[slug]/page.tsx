@@ -277,6 +277,7 @@ export default async function EventDetailPage({ params }: Props) {
               <LiveRegistrationProgress
                 eventId={event.id}
                 initialCapacity={capacityInfo}
+                isRegistrationOpen={isRegistrationOpen}
               />
 
               <div className="pt-2 border-t border-[#E5E6DE] space-y-3 text-xs font-semibold">

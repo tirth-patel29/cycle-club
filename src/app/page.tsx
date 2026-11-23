@@ -50,7 +50,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="text-sm sm:text-base lg:text-lg text-[#62645C] max-w-2xl font-medium leading-relaxed animate-fade-up animate-delay-2">
-              Gujarat's premier community cycling collective. Weekend dawn pacelines, Charotar canal routes, and endurance brevets across Anand and beyond.
+              Gujarat&apos;s premier community cycling collective. Weekend dawn pacelines, Charotar canal routes, and endurance brevets across Anand and beyond.
             </p>
 
             {/* CTA Buttons */}

@@ -55,7 +55,7 @@ export function Navbar() {
               <span className="font-extrabold text-base sm:text-lg text-[#171914] tracking-tight uppercase leading-none font-sans">
                 {CLUB_NAME}
               </span>
-              <span className="text-[10px] text-[#62645C] tracking-wider uppercase font-bold mt-0.5">
+              <span className="text-[9px] sm:text-[10px] text-[#62645C] tracking-wider uppercase font-bold mt-0.5">
                 Anand, Gujarat
               </span>
             </div>
