@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CyclingEvent, RiderProfile, BicycleType, BloodGroup } from '@/types';
+import { CyclingEvent, RiderProfile, BicycleType, BloodGroup, TshirtSize } from '@/types';
 import { formatINR } from '@/lib/constants';
 import {
   BICYCLE_TYPES,
@@ -63,8 +63,8 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
   );
   const [bicycleBrand, setBicycleBrand] = useState(initialProfile?.bicycle_brand || '');
   const [bicycleModel, setBicycleModel] = useState(initialProfile?.bicycle_model || '');
-  const [jerseySize, setJerseySize] = useState<'S' | 'M' | 'L' | 'XL' | '2XL' | 'None'>(
-    (initialProfile?.tshirt_size as any) || 'L'
+  const [jerseySize, setJerseySize] = useState<TshirtSize>(
+    (initialProfile?.tshirt_size as TshirtSize) || 'L'
   );
   const [saveToProfile, setSaveToProfile] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -431,6 +431,65 @@ export function RegistrationForm({ event, initialProfile, userEmail, userId }: P
                   {size}
                 </button>
               ))}
+            </div>
+
+            {/* T-Shirt Size Guide Table */}
+            <div className="mt-3 rounded-2xl border border-[#E5E6DE] bg-[#F7F7F2] p-3.5 sm:p-4 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                <h4 className="text-xs sm:text-sm font-black text-[#171914] uppercase tracking-tight font-sans">
+                  T-Shirt Size Guide
+                </h4>
+                <span className="text-[11px] text-[#62645C] font-medium">
+                  Male / Unisex — All measurements are in inches
+                </span>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-[#E5E6DE] bg-white shadow-xs">
+                <table className="w-full min-w-[480px] text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#EAEDE2] border-b border-[#E5E6DE] text-[#171914] font-mono">
+                      <th className="py-2.5 px-3.5 font-bold uppercase text-[10px] tracking-wider text-[#171914]">
+                        Measurement
+                      </th>
+                      <th className={`py-2.5 px-3 text-center font-bold ${jerseySize === 'XS' ? 'bg-[#171914] text-[#C7F36B]' : ''}`}>XS</th>
+                      <th className={`py-2.5 px-3 text-center font-bold ${jerseySize === 'S' ? 'bg-[#171914] text-[#C7F36B]' : ''}`}>S</th>
+                      <th className={`py-2.5 px-3 text-center font-bold ${jerseySize === 'M' ? 'bg-[#171914] text-[#C7F36B]' : ''}`}>M</th>
+                      <th className={`py-2.5 px-3 text-center font-bold ${jerseySize === 'L' ? 'bg-[#171914] text-[#C7F36B]' : ''}`}>L</th>
+                      <th className={`py-2.5 px-3 text-center font-bold ${jerseySize === 'XL' ? 'bg-[#171914] text-[#C7F36B]' : ''}`}>XL</th>
+                      <th className={`py-2.5 px-3 text-center font-bold ${jerseySize === '2XL' ? 'bg-[#171914] text-[#C7F36B]' : ''}`}>2XL</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E6DE] font-sans">
+                    <tr className="hover:bg-[#F7F7F2]/60 transition-colors">
+                      <td className="py-2.5 px-3.5 font-bold text-[#171914]">Chest</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'XS' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>36&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'S' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>38&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'M' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>40&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'L' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>42&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'XL' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>44&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === '2XL' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>46&quot;</td>
+                    </tr>
+                    <tr className="hover:bg-[#F7F7F2]/60 transition-colors">
+                      <td className="py-2.5 px-3.5 font-bold text-[#171914]">Waist</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'XS' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>28–30&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'S' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>30–32&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'M' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>32–34&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'L' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>34–36&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'XL' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>36–38&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === '2XL' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>38–40&quot;</td>
+                    </tr>
+                    <tr className="hover:bg-[#F7F7F2]/60 transition-colors">
+                      <td className="py-2.5 px-3.5 font-bold text-[#171914]">Front Length</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'XS' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>21.5&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'S' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>22.5&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'M' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>23.5&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'L' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>24.5&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === 'XL' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>25.5&quot;</td>
+                      <td className={`py-2.5 px-3 text-center font-mono ${jerseySize === '2XL' ? 'bg-[#EAEDE2] font-bold text-[#171914]' : 'text-[#62645C]'}`}>26.5&quot;</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 

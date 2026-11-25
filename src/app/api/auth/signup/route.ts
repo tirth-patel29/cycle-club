@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { setSessionCookie, ensureUuid } from '@/lib/auth';
-import { normalizeIndianMobile, INDIAN_MOBILE_REGEX, BICYCLE_TYPES } from '@/lib/validations/registration';
+import { normalizeIndianMobile, INDIAN_MOBILE_REGEX, BICYCLE_TYPES, TSHIRT_SIZES, normalizeTshirtSize } from '@/lib/validations/registration';
 import { BicycleType } from '@/types';
 import { z } from 'zod';
 
@@ -19,7 +19,7 @@ const signupSchema = z.object({
   bicycle_model: z.string().trim().optional(),
   age: z.coerce.number().min(12).max(100).optional(),
   gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']).optional(),
-  tshirt_size: z.enum(['S', 'M', 'L', 'XL', '2XL', 'None']).optional().default('None')
+  tshirt_size: z.preprocess(normalizeTshirtSize, z.enum(TSHIRT_SIZES)).optional().default('None')
 });
 
 export async function POST(request: NextRequest) {

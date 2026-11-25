@@ -55,7 +55,7 @@ export interface CyclingEvent {
 export type RegistrationStatus = 'pending_payment' | 'confirmed' | 'cancelled';
 export type GenderOption = 'Male' | 'Female' | 'Other' | 'Prefer not to say';
 export type BicycleType = 'Road' | 'Hybrid' | 'MTB' | 'City Bike' | 'Gravel Cycle';
-export type TshirtSize = 'S' | 'M' | 'L' | 'XL' | '2XL' | 'None';
+export type TshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | '2XL' | 'None';
 export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | "Don't Know";
 
 export interface RiderProfile {

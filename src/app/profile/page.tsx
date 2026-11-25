@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BICYCLE_TYPES, TSHIRT_SIZES, normalizeIndianMobile, BLOOD_GROUPS } from '@/lib/validations/registration';
-import { BicycleType, RiderProfile, Registration, BloodGroup } from '@/types';
+import { BicycleType, RiderProfile, Registration, BloodGroup, TshirtSize } from '@/types';
 import { Bike, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, UserCheck, Calendar, LogOut, Ticket, HeartPulse } from 'lucide-react';
 
 const BICYCLE_ICONS: Record<BicycleType, { title: string; desc: string }> = {
@@ -32,7 +32,7 @@ export default function ProfilePage() {
     bicycle_type: BicycleType;
     bicycle_brand: string;
     bicycle_model: string;
-    tshirt_size: 'S' | 'M' | 'L' | 'XL' | '2XL' | 'None';
+    tshirt_size: TshirtSize;
   }>({
     full_name: '',
     mobile_number: '',

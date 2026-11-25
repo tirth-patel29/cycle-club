@@ -770,6 +770,112 @@ async function runAll() {
     assert.strictEqual(canRegisterWhenFull, false, 'Event when full must disallow registration');
   });
 
+  // ==========================================
+  // Suite 15: T-Shirt Size Options & Pass Content Cleanliness
+  // ==========================================
+  console.log('\n[Suite 15: T-Shirt Size Options & Pass Content Cleanliness]');
+
+  await testAsync('validates all approved T-shirt sizes including XS and NONE', async () => {
+    const { TSHIRT_SIZES, registrationSchema, normalizeTshirtSize } = await import('../src/lib/validations/registration.ts');
+
+    assert.ok(TSHIRT_SIZES.includes('XS'), 'TSHIRT_SIZES must include XS');
+    assert.ok(TSHIRT_SIZES.includes('None'), 'TSHIRT_SIZES must include None');
+
+    // Test normalization
+    assert.strictEqual(normalizeTshirtSize('XS'), 'XS');
+    assert.strictEqual(normalizeTshirtSize('xs'), 'XS');
+    assert.strictEqual(normalizeTshirtSize('NONE'), 'None');
+    assert.strictEqual(normalizeTshirtSize('None'), 'None');
+
+    // Test schema validation
+    const basePayload = {
+      event_id: 'evt-test-1',
+      full_name: 'Sardar Rider',
+      mobile_number: '9825123456',
+      age: 28,
+      gender: 'Male',
+      residential_address: '12 Sardar Patel Road, Anand',
+      emergency_contact_name: 'Patel Senior',
+      emergency_contact_phone: '9825123457',
+      blood_group: 'B+',
+      bicycle_type: 'Road',
+      terms_accepted: true
+    };
+
+    const parsedXS = registrationSchema.parse({ ...basePayload, jersey_size: 'XS' });
+    assert.strictEqual(parsedXS.jersey_size, 'XS');
+
+    const parsedNone = registrationSchema.parse({ ...basePayload, jersey_size: 'None' });
+    assert.strictEqual(parsedNone.jersey_size, 'None');
+
+    const parsedUpperNone = registrationSchema.parse({ ...basePayload, jersey_size: 'NONE' });
+    assert.strictEqual(parsedUpperNone.jersey_size, 'None');
+
+    // Invalid size should fail
+    assert.throws(() => registrationSchema.parse({ ...basePayload, jersey_size: '3XL' }), /valid jersey\/t-shirt size/i);
+  });
+
+  await testAsync('persists XS size in registration and synchronizes to profile independently', async () => {
+    const testRiderId = `rider-${Date.now()}`;
+    const testEvent = await db.createEvent({
+      slug: `size-test-event-${Date.now()}`,
+      title: 'T-Shirt Size Test Brevet',
+      description: 'Testing apparel size persistence',
+      cover_image_url: 'https://images.unsplash.com/photo-1',
+      venue: 'Town Hall, Anand',
+      location_description: 'Anand Loop',
+      starts_at: new Date(Date.now() + 86400000).toISOString(),
+      ends_at: new Date(Date.now() + 90000000).toISOString(),
+      distance_km: 50,
+      elevation_gain_m: 100,
+      difficulty: 'Moderate',
+      registration_fee_paise: 0,
+      currency: 'INR',
+      status: 'published',
+      registration_opens_at: new Date().toISOString(),
+      registration_closes_at: new Date(Date.now() + 86400000).toISOString()
+    });
+
+    // 1. Create registration with XS size
+    const reg = await db.createRegistration({
+      event_id: testEvent.id,
+      rider_id: testRiderId,
+      full_name: 'Size Test Rider',
+      mobile_number: '9825199999',
+      age: 25,
+      gender: 'Male',
+      bicycle_type: 'Road',
+      jersey_size: 'XS',
+      amount_due_paise: 0,
+      currency: 'INR',
+      terms_accepted_at: new Date().toISOString()
+    });
+
+    assert.strictEqual(reg.jersey_size, 'XS', 'Event registration must persist XS jersey size');
+
+    // 2. Sync XS to permanent rider profile
+    const profile = await db.upsertRiderProfile(testRiderId, {
+      full_name: 'Size Test Rider',
+      mobile_number: '9825199999',
+      bicycle_type: 'Road',
+      tshirt_size: 'XS'
+    });
+
+    assert.strictEqual(profile.tshirt_size, 'XS', 'Rider profile must persist XS t-shirt size');
+
+    // 3. Verify event registration retained its size independently
+    const fetchedReg = await db.getRegistrationByReference(reg.public_reference);
+    assert.strictEqual(fetchedReg?.jersey_size, 'XS');
+  });
+
+  await testAsync('participant pass template does not contain DEMO TXN or outdated food text', async () => {
+    const fs = await import('fs');
+    const passViewSource = fs.readFileSync('src/app/registrations/[reference]/ConfirmationPassView.tsx', 'utf8');
+
+    assert.doesNotMatch(passViewSource, /DEMO TXN/, 'ConfirmationPassView must not contain DEMO TXN reference');
+    assert.doesNotMatch(passViewSource, /HOT MASALA CHAI & GUJARATI BREAKFAST/, 'ConfirmationPassView must not contain outdated food text');
+  });
+
   console.log(`\n================ Test Summary ================`);
   console.log(`Total Passed: ${passed}`);
   console.log(`Total Failed: ${failed}`);

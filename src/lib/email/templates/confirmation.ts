@@ -269,7 +269,6 @@ export function generateConfirmationEmailHtml({
                         <li><strong>Helmet is strictly mandatory</strong> for all participants at start line.</li>
                         <li>Report 30 minutes prior to flag-off to collect your physical bike bib plate.</li>
                         <li>Hydration support and backup SAG escort van accompany the entire ride.</li>
-                        <li>Hot masala chai & Gujarati breakfast awaits at the finish arch.</li>
                       </ul>
                     </div>
 
@@ -365,7 +364,6 @@ RIDE DAY PROTOCOLS
 • Cycling helmet is strictly mandatory at start line.
 • Report 30 minutes prior to flag-off to collect physical bib plate.
 • Hydration stations and SAG escort van available throughout the route.
-• Hot masala chai & breakfast at the finish arch.
 
 Questions or assistance?
 Helpline: ${CLUB_CONTACT_PHONE}

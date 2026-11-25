@@ -16,7 +16,22 @@ export function normalizeIndianMobile(phone: string): string {
 }
 
 export const BICYCLE_TYPES = ['Road', 'Hybrid', 'MTB', 'City Bike', 'Gravel Cycle'] as const;
-export const TSHIRT_SIZES = ['S', 'M', 'L', 'XL', '2XL', 'None'] as const;
+export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', 'None'] as const;
+
+export function normalizeTshirtSize(val: unknown): unknown {
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    const upper = trimmed.toUpperCase();
+    if (upper === 'NONE') return 'None';
+    if (upper === 'XS') return 'XS';
+    if (upper === 'S') return 'S';
+    if (upper === 'M') return 'M';
+    if (upper === 'L') return 'L';
+    if (upper === 'XL') return 'XL';
+    if (upper === '2XL') return '2XL';
+  }
+  return val;
+}
 export const BLOOD_GROUPS = [
   'A+',
   'A-',
@@ -86,7 +101,9 @@ export const registrationSchema = z.object({
     .min(5, 'Please enter your complete residential address')
     .max(500, 'Residential address must be within 500 characters'),
   jersey_size: z
-    .enum(TSHIRT_SIZES)
+    .preprocess(normalizeTshirtSize, z.enum(TSHIRT_SIZES, {
+      message: 'Please select a valid jersey/t-shirt size (XS, S, M, L, XL, 2XL, None)'
+    }))
     .default('None'),
   bicycle_type: bicycleTypeSchema.default('Hybrid'),
   bicycle_brand: z.string().trim().max(50).optional().or(z.literal('')),
@@ -123,7 +140,12 @@ export const riderProfileSchema = z.object({
   gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']).optional(),
   bicycle_brand: z.string().trim().max(50).optional().or(z.literal('')),
   bicycle_model: z.string().trim().max(50).optional().or(z.literal('')),
-  tshirt_size: z.enum(TSHIRT_SIZES).optional().default('None'),
+  tshirt_size: z
+    .preprocess(normalizeTshirtSize, z.enum(TSHIRT_SIZES, {
+      message: 'Please select a valid t-shirt size (XS, S, M, L, XL, 2XL, None)'
+    }))
+    .optional()
+    .default('None'),
   emergency_contact_name: z.string().trim().max(70).optional().or(z.literal('')),
   emergency_contact_phone: z
     .string()

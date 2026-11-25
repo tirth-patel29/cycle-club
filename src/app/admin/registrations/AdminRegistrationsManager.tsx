@@ -217,6 +217,13 @@ export function AdminRegistrationsManager({ initialRegistrations, events }: Prop
               </div>
 
               <div className="p-3 bg-[#F7F7F2] border border-[#E5E6DE] rounded-xl space-y-1">
+                <span className="text-[10px] font-black uppercase text-[#62645C] block">EQUIPMENT & APPAREL</span>
+                <p className="font-bold text-[#171914]">
+                  Bicycle: <span className="bg-[#EAEDE2] px-1.5 py-0.5 rounded">{selectedSafetyRider.bicycle_type || 'Road'}</span> {selectedSafetyRider.bicycle_brand ? `(${selectedSafetyRider.bicycle_brand} ${selectedSafetyRider.bicycle_model || ''})` : ''} • Jersey: <span className="bg-[#171914] text-[#C7F36B] px-1.5 py-0.5 rounded font-mono text-[10px]">{selectedSafetyRider.jersey_size || 'None'}</span>
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#F7F7F2] border border-[#E5E6DE] rounded-xl space-y-1">
                 <span className="text-[10px] font-black uppercase text-[#62645C] block">RESIDENTIAL ADDRESS</span>
                 <p className="font-medium text-[#171914] whitespace-pre-line leading-relaxed">
                   {selectedSafetyRider.residential_address || 'None provided'}

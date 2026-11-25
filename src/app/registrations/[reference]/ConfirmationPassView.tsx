@@ -182,11 +182,6 @@ export function ConfirmationPassView({ registration, event, payment }: Props) {
               <strong className="text-[#171914] font-extrabold">
                 {registration.amount_due_paise === 0 ? 'FREE ENTRY (₹0)' : formatINR(registration.amount_due_paise)}
               </strong>
-              {registration.amount_due_paise > 0 && payment && (
-                <span className="ml-2 text-[#62645C] text-[10px] font-mono">
-                  (DEMO TXN: {payment.provider_payment_reference})
-                </span>
-              )}
             </div>
             <span className="text-[#171914] font-black uppercase text-[10px] tracking-wider bg-[#EAEDE2] px-2.5 py-1 rounded-full border border-[#E5E6DE]">
               OFFICIAL ANAND CYCLING CLUB DIGITAL PASS
@@ -198,7 +193,6 @@ export function ConfirmationPassView({ registration, event, payment }: Props) {
         <div className="bg-[#EAEDE2] p-6 border-t border-[#E5E6DE] text-xs text-[#171914] space-y-1.5 uppercase font-semibold">
           <p>• HELMET IS STRICTLY MANDATORY FOR START LINE ENTRY.</p>
           <p>• REPORT 30 MINS PRIOR TO FLAG-OFF TO COLLECT PHYSICAL BIKE BIB.</p>
-          <p>• HOT MASALA CHAI & GUJARATI BREAKFAST AWAITS AT THE FINISH ARCH.</p>
         </div>
       </div>
     </div>
